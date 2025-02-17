@@ -1,3 +1,4 @@
+"use client"
 import React from 'react'
 
 import AccountSpreadsheetView from "@/components/accounts/accountSpreadsheetView";

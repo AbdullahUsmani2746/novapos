@@ -1,3 +1,4 @@
+"use client"
 import ChartOfAccounts from '@/components/accounts/chartOfAccountsComponent'
 import React from 'react'
 
@@ -6,3 +7,5 @@ const page = () => {
 }
 
 export default page
+
+
