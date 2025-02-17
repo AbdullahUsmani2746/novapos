@@ -1,0 +1,10 @@
+{
+    "build": {
+      "env": {
+        "NODE_ENV": "production",
+        "DATABASE_URL": "postgresql://admin:admin@localhost:5432/accounting_database?schema=public"
+      }
+    },
+    "installCommand": "npm install --force"
+  }
+  

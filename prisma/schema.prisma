@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model MBSCD {
+  bscd        String    @id @db.VarChar(2) @unique
+  bscdDetail  String    @db.VarChar(100)
+  bscdItems   BSCD[]
+}
+
+model BSCD {
+  bscd        String    @db.VarChar(2) @unique
+  mbscd       String    @db.VarChar(2)
+  bscdDetail  String    @db.VarChar(100)
+  mainBscd    MBSCD     @relation(fields: [mbscd], references: [bscd])
+  macnoItems  MACNO[]
+
+  @@id([mbscd, bscd])
+}
+
+model MACNO {
+  macno     String    @db.VarChar(3) @unique
+  bscd      String    @db.VarChar(2)
+  macname   String    @db.VarChar(100)
+  bscdRef   BSCD      @relation(fields: [bscd], references: [bscd])
+  accounts  ACNO[]
+
+  @@id([bscd, macno])
+}
+
+model ACNO {
+  acno              String    @db.VarChar(4) @unique
+  macno             String    @db.VarChar(3)
+  acname            String    @db.VarChar(100)
+  bankAccountNo     String?   @map("bank_account_no") @db.VarChar(25)
+  address           String?   @db.VarChar(150)
+  city              String?   @db.VarChar(50)
+  phoneFax          String?   @map("phone_fax") @db.VarChar(50)
+  email             String?   @db.VarChar(25)
+  website           String?   @db.VarChar(25)
+  crDays            Int?      @map("cr_days")
+  stRate            Decimal?  @map("st_rate") @db.Decimal(15, 2)
+  area              String?   @db.VarChar(50)
+  category          String?   @map("catagory") @db.VarChar(50)
+  subCategory       String?   @map("sub_catagory") @db.VarChar(25)
+  country           String?   @db.VarChar(25)
+  customerBank      String?   @map("customer_bank") @db.VarChar(50)
+  customerBankAddr  String?   @map("customer_bank_addr") @db.VarChar(100)
+  stRegNo           String?   @map("st_reg_no") @db.VarChar(25)
+  ntnNo             String?   @map("ntn_no") @db.VarChar(25)
+  contactPerson     String?   @map("contact_person") @db.VarChar(25)
+  crLimit           Int?      @map("cr_limit")
+  salesArea         String?   @map("sales_ares") @db.VarChar(25)
+  mainAccount       MACNO     @relation(fields: [macno], references: [macno])
+
+  @@id([macno, acno])
+  @@map("acno")
+}
