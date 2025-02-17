@@ -2,10 +2,10 @@
 import ChartOfAccounts from '@/components/accounts/chartOfAccountsComponent'
 import React from 'react'
 
-const page = () => {
+const AddAccountPage = () => {
   return ( <ChartOfAccounts/>)
 }
 
-export default page
+export default AddAccountPage
 
 

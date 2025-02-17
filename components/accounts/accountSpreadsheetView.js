@@ -4,16 +4,29 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 // import { FileDown, FileSpreadsheet, FilePdf } from "lucide-react";
 import axios from "axios";
-import html2pdf from 'html2pdf.js';
-import * as XLSX from 'xlsx';
+
+
+// Move these imports into dynamic imports
+let html2pdf;
+let XLSX;
 
 const SiegwerkAccountsView = () => {
+
+  
   const [loading, setLoading] = useState(true);
   const [accountData, setAccountData] = useState([]);
 
   useEffect(() => {
+    Promise.all([
+      import('html2pdf.js'),
+      import('xlsx')
+    ]).then(([html2pdfModule, XLSXModule]) => {
+      html2pdf = html2pdfModule.default;
+      XLSX = XLSXModule;
+    });
     fetchAccountData();
   }, []);
+
 
   const fetchAccountData = async () => {
     try {
@@ -52,6 +65,8 @@ const SiegwerkAccountsView = () => {
   };
 
   const exportToExcel = () => {
+    if (!XLSX) return;
+
     // Flatten the data for Excel export
     const flatData = accountData.flatMap(item => {
       if (item.subAccounts.length === 0) {
@@ -86,6 +101,9 @@ const SiegwerkAccountsView = () => {
   };
 
   const exportToPDF = () => {
+
+    if (!html2pdf) return;
+    
     const element = document.getElementById('accounts-content');
     const opt = {
       margin: 1,

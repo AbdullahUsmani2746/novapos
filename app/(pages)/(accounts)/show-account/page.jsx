@@ -4,8 +4,8 @@ import React from 'react'
 import AccountSpreadsheetView from "@/components/accounts/accountSpreadsheetView";
 
 
-const page = () => {
+const showAccountPage = () => {
   return ( <AccountSpreadsheetView/>)
 }
 
-export default page
+export default showAccountPage
