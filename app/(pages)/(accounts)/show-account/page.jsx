@@ -1,11 +1,10 @@
-import AccountSpreadsheetView from "@/components/accounts/accountSpreadsheetView";
 import React from 'react'
 
-export default function Page() {
-    return (
-      
+import AccountSpreadsheetView from "@/components/accounts/accountSpreadsheetView";
 
-      <AccountSpreadsheetView/>
-         
-  );
-  }
+
+const page = () => {
+  return ( <AccountSpreadsheetView/>)
+}
+
+export default page

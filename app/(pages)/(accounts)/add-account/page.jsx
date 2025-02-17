@@ -1,12 +1,8 @@
-import ChartOfAccounts from '@/components/accounts/chartOfAccountsComponent';
+import ChartOfAccounts from '@/components/accounts/chartOfAccountsComponent'
 import React from 'react'
 
-export default function Page() {
-  return  (
-    <>
-
-    <ChartOfAccounts/>
-        </>
-       
-);
+const page = () => {
+  return ( <ChartOfAccounts/>)
 }
+
+export default page
