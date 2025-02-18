@@ -46,8 +46,8 @@ const SiegwerkAccountsView = () => {
             
             // Create entry with empty sub accounts
             const entry = {
-              balanceSheetCode: l1.bscd,
-              balanceSheetCategory: l2.bscdDetail,
+              balanceSheetCode: l1.bscd + ' '+ l1.bscdDetail ,
+              balanceSheetCategory:l2.bscd + ' '+ l2.bscdDetail,
               mainAccounts: l3.macno + ' ' + l3.macname,
               subAccounts: level4Res.data.map(acc => acc.acno + ' ' + acc.acname)
             };
