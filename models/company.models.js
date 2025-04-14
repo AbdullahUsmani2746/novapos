@@ -1,31 +1,46 @@
-import prisma from '@/lib/prisma';
+import CompanyModel from '@/models/company.models';
+import { validateCompany } from '@/validators/company.validator';
 
-module.exports = {
-  async create(data) {
-    return await prisma.company.create({ data });
-  },
-
-  async getAll() {
-    return await prisma.company.findMany();
-  },
-
-  async getById(company_id) {
-    return await prisma.company.findUnique({
-      where: { company_id },
-      include: { costCenters: true }
-    });
-  },
-
-  async update(company_id, data) {
-    return await prisma.company.update({
-      where: { company_id },
-      data
-    });
-  },
-
-  async delete(company_id) {
-    return await prisma.company.delete({
-      where: { company_id }
-    });
+export async function createCompany(input) {
+  const validation = validateCompany(input);
+  if (!validation.success) {
+    const errorMessages = validation.error.errors.map((e) => e.message).join(', ');
+    throw new Error(`Validation failed: ${errorMessages}`);
   }
-};
+
+  return CompanyModel.create(validation.data);
+}
+
+export async function getCompanies() {
+  return CompanyModel.getAll();
+}
+
+export async function getCompany(companyId) {
+  if (!companyId) {
+    throw new Error('Company ID is required.');
+  }
+
+  return CompanyModel.getById(companyId);
+}
+
+export async function updateCompany(companyId, input) {
+  if (!companyId) {
+    throw new Error('Company ID is required.');
+  }
+
+  const validation = validateCompany(input);
+  if (!validation.success) {
+    const errorMessages = validation.error.errors.map((e) => e.message).join(', ');
+    throw new Error(`Validation failed: ${errorMessages}`);
+  }
+
+  return CompanyModel.update(companyId, validation.data);
+}
+
+export async function deleteCompany(companyId) {
+  if (!companyId) {
+    throw new Error('Company ID is required.');
+  }
+
+  return CompanyModel.delete(companyId);
+}
