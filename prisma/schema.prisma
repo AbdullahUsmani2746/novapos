@@ -63,7 +63,7 @@ model ACNO {
 }
 
 model Company {
-  company_id   String        @id @db.VarChar(2) @unique
+  company_id   String   @id @default(uuid()) @db.VarChar(36)
   company      String?       @db.VarChar(100)
   addr1        String?       @db.VarChar(100)
   addr2        String?       @db.VarChar(100)
