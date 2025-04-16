@@ -53,45 +53,23 @@ const data = {
       ],
     },
     {
-      title: "Models",
+      title: "Vouchers",
       url: "#",
-      icon: Bot,
+      icon: SquareTerminal,
+      isActive: true,
       items: [
         {
-          title: "Genesis",
-          url: "#",
+          title: "Payment Voucher",
+          url: "/voucher/payment",
         },
         {
-          title: "Explorer",
-          url: "#",
+          title: "Receipt Voucher",
+          url: "/voucher/receipt",
+        },{
+          title: "Journal Voucher",
+          url: "/voucher/journal",
         },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
+        
       ],
     },
     {
@@ -166,7 +144,7 @@ export function AppSidebar({
                   <Command className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Acme Inc</span>
+                  <span className="truncate font-semibold">Garibsons Pvt Ltd</span>
                   <span className="truncate text-xs">Enterprise</span>
                 </div>
               </a>
