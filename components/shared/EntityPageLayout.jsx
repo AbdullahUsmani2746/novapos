@@ -5,7 +5,7 @@ import DataTable from './DataTable'
 import AddModal from './AddModal'
 import EditModal from './EditModal'
 
-const EntityPageLayout = ({ title, endpoint, fields }) => {
+const EntityPageLayout = ({ title, endpoint, fields, buttonText = null }) => {
   const [items, setItems] = useState([])
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
@@ -28,6 +28,7 @@ const EntityPageLayout = ({ title, endpoint, fields }) => {
   }
 
   const handleEditSubmit = async (formData) => {
+    console.log("editingItem", editingItem)
     await fetch(`/api/${endpoint}/${editingItem.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -59,7 +60,7 @@ const EntityPageLayout = ({ title, endpoint, fields }) => {
           onClick={() => setIsAddModalOpen(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
-          Add {title}
+          {buttonText || `Add ${title.slice(0, -1)}`}
         </button>
       </div>
 

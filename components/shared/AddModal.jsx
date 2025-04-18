@@ -18,14 +18,14 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
     <Modal isOpen={true} onClose={onClose} title={title}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {fields.map((field) => (
-          <div key={field} className="space-y-1">
-            <label htmlFor={field} className="block text-sm font-medium text-gray-700">
-              {field.charAt(0).toUpperCase() + field.slice(1)}
+          <div key={field.name} className="space-y-1">
+            <label htmlFor={field.label} className="block text-sm font-medium text-gray-700">
+              {field.label?.charAt(0).toUpperCase() + field.label.slice(1)}
             </label>
             <input
-              id={field}
-              name={field}
-              value={formData[field] || ''}
+              id={field.name}
+              name={field.name}
+              value={formData[field?.name] || ''}
               onChange={handleChange}
               className="border p-2 w-full rounded"
             />

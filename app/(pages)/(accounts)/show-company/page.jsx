@@ -7,7 +7,16 @@ const CompaniesPage = () => {
     <EntityPageLayout
       title="Companies"
       endpoint="companies"
-      fields={['company', 'addr1', 'addr2', 'city', 'phone', 'fax', 'email']}
+      fields={[
+        { name: 'company', label: 'Company', fieldType: 'text' },
+        { name: 'addr1', label: 'Address 1', fieldType: 'text' },
+        { name: 'addr2', label: 'Address 2', fieldType: 'text' },
+        { name: 'city', label: 'City', fieldType: 'text' },
+        { name: 'phone', label: 'Phone', fieldType: 'text' },
+        { name: 'fax', label: 'Fax', fieldType: 'text' },
+        { name: 'email', label: 'Email', fieldType: 'email' },
+      ]}
+      buttonText="Add Company"
     />
   )
 }

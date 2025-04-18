@@ -4,7 +4,7 @@ const DataTable = ({ data, fields, onEdit, onDelete }) => {
       <thead>
         <tr>
           {fields.map((field) => (
-            <th key={field} className="border px-2 py-1 text-left">{field}</th>
+            <th key={field.label} className="border px-2 py-1 text-left">{field.label}</th>
           ))}
           <th className="border px-2 py-1">Actions</th>
         </tr>
@@ -13,7 +13,7 @@ const DataTable = ({ data, fields, onEdit, onDelete }) => {
         {data.map((item) => (
           <tr key={item.id}>
             {fields.map((field) => (
-              <td key={field} className="border px-2 py-1">{item[field]}</td>
+              <td key={field.name} className="border px-2 py-1">{item[field?.name]}</td>
             ))}
             <td className="border px-2 py-1 space-x-2">
               <button onClick={() => onEdit(item)} className="text-blue-600">Edit</button>
