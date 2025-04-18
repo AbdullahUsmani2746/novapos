@@ -7,7 +7,7 @@ export default function CompaniesPage() {
     <EntityPageLayout
       title="Companies"
       endpoint="companies"
-      fields={['company_id', 'company', 'addr1', 'addr2', 'city', 'phone', 'fax', 'email']}
+      fields={['company', 'addr1', 'addr2', 'city', 'phone', 'fax', 'email']}
     />
   )
 }

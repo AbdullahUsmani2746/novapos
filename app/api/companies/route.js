@@ -12,7 +12,6 @@ export async function POST(req) {
 
   const newCompany = await prisma.company.create({
     data: {
-      company_id: body.company_id,
       company: body.company,
       addr1: body.addr1,
       addr2: body.addr2,
