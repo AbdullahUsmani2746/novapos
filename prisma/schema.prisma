@@ -63,7 +63,7 @@ model ACNO {
 }
 
 model Company {
-  company_id   Int        @id @default(autoincrement())
+  id           Int         @id @default(autoincrement()) 
   company      String?       @db.VarChar(100)
   addr1        String?       @db.VarChar(100)
   addr2        String?       @db.VarChar(100)
@@ -76,9 +76,10 @@ model Company {
 }
 
 model CostCenter {
-  id         Int      @id @default(autoincrement())
-  ccno       Int      @unique
-  company_id Int
-  ccname     String?  @db.VarChar(50)
-  company    Company  @relation(fields: [company_id], references: [company_id])
+  id         Int       @id @default(autoincrement())
+  ccno       Int       @unique
+  company_id Int       // Now references Company.id (Int)
+  ccname     String?   @db.VarChar(50)
+
+  company    Company   @relation(fields: [company_id], references: [id])
 }

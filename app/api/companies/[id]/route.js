@@ -4,7 +4,7 @@ const prisma = new PrismaClient()
 
 export async function GET(_, { params }) {
   const company = await prisma.company.findUnique({
-    where: { company_id: Number(params.company_id) },
+    where: { id: Number(params.id) },
   })
   return Response.json(company)
 }
@@ -13,7 +13,7 @@ export async function PUT(req, { params }) {
   const body = await req.json()
 
   const updated = await prisma.company.update({
-    where: { company_id: Number(params.company_id) },
+    where: { id: Number(params.id) },
     data: body,
   })
 
@@ -22,7 +22,7 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(_, { params }) {
   const deleted = await prisma.company.delete({
-    where: { company_id: Number(params.company_id) },
+    where: { id: Number(params.id) },
   })
 
   return Response.json(deleted)
