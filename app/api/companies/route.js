@@ -11,15 +11,7 @@ export async function POST(req) {
   const body = await req.json()
 
   const newCompany = await prisma.company.create({
-    data: {
-      company: body.company,
-      addr1: body.addr1,
-      addr2: body.addr2,
-      city: body.city,
-      phone: body.phone,
-      fax: body.fax,
-      email: body.email
-    }
+    data: body,
   })
 
   return Response.json(newCompany)

@@ -13,7 +13,9 @@ const DataTable = ({ data, fields, onEdit, onDelete }) => {
         {data.map((item) => (
           <tr key={item.id}>
             {fields.map((field) => (
-              <td key={field.name} className="border px-2 py-1">{item[field?.name]}</td>
+              <td key={field.label} className="border px-2 py-1">
+                {field.relationName ? item[field.relation]?.[field.relationName] : item[field.name]}
+              </td>
             ))}
             <td className="border px-2 py-1 space-x-2">
               <button onClick={() => onEdit(item)} className="text-blue-600">Edit</button>
