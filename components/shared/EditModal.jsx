@@ -1,39 +1,75 @@
-import { useState, useEffect } from 'react'
-import Modal from './Modal'
+import { useState, useEffect } from "react";
+import Modal from "./Modal";
 
 const EditModal = ({ title, fields, initialData, onSubmit, onClose }) => {
-  const [formData, setFormData] = useState(initialData || {})
+  const [formData, setFormData] = useState(initialData || {});
 
   useEffect(() => {
-    setFormData(initialData || {})
-  }, [initialData])
+    setFormData(initialData || {});
+  }, [initialData]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = (e) => {
-    e.preventDefault()
-    onSubmit(formData)
-  }
+    e.preventDefault();
+    onSubmit(formData);
+  };
 
   return (
     <Modal isOpen={true} onClose={onClose} title={title}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {fields.map((field) => (
           <div key={field.name} className="space-y-1">
-            <label htmlFor={field.label} className="block text-sm font-medium text-gray-700">
-              {field.label.charAt(0).toUpperCase() + field.label.slice(1)}
+            <label
+              htmlFor={field.name}
+              className="block text-sm font-medium text-gray-700"
+            >
+              {field.label?.charAt(0).toUpperCase() + field.label.slice(1)}
             </label>
-            <input
-              id={field.name}
-              name={field.name}
-              value={formData[field?.name] || ''}
-              onChange={handleChange}
-              className="border p-2 w-full rounded"
-            />
+
+            {field.fieldType === "text" && (
+              <input
+                type="text"
+                id={field.name}
+                name={field.name}
+                value={formData[field.name] || ""}
+                onChange={handleChange}
+                className="border p-2 w-full rounded"
+              />
+            )}
+
+            {field.fieldType === "number" && (
+              <input
+                type="number"
+                id={field.name}
+                name={field.name}
+                value={formData[field.name] || ""}
+                onChange={handleChange}
+                className="border p-2 w-full rounded"
+              />
+            )}
+
+            {field.fieldType === "select" && (
+              <select
+                id={field.name}
+                name={field.name}
+                value={formData[field.name] || ""}
+                onChange={handleChange}
+                className="border p-2 w-full rounded"
+              >
+                <option value="">Select {field.label}</option>
+                {field.options?.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         ))}
+
         <div className="flex space-x-2 pt-4">
           <button
             type="button"
@@ -51,7 +87,7 @@ const EditModal = ({ title, fields, initialData, onSubmit, onClose }) => {
         </div>
       </form>
     </Modal>
-  )
-}
+  );
+};
 
-export default EditModal
+export default EditModal;
