@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Form from './Form'
 import DataTable from './DataTable'
+import AddModal from './AddModal'
+import EditModal from './EditModal'
 
-export default function EntityPageLayout({ title, endpoint, fields }) {
+const EntityPageLayout = ({ title, endpoint, fields }) => {
   const [items, setItems] = useState([])
-  const [editing, setEditing] = useState(null)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState(null)
 
   const fetchData = async () => {
     const res = await fetch(`/api/${endpoint}`)
@@ -14,17 +16,25 @@ export default function EntityPageLayout({ title, endpoint, fields }) {
     setItems(json)
   }
 
-  const handleSubmit = async (formData) => {
-    const method = editing ? 'PUT' : 'POST'
-    const url = editing ? `/api/${endpoint}/${editing.id}` : `/api/${endpoint}`
-
-    await fetch(url, {
-      method,
+  const handleAddSubmit = async (formData) => {
+    await fetch(`/api/${endpoint}`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData),
     })
 
-    setEditing(null)
+    setIsAddModalOpen(false)
+    fetchData()
+  }
+
+  const handleEditSubmit = async (formData) => {
+    await fetch(`/api/${endpoint}/${editingItem.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    })
+
+    setEditingItem(null)
     fetchData()
   }
 
@@ -33,15 +43,53 @@ export default function EntityPageLayout({ title, endpoint, fields }) {
     fetchData()
   }
 
+  const handleEdit = (item) => {
+    setEditingItem(item)
+  }
+
   useEffect(() => {
     fetchData()
   }, [])
 
   return (
     <div className="max-w-3xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">{title}</h1>
-      <Form fields={fields} initialData={editing} onSubmit={handleSubmit} submitLabel={`Save ${title}`} />
-      <DataTable data={items} fields={fields} onEdit={setEditing} onDelete={handleDelete} />
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">{title}</h1>
+        <button
+          onClick={() => setIsAddModalOpen(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          Add {title}
+        </button>
+      </div>
+
+      <DataTable 
+        data={items} 
+        fields={fields} 
+        onEdit={handleEdit} 
+        onDelete={handleDelete} 
+      />
+
+      {isAddModalOpen && (
+        <AddModal
+          title={`Add ${title.slice(0, -1)}`}
+          fields={fields}
+          onSubmit={handleAddSubmit}
+          onClose={() => setIsAddModalOpen(false)}
+        />
+      )}
+
+      {editingItem && (
+        <EditModal
+          title={`Edit ${title.slice(0, -1)}`}
+          fields={fields}
+          initialData={editingItem}
+          onSubmit={handleEditSubmit}
+          onClose={() => setEditingItem(null)}
+        />
+      )}
     </div>
   )
 }
+
+export default EntityPageLayout

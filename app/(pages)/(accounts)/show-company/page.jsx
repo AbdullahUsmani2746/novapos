@@ -2,7 +2,7 @@
 
 import EntityPageLayout from '@/components/shared/EntityPageLayout'
 
-export default function CompaniesPage() {
+const CompaniesPage = () => {
   return (
     <EntityPageLayout
       title="Companies"
@@ -11,3 +11,5 @@ export default function CompaniesPage() {
     />
   )
 }
+
+export default CompaniesPage
