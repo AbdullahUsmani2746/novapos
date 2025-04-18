@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import VoucherTable from "@/components/voucher/VoucherTable"
 import VoucherModal from "@/components/voucher/VoucherModal"
@@ -10,13 +10,15 @@ import { PlusCircle, FileText, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
-export default function Page({ params }) {
+export default function Page({ params: paramsPromise }) {
+  const params = use(paramsPromise)
+
   const [isLoading, setIsLoading] = useState(true)
   const [voucherCount, setVoucherCount] = useState(0)
   const [activeView, setActiveView] = useState("table")
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-  const type = params?.type || "Unknown"
+  const type =  params?.type || "Unknown"
   const voucherType = type.charAt(0).toUpperCase() + type.slice(1)
 
   useEffect(() => {
@@ -128,21 +130,8 @@ export default function Page({ params }) {
       </motion.div>
 
       <motion.div variants={itemVariants}>
-        <Tabs defaultValue="table" className="w-full" onValueChange={setActiveView}>
-          <div className="flex items-center justify-between mb-4">
-            <TabsList>
-              <TabsTrigger value="table" className="flex items-center gap-1">
-                <FileText size={14} />
-                <span>Table View</span>
-              </TabsTrigger>
-              <TabsTrigger value="grid" className="flex items-center gap-1">
-                <PlusCircle size={14} />
-                <span>Grid View</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
+       
 
-          <TabsContent value="table" className="space-y-4">
             <Card>
               <CardContent className="pt-6">
                 <VoucherTable
@@ -152,30 +141,8 @@ export default function Page({ params }) {
                 />
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="grid" className="space-y-4">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {isLoading ? (
-                    Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="h-48 rounded-lg bg-muted/30 animate-pulse"></div>
-                    ))
-                  ) : (
-                    <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-                      <FileText size={48} className="text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-medium">Grid view coming soon</h3>
-                      <p className="text-muted-foreground mt-1">
-                        This view is under development.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+      
       </motion.div>
     </motion.div>
   )

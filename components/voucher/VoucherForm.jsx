@@ -371,13 +371,7 @@ export default function VoucherForm({ type, onClose }) {
             {title}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative w-full sm:w-64">
-              <Input
-                placeholder="Search: All Text Columns"
-                className="pl-8 h-8 text-sm"
-              />
-              <Search className="h-4 w-4 absolute left-2.5 top-2 text-gray-500" />
-            </div>
+           
             
             <div className="flex gap-1 flex-wrap justify-end">
               <TooltipProvider>
@@ -589,42 +583,7 @@ export default function VoucherForm({ type, onClose }) {
 
   return (
     <div className="max-w-full">
-      <motion.div 
-        initial={{ y: -10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="p-2 bg-gradient-to-r from-blue-50 to-slate-50 flex justify-between items-center border-b shadow-sm"
-      >
-        <h1 className="text-xl sm:text-2xl font-semibold capitalize text-gray-800">
-          {type === 'journal' ? 'Journal / Adjustment Voucher' : `${type.charAt(0).toUpperCase() + type.slice(1)} Voucher`}
-        </h1>
-        <div className="flex gap-2">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onClose}
-            className="bg-white hover:bg-gray-100 transition-colors"
-          >
-            <X size={16} className="mr-1" />
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            className="bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : (
-              <Save size={16} className="mr-1" />
-            )}
-            Create
-          </Button>
-        </div>
-      </motion.div>
+    
       
       <div className="p-4 bg-white">
         <motion.div 
@@ -650,6 +609,38 @@ export default function VoucherForm({ type, onClose }) {
           {renderMobileLayout()}
         </div>
       </div>
+      <motion.div 
+        initial={{ y: -10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="p-2 flex gap-3 justify-end border-b "
+      >
+       
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onClose}
+            className="bg-white hover:bg-gray-100 transition-colors"
+          >
+            <X size={16} className="mr-1" />
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            className="bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : (
+              <Save size={16} className="mr-1" />
+            )}
+            Create
+          </Button>
+      </motion.div>
     </div>
   )
 }
