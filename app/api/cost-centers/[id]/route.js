@@ -18,12 +18,24 @@ export async function GET(req, { params }) {
 export async function PUT(req, { params }) {
   const body = await req.json()
 
-  const updated = await prisma.costCenter.update({
-    where: { id: Number(params.id) },
-    data: body,
-  })
+  try {
+    const { id } = params
+    const { ccno, ccname, company_id } = body
 
-  return Response.json(updated)
+    const updatedCostCenter = await prisma.costCenter.update({
+      where: { id: parseInt(id) },
+      data: {
+        ccno: parseInt(ccno),
+        ccname,
+        company_id: parseInt(company_id),
+      },
+    })
+
+    return Response.json(updatedCostCenter)
+  }
+  catch (error) {
+    return new Response(JSON.stringify({ error: 'Error updating cost center' }), { status: 500 })
+  }
 }
 
 export async function DELETE(req, { params }) {
