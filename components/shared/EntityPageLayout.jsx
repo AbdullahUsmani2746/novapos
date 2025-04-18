@@ -34,7 +34,7 @@ const EntityPageLayout = ({ title, endpoint, fields, buttonText = null }) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData),
     })
-    
+
 
     setEditingItem(null)
     fetchData()
