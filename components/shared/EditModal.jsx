@@ -51,6 +51,17 @@ const EditModal = ({ title, fields, initialData, onSubmit, onClose }) => {
               />
             )}
 
+            {field.fieldType === "date" && (
+              <input
+                type="date"
+                id={field.name}
+                name={field.name}
+                value={formData[field.name]?.slice(0, 10) || ""}
+                onChange={handleChange}
+                className="border p-2 w-full rounded"
+              />
+            )}
+
             {field.fieldType === "select" && (
               <select
                 id={field.name}

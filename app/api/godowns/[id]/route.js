@@ -5,11 +5,11 @@ const prisma = new PrismaClient()
 export async function GET(req, { params }) {
   const { id } = params
   try {
-    const department = await prisma.department.findUnique({
+    const godown = await prisma.godown.findUnique({
       where: { id: parseInt(id) },
       include: { company: true }
     })
-    return Response.json(department)
+    return Response.json(godown)
   } catch (error) {
     return new Response(JSON.stringify({ error: 'Department not found' }), { status: 404 })
   }
@@ -20,13 +20,12 @@ export async function PUT(req, { params }) {
 
   try {
     const { id } = params
-    const { dept_code, dept_name, company_id } = body
+    const { godown, company_id } = body
 
-    const updatedCostCenter = await prisma.department.update({
+    const updatedCostCenter = await prisma.godown.update({
       where: { id: parseInt(id) },
       data: {
-        dept_code,
-        dept_name,
+        godown,
         company_id: parseInt(company_id),
       },
     })
@@ -34,14 +33,14 @@ export async function PUT(req, { params }) {
     return Response.json(updatedCostCenter)
   }
   catch (error) {
-    return new Response(JSON.stringify({ error: 'Error updating department' }), { status: 500 })
+    return new Response(JSON.stringify({ error: 'Error updating godown' }), { status: 500 })
   }
 }
 
 export async function DELETE(req, { params }) {
   const { id } = params
   try {
-    await prisma.department.delete({
+    await prisma.godown.delete({
       where: { id: parseInt(id) }
     })
     return new Response(null, { status: 204 })

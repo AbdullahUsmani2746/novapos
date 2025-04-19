@@ -28,7 +28,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
 
             {field.fieldType === "text" && (
               <input
-              type="text"
+                type="text"
                 id={field.name}
                 name={field.name}
                 value={formData[field.name] || ""}
@@ -40,6 +40,17 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
             {field.fieldType === "number" && (
               <input
                 type="number"
+                id={field.name}
+                name={field.name}
+                value={formData[field.name] || ""}
+                onChange={handleChange}
+                className="border p-2 w-full rounded"
+              />
+            )}
+
+            {field.fieldType === "date" && (
+              <input
+                type="date"
                 id={field.name}
                 name={field.name}
                 value={formData[field.name] || ""}
