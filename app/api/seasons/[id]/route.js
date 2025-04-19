@@ -2,50 +2,33 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-export async function GET(req, { params }) {
-  const { id } = params
-  try {
-    const department = await prisma.department.findUnique({
-      where: { id: parseInt(id) },
-      include: { company: true }
-    })
-    return Response.json(department)
-  } catch (error) {
-    return new Response(JSON.stringify({ error: 'Department not found' }), { status: 404 })
-  }
+export async function GET(_, { params }) {
+  const season = await prisma.season.findUnique({
+    where: { id: Number(params.id) },
+  })
+  return Response.json(season)
 }
 
 export async function PUT(req, { params }) {
   const body = await req.json()
+  const { date_from, date_to, ...rest } = body
 
-  try {
-    const { id } = params
-    const { dept_code, dept_name, company_id } = body
+  const updated = await prisma.season.update({
+    where: { id: Number(params.id) },
+    data: {
+      ...rest,
+      date_from: date_from ? new Date(date_from) : undefined,
+      date_to: date_to ? new Date(date_to) : undefined,
+    },
+  })
 
-    const updatedCostCenter = await prisma.department.update({
-      where: { id: parseInt(id) },
-      data: {
-        dept_code,
-        dept_name,
-        company_id: parseInt(company_id),
-      },
-    })
-
-    return Response.json(updatedCostCenter)
-  }
-  catch (error) {
-    return new Response(JSON.stringify({ error: 'Error updating department' }), { status: 500 })
-  }
+  return Response.json(updated)
 }
 
-export async function DELETE(req, { params }) {
-  const { id } = params
-  try {
-    await prisma.department.delete({
-      where: { id: parseInt(id) }
-    })
-    return new Response(null, { status: 204 })
-  } catch (error) {
-    return new Response(JSON.stringify({ error: 'Error deleting cost center' }), { status: 500 })
-  }
+export async function DELETE(_, { params }) {
+  const deleted = await prisma.season.delete({
+    where: { id: Number(params.id) },
+  })
+
+  return Response.json(deleted)
 }

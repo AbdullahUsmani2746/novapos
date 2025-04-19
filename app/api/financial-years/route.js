@@ -3,35 +3,34 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 export async function GET() {
-  try {
-    const departments = await prisma.department.findMany({
-      include: {
-        company: true
-      }
-    })
-    return Response.json(departments)
-  } catch (error) {
-    console.log(error)
-    return new Response(JSON.stringify({ error: 'Error fetching departments' }), { status: 500 })
-  }
+  const financialYears = await prisma.financialYear.findMany()
+  return Response.json(financialYears)
 }
 
 export async function POST(req) {
-  try {
-    const body = await req.json()
-    const { dept_code, dept_name, company_id } = body
+  const body = await req.json()
+  const { date_from, date_to, ...rest } = body
 
-    const newCostCenter = await prisma.department.create({
+  if (!date_from || isNaN(Date.parse(date_from))) {
+    return new Response(JSON.stringify({ error: "Invalid or missing date_from" }), { status: 400 })
+  }
+
+  if (!date_to || isNaN(Date.parse(date_to))) {
+    return new Response(JSON.stringify({ error: "Invalid or missing date_to" }), { status: 400 })
+  }
+
+  try {
+    const newFinancialYear = await prisma.financialYear.create({
       data: {
-        dept_code,
-        dept_name,
-        company_id: parseInt(company_id),
+        ...rest,
+        date_from: new Date(date_from),
+        date_to: new Date(date_to),
       },
     })
 
-    return Response.json(newCostCenter)
+    return Response.json(newFinancialYear)
   } catch (error) {
-    console.log(error)  
-    return new Response(JSON.stringify({ error: 'Error creating department' }), { status: 500 })
+    return new Response(JSON.stringify({ error: "Failed to create financial year", details: error.message }), { status: 500 })
   }
 }
+

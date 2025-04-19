@@ -49,6 +49,10 @@ const data = {
           title: "Show Account",
           url: "/show-account",
         },
+        {
+          title: "Company",
+          url: "/company",
+        },
         
       ],
     },
