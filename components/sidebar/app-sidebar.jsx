@@ -73,6 +73,23 @@ const data = {
       ],
     },
     {
+      title: "Invoices",
+      url: "#",
+      icon: SquareTerminal,
+      isActive: true,
+      items: [
+        {
+          title: "Purchase Invoice",
+          url: "/invoice/purchase",
+        },
+        {
+          title: "Sale Invoice",
+          url: "/invoice/sale",
+        },
+        
+      ],
+    },
+    {
       title: "Settings",
       url: "#",
       icon: Settings2,

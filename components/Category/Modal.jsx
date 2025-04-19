@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import VoucherForm from './VoucherForm'
+import Form from './Form'
 import { PlusIcon, X } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -70,7 +70,7 @@ export default function VoucherModal({ type }) {
               </div>
 
               <div className="p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
-                <VoucherForm type={type} onClose={() => setOpen(false)} />
+                <Form type={type} onClose={() => setOpen(false)} />
               </div>
             </motion.div>
           </motion.div>
