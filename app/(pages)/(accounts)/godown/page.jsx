@@ -25,13 +25,14 @@ const GodownsPage = () => {
       title="Godowns"
       endpoint="godowns"
       fields={[
-        { name: "godown", label: "Godown", fieldType: "text" },
+        { name: "godown", label: "Godown", fieldType: "text", required: true },
         {
           relation: "company",
           relationName: "company",
           name: "company_id",
           label: "Company",
           fieldType: "select",
+          required: true,
           options: companies.map((company) => ({
             value: company.id,
             label: company.company,

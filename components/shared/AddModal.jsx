@@ -3,6 +3,7 @@ import Modal from "./Modal";
 
 const AddModal = ({ title, fields, onSubmit, onClose }) => {
   const [formData, setFormData] = useState({});
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -10,6 +11,26 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    const newErrors = {};
+
+    fields.forEach((field) => {
+      if (field.required && !formData[field.name]?.trim()) {
+        newErrors[field.name] = `${field.label} is required`;
+      }
+
+      if (field.fieldType === "number" && formData[field.name]) {
+        if (isNaN(Number(formData[field.name]))) {
+          newErrors[field.name] = `${field.label} must be a number`;
+        }
+      }
+    });
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
     onSubmit(formData);
     setFormData({});
   };
@@ -26,7 +47,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
               {field.label?.charAt(0).toUpperCase() + field.label.slice(1)}
             </label>
 
-            {field.fieldType === "text" && (
+            {(field.fieldType === "text" || field.fieldType === "email") && (
               <input
                 type="text"
                 id={field.name}
@@ -74,6 +95,10 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
                   </option>
                 ))}
               </select>
+            )}
+
+            {errors[field.name] && (
+              <p className="text-red-500 text-sm">{errors[field.name]}</p>
             )}
           </div>
         ))}

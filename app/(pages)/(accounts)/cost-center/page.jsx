@@ -25,8 +25,8 @@ const CostCentersPage = () => {
       title="Cost Centers"
       endpoint="cost-centers"
       fields={[
-        { name: "ccno", label: "CCNO", fieldType: "text" },
-        { name: "ccname", label: "CC Name", fieldType: "text" },
+        { name: "ccno", label: "CCNO", fieldType: "text", required: true },
+        { name: "ccname", label: "CC Name", fieldType: "text", required: true },
         {
           relation: "company",
           relationName: "company",
@@ -37,6 +37,7 @@ const CostCentersPage = () => {
             value: company.id,
             label: company.company,
           })),
+          required: true
         },
       ]}
       buttonText="Add Cost Center"

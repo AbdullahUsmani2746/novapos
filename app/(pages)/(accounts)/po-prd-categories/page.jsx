@@ -8,7 +8,7 @@ const PoPrdCategories = () => {
       title="PO Product Categories"
       endpoint="po-prd-cats"
       fields={[
-        { name: 'category_name', label: 'Category Name', fieldType: 'text' },
+        { name: 'category_name', label: 'Category Name', fieldType: 'text', required: true },
       ]}
       buttonText="Add PO Product Category"
     />

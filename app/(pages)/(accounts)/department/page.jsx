@@ -25,8 +25,8 @@ const DepartmentsPage = () => {
       title="Departments"
       endpoint="departments"
       fields={[
-        { name: "dept_code", label: "Dept Code", fieldType: "text" },
-        { name: "dept_name", label: "Dept Name", fieldType: "text" },
+        { name: "dept_code", label: "Dept Code", fieldType: "text", required: true },
+        { name: "dept_name", label: "Dept Name", fieldType: "text", required: true },
         {
           relation: "company",
           relationName: "company",

@@ -3,6 +3,7 @@ import Modal from "./Modal";
 
 const EditModal = ({ title, fields, initialData, onSubmit, onClose }) => {
   const [formData, setFormData] = useState(initialData || {});
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     setFormData(initialData || {});
@@ -14,6 +15,26 @@ const EditModal = ({ title, fields, initialData, onSubmit, onClose }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    const newErrors = {};
+
+    fields.forEach((field) => {
+      if (field.required && !formData[field.name]?.trim()) {
+        newErrors[field.name] = `${field.label} is required`;
+      }
+
+      if (field.fieldType === "number" && formData[field.name]) {
+        if (isNaN(Number(formData[field.name]))) {
+          newErrors[field.name] = `${field.label} must be a number`;
+        }
+      }
+    });
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
     onSubmit(formData);
   };
 
@@ -77,6 +98,9 @@ const EditModal = ({ title, fields, initialData, onSubmit, onClose }) => {
                   </option>
                 ))}
               </select>
+            )}
+             {errors[field.name] && (
+              <p className="text-red-500 text-sm">{errors[field.name]}</p>
             )}
           </div>
         ))}

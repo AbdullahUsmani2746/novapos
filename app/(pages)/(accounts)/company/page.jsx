@@ -8,11 +8,11 @@ const CompaniesPage = () => {
       title="Companies"
       endpoint="companies"
       fields={[
-        { name: 'company', label: 'Company', fieldType: 'text' },
-        { name: 'addr1', label: 'Address 1', fieldType: 'text' },
+        { name: 'company', label: 'Company', fieldType: 'text', required: true },
+        { name: 'addr1', label: 'Address 1', fieldType: 'text', required: true },
         { name: 'addr2', label: 'Address 2', fieldType: 'text' },
-        { name: 'city', label: 'City', fieldType: 'text' },
-        { name: 'phone', label: 'Phone', fieldType: 'text' },
+        { name: 'city', label: 'City', fieldType: 'text', required: true },
+        { name: 'phone', label: 'Phone', fieldType: 'text', required: true },
         { name: 'fax', label: 'Fax', fieldType: 'text' },
         { name: 'email', label: 'Email', fieldType: 'email' },
       ]}

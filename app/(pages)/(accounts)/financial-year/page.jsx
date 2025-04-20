@@ -8,9 +8,9 @@ const FinancialYearsPage = () => {
       title="Financial Years"
       endpoint="financial-years"
       fields={[
-        { name: 'date_from', label: 'Start Date', fieldType: 'date' },
-        { name: 'date_to', label: 'End Date', fieldType: 'date' },
-        { name: 'status', label: 'Status', fieldType: 'select', options: [{
+        { name: 'date_from', label: 'Start Date', fieldType: 'date', required: true },
+        { name: 'date_to', label: 'End Date', fieldType: 'date', required: true },
+        { name: 'status', label: 'Status', fieldType: 'select', required: true, options: [{
             'value': 'open', 'label': 'Open' }, { 'value': 'closed', 'label': 'Closed'
         }] },
       ]}
