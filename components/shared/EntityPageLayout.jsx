@@ -54,7 +54,7 @@ const EntityPageLayout = ({ title, endpoint, fields, buttonText = null }) => {
   }, [])
 
   return (
-    <div className="max-w-3xl mx-auto p-4">
+    <div className="w-full p-10">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">{title}</h1>
         <button
