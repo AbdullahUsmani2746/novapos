@@ -83,13 +83,13 @@ model Company {
 }
 
 model CostCenter {
+  id         Int     @id @default(autoincrement())
   ccno       Int     @id @default(autoincrement())
   company_id Int // Now references Company.id (Int)
   ccname     String? @db.VarChar(50)
 
   company Company @relation(fields: [company_id], references: [id])
   Transaction Transactions[]
-
 }
 
 model Department {
@@ -107,7 +107,6 @@ model Godown {
   company    Company @relation(fields: [company_id], references: [id])
   Transaction Transactions[]
   TransactionsMaster TransactionsMaster[]
-
 }
 
 model FinancialYear {

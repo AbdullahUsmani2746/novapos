@@ -49,7 +49,34 @@ const data = {
           title: "Show Account",
           url: "/show-account",
         },
-        
+        {
+          title: "Company",
+          url: "/company",
+        },
+        {
+          title: "Cost Center",
+          url: "/cost-center",
+        },
+        {
+          title: "Department",
+          url: "/department",
+        },
+        {
+          title: "Financial Year",
+          url: "/financial-year",
+        },
+        {
+          title: "Godown",
+          url: "/godown",
+        },
+        {
+          title: "PO Product Category",
+          url: "/po-prd-categories",
+        },
+        {
+          title: "Season",
+          url: "/season",
+        },
       ],
     },
     {
