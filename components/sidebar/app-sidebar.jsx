@@ -49,34 +49,7 @@ const data = {
           title: "Show Account",
           url: "/show-account",
         },
-        {
-          title: "Company",
-          url: "/company",
-        },
-        {
-          title: "Cost Center",
-          url: "/cost-center",
-        },
-        {
-          title: "Department",
-          url: "/department",
-        },
-        {
-          title: "Financial Year",
-          url: "/financial-year",
-        },
-        {
-          title: "Godown",
-          url: "/godown",
-        },
-        {
-          title: "PO Product Category",
-          url: "/po-prd-categories",
-        },
-        {
-          title: "Season",
-          url: "/season",
-        },
+
       ],
     },
     {
@@ -112,6 +85,44 @@ const data = {
         {
           title: "Sale Invoice",
           url: "/invoice/sale",
+        },
+        
+      ],
+    },
+
+    {
+      title: "Setups",
+      url: "#",
+      icon: SquareTerminal,
+      isActive: true,
+      items: [
+        {
+          title: "Company Setup",
+          url: "/company",
+        },
+        {
+          title: "Cost Center Setup",
+          url: "/cost-center",
+        },
+        {
+          title: "Department Setup",
+          url: "/department",
+        },
+        {
+          title: "Godown Setup",
+          url: "/godown",
+        },
+        {
+          title: "Season Setup",
+          url: "/season",
+        },
+        {
+          title: "Financial Year Setup",
+          url: "/financial-year",
+        },
+        {
+          title: "Product Category Setup",
+          url: "/po-prd-categories",
         },
         
       ],

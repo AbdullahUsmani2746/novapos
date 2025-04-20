@@ -84,7 +84,6 @@ model Company {
 
 model CostCenter {
   id         Int     @id @default(autoincrement())
-  ccno       Int     @id @default(autoincrement())
   company_id Int // Now references Company.id (Int)
   ccname     String? @db.VarChar(50)
 
@@ -216,7 +215,7 @@ model Transactions {
   transactionsMaster TransactionsMaster @relation(fields: [tran_id], references: [tran_id])
   acnoDetails        ACNO               @relation(fields: [acno], references: [acno])
   itemDetails        Item               @relation(fields: [itcd], references: [itcd])
-  costCenter         CostCenter         @relation(fields: [ccno], references: [ccno])
+  costCenter         CostCenter         @relation(fields: [ccno], references: [id])
   godownDetails      Godown            @relation(fields: [godown], references: [id])
   currencyDetails    Currency           @relation(fields: [currency], references: [currency])
 }
