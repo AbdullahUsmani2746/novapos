@@ -14,7 +14,7 @@ const CompaniesPage = () => {
         { name: 'city', label: 'City', fieldType: 'text', required: true },
         { name: 'phone', label: 'Phone', fieldType: 'text', required: true },
         { name: 'fax', label: 'Fax', fieldType: 'text' },
-        { name: 'email', label: 'Email', fieldType: 'email' },
+        { name: 'email', label: 'Email', fieldType: 'email', required: true },
       ]}
       buttonText="Add Company"
     />
