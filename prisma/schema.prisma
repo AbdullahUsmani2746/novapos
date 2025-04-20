@@ -34,33 +34,36 @@ model MACNO {
 }
 
 model ACNO {
-  acno             String   @unique @db.VarChar(4)
-  macno            String   @db.VarChar(3)
-  acname           String   @db.VarChar(100)
-  bankAccountNo    String?  @map("bank_account_no") @db.VarChar(25)
-  address          String?  @db.VarChar(150)
-  city             String?  @db.VarChar(50)
-  phoneFax         String?  @map("phone_fax") @db.VarChar(50)
-  email            String?  @db.VarChar(25)
-  website          String?  @db.VarChar(25)
-  crDays           Int?     @map("cr_days")
-  stRate           Decimal? @map("st_rate") @db.Decimal(15, 2)
-  area             String?  @db.VarChar(50)
-  category         String?  @map("catagory") @db.VarChar(50)
-  subCategory      String?  @map("sub_catagory") @db.VarChar(25)
-  country          String?  @db.VarChar(25)
-  customerBank     String?  @map("customer_bank") @db.VarChar(50)
-  customerBankAddr String?  @map("customer_bank_addr") @db.VarChar(100)
-  stRegNo          String?  @map("st_reg_no") @db.VarChar(25)
-  ntnNo            String?  @map("ntn_no") @db.VarChar(25)
-  contactPerson    String?  @map("contact_person") @db.VarChar(25)
-  crLimit          Int?     @map("cr_limit")
-  salesArea        String?  @map("sales_ares") @db.VarChar(25)
-  mainAccount      MACNO    @relation(fields: [macno], references: [macno])
+  acno               String               @unique @db.VarChar(4)
+  macno              String               @db.VarChar(3)
+  acname             String               @db.VarChar(100)
+  bankAccountNo      String?              @map("bank_account_no") @db.VarChar(25)
+  address            String?              @db.VarChar(150)
+  city               String?              @db.VarChar(50)
+  phoneFax           String?              @map("phone_fax") @db.VarChar(50)
+  email              String?              @db.VarChar(25)
+  website            String?              @db.VarChar(25)
+  crDays             Int?                 @map("cr_days")
+  stRate             Decimal?             @map("st_rate") @db.Decimal(15, 2)
+  area               String?              @db.VarChar(50)
+  category           String?              @map("catagory") @db.VarChar(50)
+  subCategory        String?              @map("sub_catagory") @db.VarChar(25)
+  country            String?              @db.VarChar(25)
+  customerBank       String?              @map("customer_bank") @db.VarChar(50)
+  customerBankAddr   String?              @map("customer_bank_addr") @db.VarChar(100)
+  stRegNo            String?              @map("st_reg_no") @db.VarChar(25)
+  ntnNo              String?              @map("ntn_no") @db.VarChar(25)
+  contactPerson      String?              @map("contact_person") @db.VarChar(25)
+  crLimit            Int?                 @map("cr_limit")
+  salesArea          String?              @map("sales_ares") @db.VarChar(25)
+  mainAccount        MACNO                @relation(fields: [macno], references: [macno])
+  transactionsMaster TransactionsMaster[]
+  transactions       Transactions[]
 
   @@id([macno, acno])
   @@map("acno")
 }
+
 
 model Company {
   id      Int     @id @default(autoincrement())
@@ -74,16 +77,19 @@ model Company {
 
   costCenters CostCenter[]
   departments Department[]
+  TransactionsMaster TransactionsMaster[]
+  users              Users[]
   godowns     Godown[]
 }
 
 model CostCenter {
   id         Int     @id @default(autoincrement())
-  ccno       Int     @unique
+  ccno       Int     @id @default(autoincrement())
   company_id Int // Now references Company.id (Int)
   ccname     String? @db.VarChar(50)
 
   company Company @relation(fields: [company_id], references: [id])
+  Transaction Transactions[]
 }
 
 model Department {
@@ -99,6 +105,8 @@ model Godown {
   godown     String  @db.VarChar(100)
   company_id Int
   company    Company @relation(fields: [company_id], references: [id])
+  Transaction Transactions[]
+  TransactionsMaster TransactionsMaster[]
 }
 
 model FinancialYear {
@@ -124,4 +132,91 @@ model DeliveryMode {
   id            Int    @id @default(autoincrement())
   delivery_mode String @db.Char(50)
   rate_kg       Int
+}
+
+
+model Users {
+  user_id            String               @id @unique @db.VarChar(10)
+  user_name          String?              @db.VarChar(50)
+  company_id         Int                  
+  company            Company              @relation(fields: [company_id], references: [id])
+  transactionsMaster TransactionsMaster[]
+}
+
+model Currency {
+  currency String @id @unique @db.VarChar(50)
+  rate     Float
+  transactions Transactions[]
+}
+
+model TransactionsMaster {
+  tran_id      Int            @id @default(autoincrement())
+  company_id   Int
+  dateD        DateTime?
+  time         DateTime?
+  tran_code    Int
+  vr_no        Int            @unique
+  pycd         String
+  check_no     String?        @map("CHECK_NO")
+  check_date   DateTime?      @map("CHECK_DATE")
+  rmk          String?        @map("RMK")
+  rmk1         String?        @map("RMK1")
+  rmk2         String?        @map("RMK2")
+  rmk3         String?        @map("RMK3")
+  rmk4         String?        @map("RMK4")
+  rmk5         String?        @map("RMK5")
+  userId       String         @map("USER_ID")
+  invoice_no   String?        @db.Char(150)
+  godown       Int?            
+  acno         ACNO           @relation(fields: [pycd], references: [acno])
+  company      Company        @relation(fields: [company_id], references: [id])
+  user         Users          @relation(fields: [userId], references: [user_id])
+  godownDetails Godown?     @relation(fields: [godown], references: [id])
+  transactions Transactions[]
+
+    @@map("TRANSACTIONS_MASTER")
+
+}
+
+model Item {
+  itcd         Int            @id @unique
+  item_name    String?        @db.VarChar(50)
+  Transactions Transactions[]
+}
+
+model Transactions {
+  tran_id            Int                @id @default(autoincrement())
+  acno               String
+  itcd               Int
+  ccno               Int
+  narration1         String?            @db.Char(150)
+  narration2         String?            @db.Char(150)
+  narration3         String?            @db.Char(150)
+  narration4         String?            @db.Char(150)
+  narration5         String?            @db.Char(150)
+  chno               String?            @db.Char(150)
+  check_date         DateTime?
+  party_name         String?            @db.Char(150)
+  damt               Float?
+  camt               Float?
+  qty                Float?
+  rate               Float?  
+  wht_rate           Float?
+  st_rate            Float?
+  godown             Int
+  invoice_no         String?            @db.Char(150)
+  sub_tran_id        Int                @default(1) // 1 for Payment block, 2 for deduction block
+  currency           String             @db.Char(50)
+  fc_amount          Float
+  no_of_pack         Int? 
+  qty_per_pack       Int?
+  st_amount          Int?
+  additional_tax     Int?
+
+  transactionsMaster TransactionsMaster @relation(fields: [tran_id], references: [tran_id])
+  acnoDetails        ACNO               @relation(fields: [acno], references: [acno])
+  itemDetails        Item               @relation(fields: [itcd], references: [itcd])
+  costCenter         CostCenter         @relation(fields: [ccno], references: [ccno])
+  godownDetails      Godown            @relation(fields: [godown], references: [id])
+  currencyDetails    Currency           @relation(fields: [currency], references: [currency])
 }
