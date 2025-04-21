@@ -24,7 +24,7 @@ const DataTable = ({ data = [], fields = [], onEdit = () => {}, onDelete = () =>
         <table className="w-full">
           <thead>
             <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
-              {fields.map((field) => (
+              {fields?.map((field) => (
                 <th 
                   key={field.label || field.name} 
                   className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
@@ -53,7 +53,7 @@ const DataTable = ({ data = [], fields = [], onEdit = () => {}, onDelete = () =>
                 </td>
               </tr>
             ) : (
-              data.map((item) => (
+              data?.map((item) => (
                 <tr 
                   key={item.id || Math.random().toString(36)}
                   className={`${
@@ -62,7 +62,7 @@ const DataTable = ({ data = [], fields = [], onEdit = () => {}, onDelete = () =>
                   onMouseEnter={() => setHoveredRow(item.id)}
                   onMouseLeave={() => setHoveredRow(null)}
                 >
-                  {fields.map((field) => {
+                  {fields?.map((field) => {
                     let cellContent = '';
                     try {
                       if (field.fieldType === "date" && item[field.name]) {

@@ -124,6 +124,22 @@ const data = {
           title: "Product Category Setup",
           url: "/po-prd-categories",
         },
+        {
+          title: "Delivery Mode Setup",
+          url: "/delivery-mode",
+        },
+        {
+          title: "Delivery Terms Setup",
+          url: "/delivery-term",
+        },
+        {
+          title: "Commission Term Setup",
+          url: "/commission-term",
+        },
+        {
+          title: "Employee Setup",
+          url: "/employee",
+        },
         
       ],
     },
