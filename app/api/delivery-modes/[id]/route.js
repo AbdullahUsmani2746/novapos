@@ -5,13 +5,13 @@ const prisma = new PrismaClient()
 export async function GET(req, { params }) {
   const { id } = params
   try {
-    const department = await prisma.department.findUnique({
+    const deliveryMode = await prisma.deliveryMode.findUnique({
       where: { id: parseInt(id) },
       include: { company: true }
     })
-    return Response.json(department)
+    return Response.json(deliveryMode)
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Department not found' }), { status: 404 })
+    return new Response(JSON.stringify({ error: 'Delivery mode not found' }), { status: 404 })
   }
 }
 
@@ -20,28 +20,27 @@ export async function PUT(req, { params }) {
 
   try {
     const { id } = params
-    const { dept_code, dept_name, company_id } = body
 
-    const updatedCostCenter = await prisma.department.update({
+    const updatedDeliveryMode = await prisma.deliveryMode.update({
       where: { id: parseInt(id) },
       data: {
-        dept_code,
-        dept_name,
-        company_id: parseInt(company_id),
+        delivery_mode: body.delivery_mode,
+        rate_kg: parseFloat(body.rate_kg),
       },
     })
 
-    return Response.json(updatedCostCenter)
+    return Response.json(updatedDeliveryMode)
   }
   catch (error) {
-    return new Response(JSON.stringify({ error: 'Error updating department' }), { status: 500 })
+    console.log(error)
+    return new Response(JSON.stringify({ error: 'Error updating deliveryMode' }), { status: 500 })
   }
 }
 
 export async function DELETE(req, { params }) {
   const { id } = params
   try {
-    await prisma.department.delete({
+    await prisma.deliveryMode.delete({
       where: { id: parseInt(id) }
     })
     return new Response(null, { status: 204 })
