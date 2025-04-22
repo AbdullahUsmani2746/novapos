@@ -4,34 +4,29 @@ const prisma = new PrismaClient()
 
 export async function GET() {
   try {
-    const departments = await prisma.department.findMany({
-      include: {
-        company: true
-      }
+    const deliveryModes = await prisma.deliveryMode.findMany({
     })
-    return Response.json(departments)
+    return Response.json(deliveryModes)
   } catch (error) {
     console.log(error)
-    return new Response(JSON.stringify({ error: 'Error fetching departments' }), { status: 500 })
+    return new Response(JSON.stringify({ error: 'Error fetching delivery modes' }), { status: 500 })
   }
 }
 
 export async function POST(req) {
   try {
     const body = await req.json()
-    const { dept_code, dept_name, company_id } = body
 
-    const newCostCenter = await prisma.department.create({
+    const newDeliveryMode = await prisma.deliveryMode.create({
       data: {
-        dept_code,
-        dept_name,
-        company_id: parseInt(company_id),
+        delivery_mode: body.delivery_mode,
+        rate_kg: parseFloat(body.rate_kg),
       },
     })
 
-    return Response.json(newCostCenter)
+    return Response.json(newDeliveryMode)
   } catch (error) {
     console.log(error)  
-    return new Response(JSON.stringify({ error: 'Error creating department' }), { status: 500 })
+    return new Response(JSON.stringify({ error: 'Error creating delivery mode' }), { status: 500 })
   }
 }

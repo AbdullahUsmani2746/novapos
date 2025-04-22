@@ -221,3 +221,108 @@ model Transactions {
   itemDetails        Item               @relation(fields: [itcd], references: [itcd])
   transactionsMaster TransactionsMaster @relation(fields: [tran_id], references: [tran_id])
 }
+
+model DeliveryTerm {
+  id            Int    @id @default(autoincrement())
+  delivery_term String @db.Char(50)
+}
+
+model CommissionTerm {
+  id            Int    @id @default(autoincrement())
+  commission_term String @db.Char(50)
+}
+
+model Employee {
+  id               String     @id @default(uuid()) @map("id")
+  first_name       String     @map("first_name")
+  middle_name      String?    @map("middle_name")
+  surname          String     @map("surname")
+  dob              DateTime   @map("dob")
+  gender           Gender?    @map("gender")
+  phone_number     String     @map("phone_number")
+  npf_number       String     @map("npf_number")
+  email_address    String     @map("email_address")
+  village          String     @map("village")
+  status           Status?    @map("status")
+  hire_date        DateTime   @map("hire_date")
+  job_title        String     @map("job_title")
+  department       String     @map("department")
+  work_location    String     @map("work_location")
+  manager_id       String?    @map("manager_id")
+  manager          Manager?   @relation(fields: [manager_id], references: [id])
+  client_id        String     @map("client_id")
+  employer         Employer   @relation(fields: [client_id], references: [employer_id])
+  employee_id      String     @unique @map("employee_id")
+  payment_method   PaymentMethod? @map("payment_method")
+  bank_name        String?    @map("bank_name")
+  account_name     String?    @map("account_name")
+  account_number   String?    @map("account_number")
+  pay_type         PayType?   @map("pay_type")
+  rate_per_hour    Float      @map("rate_per_hour")
+  pay_frequency    PayFrequency? @map("pay_frequency")
+  employee_type    String     @map("employee_type")
+  cost_center      String     @map("cost_center")
+  allownces        Json       @map("allownces")
+  allownce_eligible Boolean    @default(false) @map("allownce_eligible")
+  deductions       Json       @map("deductions")
+  leaves           Leave[]
+  profile_image    String?    @map("profile_image")
+  documents        Document[]
+  created_on       DateTime   @default(now()) @map("created_on")
+  updated_on       DateTime   @updatedAt @map("updated_on")
+}
+
+model Leave {
+  id         String   @id @default(uuid())
+  leave_id   String   @map("leave_id")
+  available  Float    @map("available")
+  employee   Employee @relation(fields: [employee_id], references: [id])
+  employee_id String   @map("employee_id")
+}
+
+model Document {
+  id          String   @id @default(uuid())
+  url         String   @map("url")
+  name        String   @map("name")
+  description String?  @map("description")
+  employee    Employee @relation(fields: [employee_id], references: [id])
+  employee_id String   @map("employee_id")
+}
+
+model Manager {
+  id        String     @id @default(uuid())
+  employees Employee[]
+}
+
+model Employer {
+  employer_id String     @id @map("employer_id")
+  employees   Employee[]
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+enum PaymentMethod {
+  CASH
+  DIRECT_DEPOSIT
+  CHEQUE
+}
+
+enum PayType {
+  HOUR
+  SALARY
+}
+
+enum PayFrequency {
+  Monthly
+  Fortnightly
+  Weekly
+}

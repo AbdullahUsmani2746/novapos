@@ -5,13 +5,12 @@ const prisma = new PrismaClient()
 export async function GET(req, { params }) {
   const { id } = params
   try {
-    const deliveryMode = await prisma.deliveryMode.findUnique({
+    const commissionTerm = await prisma.commissionTerm.findUnique({
       where: { id: parseInt(id) },
-      include: { company: true }
     })
-    return Response.json(deliveryMode)
+    return Response.json(commissionTerm)
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Delivery mode not found' }), { status: 404 })
+    return new Response(JSON.stringify({ error: 'Commission term not found' }), { status: 404 })
   }
 }
 
@@ -21,26 +20,23 @@ export async function PUT(req, { params }) {
   try {
     const { id } = params
 
-    const updatedDeliveryMode = await prisma.deliveryMode.update({
+    const updatedCommissionTerm = await prisma.commissionTerm.update({
       where: { id: parseInt(id) },
-      data: {
-        delivery_mode: body.delivery_mode,
-        rate_kg: parseFloat(body.rate_kg),
-      },
+      data: body,
     })
 
-    return Response.json(updatedDeliveryMode)
+    return Response.json(updatedCommissionTerm)
   }
   catch (error) {
     console.log(error)
-    return new Response(JSON.stringify({ error: 'Error updating deliveryMode' }), { status: 500 })
+    return new Response(JSON.stringify({ error: 'Error updating commissionTerm' }), { status: 500 })
   }
 }
 
 export async function DELETE(req, { params }) {
   const { id } = params
   try {
-    await prisma.deliveryMode.delete({
+    await prisma.commissionTerm.delete({
       where: { id: parseInt(id) }
     })
     return new Response(null, { status: 204 })
