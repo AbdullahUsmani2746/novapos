@@ -94,13 +94,39 @@ const ChartOfAccounts = () => {
     }
   };
 
-  const getNextCode = (allLevelsData, padding) => {
-    if (!allLevelsData.length) return "1".padStart(padding, "0");
+  const getNextCode = async (level, padding) => {
+    try {
+      let endpoint = "";
+      let codeField = "";
+      switch (level) {
+        case 1:
+          endpoint = "/api/accounts/mbscd";
+          codeField = "bscd";
+          break;
+        case 2:
+          endpoint = "/api/accounts/bscd";
+          codeField = "bscd";
+          break;
+        case 3:
+          endpoint = "/api/accounts/macno";
+          codeField = "macno";
+          break;
+        case 4:
+          endpoint = "/api/accounts/acno";
+          codeField = "acno";
+          break;
+        default:
+          return "0000";
+      }
   
-    const existingCodes = allLevelsData.map(item => parseInt(item.bscd || item.macno || item.acno));
-    const maxCode = existingCodes.length ? Math.max(...existingCodes) : 0;
-  
-    return (maxCode + 1).toString().padStart(padding, "0");
+      const response = await axios.get(endpoint);
+      const existingCodes = response.data.map(item => parseInt(item[codeField]));
+      const maxCode = existingCodes.length ? Math.max(...existingCodes) : 0;
+      return (maxCode + 1).toString().padStart(padding, "0");
+    } catch (error) {
+      console.error("Error fetching data for next code:", error);
+      return "0000";
+    }
   };
 
   const handleLevel1Select = async (value) => {
@@ -138,7 +164,7 @@ const ChartOfAccounts = () => {
 
   const handleAddLevel1 = async () => {
     try {
-      const nextCode = getNextCode([...level1Data, ...level2Data, ...level3Data, ...accounts], 2);
+      const nextCode = await getNextCode(1, 2);
       await axios.post("/api/accounts/mbscd", {
         ...newLevel1,
         bscd: nextCode,
@@ -149,11 +175,11 @@ const ChartOfAccounts = () => {
       console.error("Error adding level 1:", error);
     }
   };
-
+  
   const handleAddLevel2 = async () => {
     if (!selectedLevel1) return;
     try {
-      const nextCode = getNextCode([...level1Data, ...level2Data, ...level3Data, ...accounts], 2);
+      const nextCode = await getNextCode(2, 2);
       await axios.post("/api/accounts/bscd", {
         ...newLevel2,
         bscd: nextCode,
@@ -165,12 +191,11 @@ const ChartOfAccounts = () => {
       console.error("Error adding level 2:", error);
     }
   };
-
+  
   const handleAddLevel3 = async () => {
     if (!selectedLevel2) return;
     try {
-      const nextCode = getNextCode([...level1Data, ...level2Data, ...level3Data, ...accounts], 3);
-
+      const nextCode = await getNextCode(3, 3);
       await axios.post("/api/accounts/macno", {
         ...newLevel3,
         macno: nextCode,
@@ -182,12 +207,11 @@ const ChartOfAccounts = () => {
       console.error("Error adding level 3:", error);
     }
   };
-
+  
   const handleAddLevel4 = async () => {
     if (!selectedLevel3) return;
     try {
-      const nextCode = getNextCode([...level1Data, ...level2Data, ...level3Data, ...accounts], 4);
-
+      const nextCode = await getNextCode(4, 4);
       await axios.post("/api/accounts/acno", {
         ...detailedAccountData,
         acno: nextCode,

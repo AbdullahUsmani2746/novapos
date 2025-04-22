@@ -36,7 +36,7 @@ model MACNO {
 model ACNO {
   acno               String               @unique @db.VarChar(4)
   macno              String               @db.VarChar(3)
-  acname             String               @db.VarChar(100)
+  acname             String               @db.VarChar(250)
   bankAccountNo      String?              @map("bank_account_no") @db.VarChar(25)
   address            String?              @db.VarChar(150)
   city               String?              @db.VarChar(50)
@@ -56,56 +56,61 @@ model ACNO {
   contactPerson      String?              @map("contact_person") @db.VarChar(25)
   crLimit            Int?                 @map("cr_limit")
   salesArea          String?              @map("sales_ares") @db.VarChar(25)
-  mainAccount        MACNO                @relation(fields: [macno], references: [macno])
   transactionsMaster TransactionsMaster[]
   transactions       Transactions[]
+  mainAccount        MACNO                @relation(fields: [macno], references: [macno])
 
   @@id([macno, acno])
   @@map("acno")
 }
 
-
 model Company {
-  id      Int     @id @default(autoincrement())
-  company String? @db.VarChar(100)
-  addr1   String? @db.VarChar(100)
-  addr2   String? @db.VarChar(100)
-  city    String? @db.VarChar(50)
-  phone   String? @db.VarChar(50)
-  fax     String? @db.VarChar(50)
-  email   String? @db.VarChar(50)
+  id                 Int                  @id @default(autoincrement())
+  company            String?              @db.VarChar(100)
+  addr1              String?              @db.VarChar(100)
+  addr2              String?              @db.VarChar(100)
+  city               String?              @db.VarChar(50)
+  phone              String?              @db.VarChar(50)
+  fax                String?              @db.VarChar(50)
+  email              String?              @db.VarChar(50)
+  costCenters        CostCenter[]
+  departments        Department[]
+  designations       Designation[]
 
-  costCenters CostCenter[]
-  departments Department[]
+  godowns            Godown[]
   TransactionsMaster TransactionsMaster[]
   users              Users[]
-  godowns     Godown[]
 }
 
 model CostCenter {
-  id         Int     @id @default(autoincrement())
-  company_id Int // Now references Company.id (Int)
-  ccname     String? @db.VarChar(50)
-
-  company Company @relation(fields: [company_id], references: [id])
+  ccno        Int            @id @default(autoincrement())
+  company_id  Int
+  ccname      String?        @db.VarChar(50)
+  company     Company        @relation(fields: [company_id], references: [id])
   Transaction Transactions[]
 }
 
 model Department {
   id         Int     @id @default(autoincrement())
-  dept_code  String  @db.VarChar(100)
   dept_name  String? @db.VarChar(100)
   company_id Int
   company    Company @relation(fields: [company_id], references: [id])
 }
 
-model Godown {
+model Designation {
   id         Int     @id @default(autoincrement())
-  godown     String  @db.VarChar(100)
+  desg_name  String? @db.VarChar(100)
   company_id Int
   company    Company @relation(fields: [company_id], references: [id])
-  Transaction Transactions[]
+}
+
+model Godown {
+  id                 Int                  @id @default(autoincrement())
+  godown             String               @db.VarChar(100)
+  company_id         Int
+  company            Company              @relation(fields: [company_id], references: [id])
   TransactionsMaster TransactionsMaster[]
+  Transaction        Transactions[]
 }
 
 model FinancialYear {
@@ -133,48 +138,46 @@ model DeliveryMode {
   rate_kg       Int
 }
 
-
 model Users {
   user_id            String               @id @unique @db.VarChar(10)
   user_name          String?              @db.VarChar(50)
-  company_id         Int                  
-  company            Company              @relation(fields: [company_id], references: [id])
+  company_id         Int
   transactionsMaster TransactionsMaster[]
+  company            Company              @relation(fields: [company_id], references: [id])
 }
 
 model Currency {
-  currency String @id @unique @db.VarChar(50)
-  rate     Float
+  currency     String         @id @unique @db.VarChar(50)
+  rate         Float
   transactions Transactions[]
 }
 
 model TransactionsMaster {
-  tran_id      Int            @id @default(autoincrement())
-  company_id   Int
-  dateD        DateTime?
-  time         DateTime?
-  tran_code    Int
-  vr_no        Int            @unique
-  pycd         String
-  check_no     String?        @map("CHECK_NO")
-  check_date   DateTime?      @map("CHECK_DATE")
-  rmk          String?        @map("RMK")
-  rmk1         String?        @map("RMK1")
-  rmk2         String?        @map("RMK2")
-  rmk3         String?        @map("RMK3")
-  rmk4         String?        @map("RMK4")
-  rmk5         String?        @map("RMK5")
-  userId       String         @map("USER_ID")
-  invoice_no   String?        @db.Char(150)
-  godown       Int?            
-  acno         ACNO           @relation(fields: [pycd], references: [acno])
-  company      Company        @relation(fields: [company_id], references: [id])
-  user         Users          @relation(fields: [userId], references: [user_id])
-  godownDetails Godown?     @relation(fields: [godown], references: [id])
-  transactions Transactions[]
+  tran_id       Int           @id @default(autoincrement())
+  company_id    Int
+  dateD         DateTime?
+  time          DateTime?
+  tran_code     Int
+  vr_no         Int           @unique
+  pycd          String
+  check_no      String?       @map("CHECK_NO")
+  check_date    DateTime?     @map("CHECK_DATE")
+  rmk           String?       @map("RMK")
+  rmk1          String?       @map("RMK1")
+  rmk2          String?       @map("RMK2")
+  rmk3          String?       @map("RMK3")
+  rmk4          String?       @map("RMK4")
+  rmk5          String?       @map("RMK5")
+  userId        String        @map("USER_ID")
+  invoice_no    String?       @db.Char(150)
+  godown        Int?
+  user          Users         @relation(fields: [userId], references: [user_id])
+  company       Company       @relation(fields: [company_id], references: [id])
+  godownDetails Godown?       @relation(fields: [godown], references: [id])
+  acno          ACNO          @relation(fields: [pycd], references: [acno])
+  transactions  Transactions?
 
-    @@map("TRANSACTIONS_MASTER")
-
+  @@map("TRANSACTIONS_MASTER")
 }
 
 model Item {
@@ -199,23 +202,22 @@ model Transactions {
   damt               Float?
   camt               Float?
   qty                Float?
-  rate               Float?  
+  rate               Float?
   wht_rate           Float?
   st_rate            Float?
   godown             Int
   invoice_no         String?            @db.Char(150)
-  sub_tran_id        Int                @default(1) // 1 for Payment block, 2 for deduction block
+  sub_tran_id        Int                @default(1)
   currency           String             @db.Char(50)
   fc_amount          Float
-  no_of_pack         Int? 
+  no_of_pack         Int?
   qty_per_pack       Int?
   st_amount          Int?
   additional_tax     Int?
-
-  transactionsMaster TransactionsMaster @relation(fields: [tran_id], references: [tran_id])
   acnoDetails        ACNO               @relation(fields: [acno], references: [acno])
-  itemDetails        Item               @relation(fields: [itcd], references: [itcd])
-  costCenter         CostCenter         @relation(fields: [ccno], references: [id])
-  godownDetails      Godown            @relation(fields: [godown], references: [id])
+  costCenter         CostCenter         @relation(fields: [ccno], references: [ccno])
   currencyDetails    Currency           @relation(fields: [currency], references: [currency])
+  godownDetails      Godown             @relation(fields: [godown], references: [id])
+  itemDetails        Item               @relation(fields: [itcd], references: [itcd])
+  transactionsMaster TransactionsMaster @relation(fields: [tran_id], references: [tran_id])
 }

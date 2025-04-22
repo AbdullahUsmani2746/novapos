@@ -20,12 +20,11 @@ export async function PUT(req, { params }) {
 
   try {
     const { id } = params
-    const { dept_code, dept_name, company_id } = body
+    const { dept_name, company_id } = body
 
     const updatedCostCenter = await prisma.department.update({
       where: { id: parseInt(id) },
       data: {
-        dept_code,
         dept_name,
         company_id: parseInt(company_id),
       },
