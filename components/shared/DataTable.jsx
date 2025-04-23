@@ -53,7 +53,7 @@ const DataTable = ({ data = [], fields = [], onEdit = () => {}, onDelete = () =>
                 </td>
               </tr>
             ) : (
-              data?.map((item) => (
+              data?.map((item,index) => (
                 <tr 
                   key={item.id || Math.random().toString(36)}
                   className={`${
@@ -66,10 +66,16 @@ const DataTable = ({ data = [], fields = [], onEdit = () => {}, onDelete = () =>
                     let cellContent = '';
                     try {
                       if (field.fieldType === "date" && item[field.name]) {
+                        console.log(1)
+
                         cellContent = formatDate(item[field.name]);
                       } else if (field.relationName && item[field.relation]) {
+                        console.log(2)
+
                         cellContent = item[field.relation][field.relationName] || '';
-                      } else {
+                      } 
+                      
+                      else {
                         cellContent = item[field.name] || '';
                       }
                     } catch (e) {

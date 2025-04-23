@@ -76,7 +76,6 @@ model Company {
   costCenters        CostCenter[]
   departments        Department[]
   designations       Designation[]
-
   godowns            Godown[]
   TransactionsMaster TransactionsMaster[]
   users              Users[]
@@ -96,6 +95,55 @@ model Department {
   company_id Int
   company    Company @relation(fields: [company_id], references: [id])
 }
+
+model ProductMasterCategory {
+  id         Int     @id @default(autoincrement())
+  pmc_name  String? @db.VarChar(250)
+  productGroups         ProductGroup[]
+
+
+}
+
+model ProductGroup {
+  id         Int     @id @default(autoincrement())
+  pg_name  String? @db.VarChar(250)
+  pmc_id    Int
+  productCategories     ProductCategory[] 
+  ProductMasterCategories       ProductMasterCategory @relation(fields: [pmc_id], references: [id])
+}
+
+model ProductCategory {
+  id         Int     @id @default(autoincrement())
+  pc_name  String? @db.VarChar(250)
+  pg_id      Int
+  mainCategories        MainCategory[]
+  ProductGroups         ProductGroup @relation(fields: [pg_id], references: [id])
+}
+
+model MainCategory {
+  id         Int     @id @default(autoincrement())
+  mc_name  String? @db.VarChar(100)
+  pc_id    Int
+  itemCategories        ItemCategory[]
+  ProductCategories       ProductCategory @relation(fields: [pc_id], references: [id])
+}
+
+model ItemCategory {
+  id         Int     @id @default(autoincrement())
+  ic_name  String? @db.VarChar(250)
+  mc_id      Int
+  items       Item[]
+  MainCategories       MainCategory @relation(fields: [mc_id], references: [id])
+}
+
+model Item {
+  itcd         Int            @id @unique
+  item    String?        @db.VarChar(250)
+  ic_id        Int
+  itemCategories ItemCategory   @relation(fields: [ic_id], references: [id])
+  Transactions Transactions[]
+}
+
 
 model Designation {
   id         Int     @id @default(autoincrement())
@@ -180,11 +228,7 @@ model TransactionsMaster {
   @@map("TRANSACTIONS_MASTER")
 }
 
-model Item {
-  itcd         Int            @id @unique
-  item_name    String?        @db.VarChar(50)
-  Transactions Transactions[]
-}
+
 
 model Transactions {
   tran_id            Int                @id @default(autoincrement())
