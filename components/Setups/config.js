@@ -65,7 +65,7 @@ const entityConfig = {
     },
     cost_centers: {
       "title": "Cost Centers",
-      "endpoint": "cost-centers",
+      "endpoint": "cost_centers",
       "fields": [
         {
           "name": "ccno",
@@ -91,7 +91,7 @@ const entityConfig = {
       ],
       "buttonText": "Add Cost Center"
     },   
-    cxo: {
+    companies: {
       title: "Companies",
       endpoint: "companies",
       fields: [
