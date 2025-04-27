@@ -9,11 +9,23 @@ export async function GET(req, { params }) {
     return new Response(JSON.stringify({ error: "Invalid entity" }), { status: 400 });
   }
 
+  const { searchParams } = new URL(req.url);
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = parseInt(searchParams.get('limit') || '10', 10);
+
+  const skip = (page - 1) * limit;
+
   try {
-    const data = await config.model.findMany({
-      include: config.include || undefined,
-    });
-    return Response.json(data);
+    const [data, total] = await Promise.all([
+      config.model.findMany({
+        skip,
+        take: limit,
+        include: config.include || undefined,
+      }),
+      config.model.count(),
+    ]);
+
+    return Response.json({ data, total });
   } catch (error) {
     return new Response(JSON.stringify({ error: "Error fetching data" }), { status: 500 });
   }

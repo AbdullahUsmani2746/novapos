@@ -11,18 +11,27 @@ const EntityPageLayout = ({ title, endpoint, fields, buttonText = null }) => {
   const [editingItem, setEditingItem] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  const [page, setPage] = useState(1);
+  const limit = 1; 
+  const [total, setTotal] = useState(0);
+
+  useEffect(() => {
+    fetchData();
+  }, [page]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/${endpoint}`);
+      const res = await fetch(`/api/${endpoint}?page=${page}&limit=${limit}`);
       const json = await res.json();
-      setItems(json);
+      setItems(json.data || []);
+      setTotal(json.total || 0);
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
       setLoading(false);
     }
-  }  
+  }
 
   const handleAddSubmit = async (formData) => {
     await fetch(`/api/${endpoint}`, {
@@ -79,6 +88,11 @@ const EntityPageLayout = ({ title, endpoint, fields, buttonText = null }) => {
         onEdit={handleEdit} 
         onDelete={handleDelete} 
         loading={loading}
+        page={page}
+        setPage={setPage}
+        limit={limit}
+        total={total}
+        setTotal={setTotal}
       />
 
       {isAddModalOpen && (

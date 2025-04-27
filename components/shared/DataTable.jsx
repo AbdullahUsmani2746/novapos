@@ -8,6 +8,10 @@ const DataTable = ({
   onEdit = () => {},
   onDelete = () => {},
   loading = false,
+  page = 1,
+  setPage = () => {},
+  limit = 10,
+  total = 0,
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
 
@@ -31,8 +35,8 @@ const DataTable = ({
           <div className="py-20 flex justify-center items-center">
             <LoadingSpinner variant="pulse" size="default" fullscreen={false} text="Loading data..." />
           </div>
-        ) : (
-          <table className="w-full">
+        ) : <>
+        <table className="w-full">
             <thead>
               <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
                 {Array.isArray(fields) && fields.map((field) => (
@@ -119,7 +123,30 @@ const DataTable = ({
               )}
             </tbody>
           </table>
-        )}
+          {total > limit && (
+            <div className="flex justify-between items-center p-4 bg-gray-50 border-t border-gray-100">
+              <button
+                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                disabled={page === 1}
+                className="px-4 py-2 text-sm text-gray-700 bg-white border rounded disabled:opacity-50"
+              >
+                Previous
+              </button>
+          
+              <span className="text-sm text-gray-600">
+                Page {page} of {Math.ceil(total / limit)}
+              </span>
+          
+              <button
+                onClick={() => setPage((prev) => prev + 1)}
+                disabled={page >= Math.ceil(total / limit)}
+                className="px-4 py-2 text-sm text-gray-700 bg-white border rounded disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>}
       </div>
     </div>
   );
