@@ -79,6 +79,13 @@ model Company {
   godowns            Godown[]
   TransactionsMaster TransactionsMaster[]
   users              Users[]
+  financialYears    FinancialYear[]
+  seasons            Season[]
+  poPrdCats         PoPrdCat[]
+  deliveryModes      DeliveryMode[]
+  deliveryTerms      DeliveryTerm[]
+  commissionTerms    CommissionTerm[]
+  employees          Employee[]
 }
 
 model CostCenter {
@@ -166,6 +173,8 @@ model FinancialYear {
   date_from DateTime
   date_to   DateTime
   status    String   @db.Char(50)
+  company_id Int
+  company    Company @relation(fields: [company_id], references: [id])
 }
 
 model Season {
@@ -173,17 +182,23 @@ model Season {
   date_from DateTime
   date_to   DateTime
   status    String   @db.Char(50)
+  company_id Int
+  company    Company @relation(fields: [company_id], references: [id])
 }
 
 model PoPrdCat {
   id            Int    @id @default(autoincrement())
   category_name String @db.Char(50)
+  company_id Int
+  company    Company @relation(fields: [company_id], references: [id])
 }
 
 model DeliveryMode {
   id            Int    @id @default(autoincrement())
   delivery_mode String @db.Char(50)
   rate_kg       Int
+  company_id Int
+  company    Company @relation(fields: [company_id], references: [id])
 }
 
 model Users {
@@ -269,11 +284,15 @@ model Transactions {
 model DeliveryTerm {
   id            Int    @id @default(autoincrement())
   delivery_term String @db.Char(50)
+  company_id Int
+  company    Company @relation(fields: [company_id], references: [id])
 }
 
 model CommissionTerm {
   id            Int    @id @default(autoincrement())
   commission_term String @db.Char(50)
+  company_id Int
+  company    Company @relation(fields: [company_id], references: [id])
 }
 
 model Employee {
@@ -314,6 +333,8 @@ model Employee {
   documents        Document[]
   created_on       DateTime   @default(now()) @map("created_on")
   updated_on       DateTime   @updatedAt @map("updated_on")
+  company_id Int
+  company    Company @relation(fields: [company_id], references: [id])
 }
 
 model Leave {

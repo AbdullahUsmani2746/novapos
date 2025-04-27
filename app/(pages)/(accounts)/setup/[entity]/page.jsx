@@ -64,8 +64,6 @@ const DynamicEntityPage = () => {
     return field;
   });
 
-  console.log({ fieldsWithOptions });
-
   return (
     <EntityPageLayout
       title={config.title}

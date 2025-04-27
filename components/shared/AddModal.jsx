@@ -38,7 +38,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
   return (
     <Modal isOpen={true} onClose={onClose} title={title}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {fields.map((field) => (
+        {Array.isArray(fields) && fields.map((field) => (
           <div key={field.name} className="space-y-1">
             <label
               htmlFor={field.name}
@@ -89,7 +89,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
                 className="border p-2 w-full rounded"
               >
                 <option value="">Select {field.label}</option>
-                {field.options?.map((option) => (
+                {Array.isArray(field?.options) && field.options?.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>

@@ -19,7 +19,7 @@ const EditModal = ({ title, fields, initialData, onSubmit, onClose }) => {
     const newErrors = {};
 
     fields.forEach((field) => {
-      if (field.required && !formData[field.name]?.trim()) {
+      if (field.required && !formData[field.name]) {
         newErrors[field.name] = `${field.label} is required`;
       }
 

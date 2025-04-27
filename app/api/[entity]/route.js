@@ -20,6 +20,7 @@ export async function GET(req, { params }) {
 }
 
 export async function POST(req, { params }) {
+  console.log("params..", params)
   const { entity } = params;
   const config = entityModelMap[entity];
 
@@ -34,6 +35,7 @@ export async function POST(req, { params }) {
     });
     return Response.json(newItem);
   } catch (error) {
+    console.log(error)
     return new Response(JSON.stringify({ error: "Error creating item" }), { status: 500 });
   }
 }
