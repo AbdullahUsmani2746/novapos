@@ -98,47 +98,47 @@ const data = {
       items: [
         {
           title: "Company Setup",
-          url: "/company",
+          url: "/setup/companies",
         },
         {
           title: "Cost Center Setup",
-          url: "/cost-center",
+          url: "/setup/cost_centers",
         },
         {
           title: "Department Setup",
-          url: "/department",
+          url: "/setup/departments",
         },
         {
           title: "Godown Setup",
-          url: "/godown",
+          url: "/setup/godowns",
         },
         {
           title: "Season Setup",
-          url: "/season",
+          url: "/setup/seasons",
         },
         {
           title: "Financial Year Setup",
-          url: "/financial-year",
+          url: "/setup/financial_years",
         },
         {
           title: "Product Category Setup",
-          url: "/po-prd-categories",
+          url: "/setup/purchase_product_categories",
         },
         {
           title: "Delivery Mode Setup",
-          url: "/delivery-mode",
+          url: "/setup/delivery_modes",
         },
         {
           title: "Delivery Terms Setup",
-          url: "/delivery-term",
+          url: "/setup/delivery_terms",
         },
         {
           title: "Commission Term Setup",
-          url: "/commission-term",
+          url: "/setup/commission_terms",
         },
         {
           title: "Employee Setup",
-          url: "/employee",
+          url: "/setup/employees",
         },
         
       ],
