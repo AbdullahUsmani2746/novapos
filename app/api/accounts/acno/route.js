@@ -8,26 +8,11 @@ export async function GET(request) {
 
       // Get the mbscd query parameter from the URL
       const { searchParams } = new URL(request.url);
-      const macno = searchParams.get('macno');
+      const macno = searchParams.get('macno') || "";
   
-      const where = macno ? { macno: macno } : {};
+      const where = macno!=="" ? { macno: macno } : {};
   
     const acnos = await prisma.aCNO.findMany({
-    //   include: {
-    //     mainAccount: {
-    //       include: {
-    //         businessCat: {
-    //           include: {
-    //             mainBsCd: true,
-    //           },
-    //         },
-    //       },
-    //     },
-    //   },
-    //   orderBy: {
-    //     acno: 'asc',
-    //   },
-
       where
     });
     

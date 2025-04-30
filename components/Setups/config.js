@@ -1,5 +1,7 @@
 // config/entityConfig.js
 
+import { Currency } from "lucide-react";
+
 const entityConfig = {
     // departments: {
     //   title: "Departments",
@@ -91,7 +93,7 @@ const entityConfig = {
       ],
       "buttonText": "Add Cost Center"
     },   
-    cxo: {
+    companies: {
       title: "Companies",
       endpoint: "companies",
       fields: [
@@ -104,6 +106,14 @@ const entityConfig = {
         { name: 'email', label: 'Email', fieldType: 'email', required: true },
       ],
       buttonText: "Add Company"
+    },
+    currencies: {
+      title: "Currencies",
+      endpoint: "currencies",
+      buttonText: "Add Currency",
+      fields: [
+        { name: 'currency', label: 'Currency', fieldType: 'text', required: true },
+      ],
     },
     departments: {
       "title": "Departments",
@@ -126,27 +136,45 @@ const entityConfig = {
       ],
       "buttonText": "Add Department"
     },    
+    // godowns: {
+    //   "title": "Godowns",
+    //   "endpoint": "godowns",
+    //   "fields": [
+    //     {
+    //       "name": "godown",
+    //       "label": "Godown",
+    //       "fieldType": "text",
+    //       "required": true
+    //     },
+    //     {
+    //       "relation": "company",
+    //       "relationName": "company",
+    //       "name": "company_id",
+    //       "label": "Company",
+    //       "fieldType": "select",
+    //       "required": true,
+    //       "options": "companies.map((company) => ({ value: company.id, label: company.company }))"
+    //     }
+    //   ],
+    //   "buttonText": "Add Godown"
+    // },
     godowns: {
-      "title": "Godowns",
-      "endpoint": "godowns",
-      "fields": [
+      title: "Godowns",
+      endpoint: "godowns",
+      buttonText: "Add Godown",
+      fields: [
+        { name: "godown", label: "Godown Name", fieldType: "text", required: true },
         {
-          "name": "godown",
-          "label": "Godown",
-          "fieldType": "text",
-          "required": true
+          relation: "company",
+          relationName: "company",
+          name: "company_id",
+          label: "Company",
+          fieldType: "select",
+          fetchFrom: "/api/companies", // used to fetch dropdown data
+          optionLabelKey: "company",
+          optionValueKey: "id",
         },
-        {
-          "relation": "company",
-          "relationName": "company",
-          "name": "company_id",
-          "label": "Company",
-          "fieldType": "select",
-          "required": true,
-          "options": "companies.map((company) => ({ value: company.id, label: company.company }))"
-        }
       ],
-      "buttonText": "Add Godown"
     },
     financial_years: {
       "title": "Financial Years",

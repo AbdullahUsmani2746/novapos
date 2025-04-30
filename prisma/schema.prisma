@@ -195,8 +195,8 @@ model Users {
 }
 
 model Currency {
-  currency     String         @id @unique @db.VarChar(50)
-  rate         Float
+  id           Int            @id @unique @default(autoincrement())
+  currency     String         @unique @db.VarChar(50)
   transactions Transactions[]
 }
 
@@ -252,7 +252,7 @@ model Transactions {
   godown             Int
   invoice_no         String?            @db.Char(150)
   sub_tran_id        Int                @default(1)
-  currency           String             @db.Char(50)
+  currency           Int             
   fc_amount          Float
   no_of_pack         Int?
   qty_per_pack       Int?
@@ -260,7 +260,7 @@ model Transactions {
   additional_tax     Int?
   acnoDetails        ACNO               @relation(fields: [acno], references: [acno])
   costCenter         CostCenter         @relation(fields: [ccno], references: [ccno])
-  currencyDetails    Currency           @relation(fields: [currency], references: [currency])
+  currencyDetails    Currency           @relation(fields: [currency], references: [id])
   godownDetails      Godown             @relation(fields: [godown], references: [id])
   itemDetails        Item               @relation(fields: [itcd], references: [itcd])
   transactionsMaster TransactionsMaster @relation(fields: [tran_id], references: [tran_id])

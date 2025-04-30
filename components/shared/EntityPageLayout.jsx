@@ -11,7 +11,7 @@ const EntityPageLayout = ({ title, endpoint, fields, buttonText = null }) => {
   const [editingItem, setEditingItem] = useState(null)
 
   const fetchData = async () => {
-    const res = await fetch(`/api/${endpoint}`)
+    const res = await fetch(`/api/setup/${endpoint}`)
     const json = await res.json()
     setItems(json)
   }

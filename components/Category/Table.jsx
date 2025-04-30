@@ -57,6 +57,20 @@ export default function VoucherTable({ type }) {
     }
   }
 
+  // Helper function to format cell content based on field type
+  const formatCellContent = (value, type) => {
+    if (value === null || value === undefined) return '-'
+    switch (type) {
+      case 'date':
+        return new Date(value).toLocaleDateString()
+      case 'number':
+        return Number(value).toFixed(2)
+      case 'text':
+      default:
+        return value.toString()
+    }
+  }
+
   return (
     <Card className="mt-6 overflow-hidden">
       <div className="overflow-x-auto">
@@ -64,8 +78,11 @@ export default function VoucherTable({ type }) {
           <TableHeader>
             <TableRow className="bg-secondary/50 hover:bg-secondary/50">
               {fields.map(field => (
-                <TableHead key={field} className="font-semibold text-xs uppercase tracking-wider px-4 py-3">
-                  {field}
+                <TableHead 
+                  key={field.name} 
+                  className="font-semibold text-xs uppercase tracking-wider px-4 py-3"
+                >
+                  {field.label}
                 </TableHead>
               ))}
             </TableRow>
@@ -76,7 +93,7 @@ export default function VoucherTable({ type }) {
               {[...Array(5)].map((_, idx) => (
                 <TableRow key={idx}>
                   {fields.map(field => (
-                    <TableCell key={field} className="p-3">
+                    <TableCell key={field.name} className="p-3">
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
                   ))}
@@ -92,20 +109,26 @@ export default function VoucherTable({ type }) {
             >
               {data.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={fields.length} className="text-center py-8 text-muted-foreground">
+                  <TableCell 
+                    colSpan={fields.length} 
+                    className="text-center py-8 text-muted-foreground"
+                  >
                     No data available
                   </TableCell>
                 </TableRow>
               ) : (
-                data.length>0 && data.map((entry, idx) => (
+                data.length > 0 && data?.map((entry, idx) => (
                   <motion.tr
                     key={idx}
                     variants={rowVariants}
                     className="hover:bg-muted/50 transition-colors"
                   >
                     {fields.map(field => (
-                      <TableCell key={field} className="px-4 py-3 text-sm">
-                        {entry[field]}
+                      <TableCell 
+                        key={field.name} 
+                        className="px-4 py-3 text-sm"
+                      >
+                        {formatCellContent(entry[field.name], field.type)}
                       </TableCell>
                     ))}
                   </motion.tr>
