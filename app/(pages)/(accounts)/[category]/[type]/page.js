@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { RefreshCw } from 'lucide-react'
+import axios from 'axios'
 const CONFIG = {
   voucher: {
     payment: {
@@ -23,7 +24,7 @@ const CONFIG = {
     },
     journal: {
       label: 'Journal',
-      stats: ['entries', 'balanced'],
+      stats: ['total', 'verified', 'pending'],
       apiPath: 'journal'
     }
   },
@@ -61,8 +62,9 @@ export default function DynamicVoucherPage({ params: paramsPromise}) {
       try {
         setIsLoading(true)
         
-        const res = await fetch(`/api/${params.category}/${typeConfig.apiPath}`)
-        const data = await res.json()
+        const res = await axios.get(`/api/${params.category}/${typeConfig.apiPath}`)
+        const data = await res.data
+        console.log('Fetched data:', data)
         
         setStats(data)
       } catch (error) {

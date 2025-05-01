@@ -24,7 +24,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import axios from "axios";
-// Ensure VOUCHER_CONFIG is imported correctly
 import { VOUCHER_CONFIG } from "./constants";
 
 export default function VoucherForm({ type, onClose }) {
@@ -84,7 +83,7 @@ export default function VoucherForm({ type, onClose }) {
       setLoading((prev) => ({ ...prev, options: true }));
       const endpointMap = {
         accounts: "/api/accounts/acno?macno=001",
-        costCenters: "/api/setup/cost-centers",
+        costCenters: "/api/setup/cost_centers",
         currencies: "/api/setup/currencies",
         suppliers: "/api/setup/suppliers",
         customers: "/api/setup/customers",
@@ -104,7 +103,7 @@ export default function VoucherForm({ type, onClose }) {
       const results = await Promise.all(
         endpoints.map(async ({ key, url }) => {
           const response = await axios.get(url);
-          return { key, data: response.data };
+          return { key, data: response.data.data };
         })
       );
 
@@ -172,12 +171,12 @@ export default function VoucherForm({ type, onClose }) {
   useEffect(() => {
     if (
       voucherConfig.masterFields?.some(
-        (f) => f.name === "voucher_no" && f.autoGenerate
+        (f) => f.name === "vr_no" && f.autoGenerate
       )
     ) {
       setLoading((prev) => ({ ...prev, vrNo: true }));
       fetchNextVrNo(voucherConfig.tran_code).then((nextVrNo) => {
-        setMasterData((prev) => ({ ...prev, voucher_no: nextVrNo }));
+        setMasterData((prev) => ({ ...prev, vr_no: nextVrNo }));
         setLoading((prev) => ({ ...prev, vrNo: false }));
       });
     }
@@ -346,12 +345,23 @@ export default function VoucherForm({ type, onClose }) {
       return false;
     }
 
-    if (type === "journal" && totals.debitTotal !== totals.creditTotal) {
-      setErrors((prev) => ({
-        ...prev,
-        validation: "Total Debit must equal Total Credit.",
-      }));
-      return false;
+    if (voucherConfig.balanceCheck) {
+      const formData = {
+        master: masterData,
+        lines: mainLines,
+        deductions: deductionLines,
+        totals,
+      };
+      if (!voucherConfig.balanceCheck.condition(formData)) {
+        const errorMsg = typeof voucherConfig.balanceCheck.errorMessage === 'function'
+          ? voucherConfig.balanceCheck.errorMessage(formData)
+          : voucherConfig.balanceCheck.errorMessage;
+        setErrors((prev) => ({
+          ...prev,
+          validation: errorMsg,
+        }));
+        return false;
+      }
     }
 
     return true;
@@ -361,13 +371,13 @@ export default function VoucherForm({ type, onClose }) {
     master: { ...masterData, tran_code: voucherConfig.tran_code },
     lines: mainLines
       .filter((line) => Object.values(line).some((v) => v?.toString().trim()))
-      .map((line) => ({ ...line, sub_tran_id: 1 })),
+      .map((line) => ({ ...line })),
     deductions: voucherConfig.hasDeductionBlock
       ? deductionLines
           .filter((line) =>
             Object.values(line).some((v) => v?.toString().trim())
           )
-          .map((line) => ({ ...line, sub_tran_id: 2 }))
+          .map((line) => ({ ...line }))
       : [],
   });
 
@@ -397,7 +407,6 @@ export default function VoucherForm({ type, onClose }) {
   const getSelectOptions = (optionsType, valueKey = 'id', nameKey = 'name') => {
     const options = optionsData[optionsType];
     
-    // Check if options exists and is an array
     if (!options || !Array.isArray(options)) {
       console.warn(`No options available for ${optionsType} or not an array`);
       return [];
@@ -520,17 +529,17 @@ export default function VoucherForm({ type, onClose }) {
                 <Input
                   type={field.type}
                   value={
-                    field.name === "voucher_no" && field.autoGenerate
+                    field.name === "vr_no" && field.autoGenerate
                       ? masterData[fieldName] || ""
                       : masterData[fieldName] || ""
                   }
                   onChange={(e) =>
                     handleMasterChange(fieldName, e.target.value)
                   }
-                  readOnly={field.name === "voucher_no" && field.autoGenerate}
+                  readOnly={field.name === "vr_no" && field.autoGenerate}
                   disabled={
                     loading.submit ||
-                    (field.name === "voucher_no" &&
+                    (field.name === "vr_no" &&
                       field.autoGenerate &&
                       loading.vrNo)
                   }
@@ -776,7 +785,7 @@ export default function VoucherForm({ type, onClose }) {
     const handleSave = async () => {
       try {
         setIsSubmitting(true);
-        const response = await axios.post("/api/cost-centers", costCenterData);
+        const response = await axios.post("/api/setup/cost_centers", costCenterData);
         onSave(response.data);
       } catch (error) {
         console.error("Error adding cost center:", error);

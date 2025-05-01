@@ -16,7 +16,7 @@ export async function GET(request) {
       where
     });
     
-    return NextResponse.json(acnos, { status: 200 });
+    return NextResponse.json({data:acnos, status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to fetch ACNO data' },

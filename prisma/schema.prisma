@@ -79,6 +79,13 @@ model Company {
   godowns            Godown[]
   TransactionsMaster TransactionsMaster[]
   users              Users[]
+  financialYears    FinancialYear[]
+  seasons            Season[]
+  poPrdCats         PoPrdCat[]
+  deliveryModes      DeliveryMode[]
+  deliveryTerms      DeliveryTerm[]
+  commissionTerms    CommissionTerm[]
+  employees          Employee[]
 }
 
 model CostCenter {
@@ -166,6 +173,8 @@ model FinancialYear {
   date_from DateTime
   date_to   DateTime
   status    String   @db.Char(50)
+  company_id Int
+  company    Company @relation(fields: [company_id], references: [id])
 }
 
 model Season {
@@ -173,17 +182,23 @@ model Season {
   date_from DateTime
   date_to   DateTime
   status    String   @db.Char(50)
+  company_id Int
+  company    Company @relation(fields: [company_id], references: [id])
 }
 
 model PoPrdCat {
   id            Int    @id @default(autoincrement())
   category_name String @db.Char(50)
+  company_id Int
+  company    Company @relation(fields: [company_id], references: [id])
 }
 
 model DeliveryMode {
   id            Int    @id @default(autoincrement())
   delivery_mode String @db.Char(50)
   rate_kg       Int
+  company_id Int
+  company    Company @relation(fields: [company_id], references: [id])
 }
 
 model Users {
@@ -202,12 +217,12 @@ model Currency {
 
 model TransactionsMaster {
   tran_id       Int           @id @default(autoincrement())
-  company_id    Int
+  company_id    Int?
   dateD         DateTime?
   time          DateTime?
-  tran_code     Int
-  vr_no         Int           @unique
-  pycd          String
+  tran_code     Int?
+  vr_no         Int?           
+  pycd          String?
   check_no      String?       @map("CHECK_NO")
   check_date    DateTime?     @map("CHECK_DATE")
   rmk           String?       @map("RMK")
@@ -216,25 +231,27 @@ model TransactionsMaster {
   rmk3          String?       @map("RMK3")
   rmk4          String?       @map("RMK4")
   rmk5          String?       @map("RMK5")
-  userId        String        @map("USER_ID")
+  userId        String?        @map("USER_ID")
   invoice_no    String?       @db.Char(150)
   godown        Int?
-  user          Users         @relation(fields: [userId], references: [user_id])
-  company       Company       @relation(fields: [company_id], references: [id])
+  user          Users?         @relation(fields: [userId], references: [user_id])
+  company       Company?       @relation(fields: [company_id], references: [id])
   godownDetails Godown?       @relation(fields: [godown], references: [id])
-  acno          ACNO          @relation(fields: [pycd], references: [acno])
-  transactions  Transactions?
+  acno          ACNO?          @relation(fields: [pycd], references: [acno])
+  transactions  Transactions[]
 
+  @@unique([tran_code, vr_no]) // Enforces no duplicate voucher numbers per tran_code
   @@map("TRANSACTIONS_MASTER")
 }
 
 
 
 model Transactions {
-  tran_id            Int                @id @default(autoincrement())
-  acno               String
-  itcd               Int
-  ccno               Int
+  id                 Int                @id @default(autoincrement())
+  tran_id            Int               
+  acno               String?
+  itcd               Int?
+  ccno               Int?
   narration1         String?            @db.Char(150)
   narration2         String?            @db.Char(150)
   narration3         String?            @db.Char(150)
@@ -249,31 +266,35 @@ model Transactions {
   rate               Float?
   wht_rate           Float?
   st_rate            Float?
-  godown             Int
+  godown             Int?
   invoice_no         String?            @db.Char(150)
-  sub_tran_id        Int                @default(1)
-  currency           Int             
-  fc_amount          Float
+  sub_tran_id        Int?                @default(1)
+  currency           Int?             
+  fc_amount          Float?
   no_of_pack         Int?
   qty_per_pack       Int?
   st_amount          Int?
   additional_tax     Int?
-  acnoDetails        ACNO               @relation(fields: [acno], references: [acno])
-  costCenter         CostCenter         @relation(fields: [ccno], references: [ccno])
-  currencyDetails    Currency           @relation(fields: [currency], references: [id])
-  godownDetails      Godown             @relation(fields: [godown], references: [id])
-  itemDetails        Item               @relation(fields: [itcd], references: [itcd])
+  acnoDetails        ACNO?               @relation(fields: [acno], references: [acno])
+  costCenter         CostCenter?         @relation(fields: [ccno], references: [ccno])
+  currencyDetails    Currency?           @relation(fields: [currency], references: [id])
+  godownDetails      Godown?             @relation(fields: [godown], references: [id])
+  itemDetails        Item?               @relation(fields: [itcd], references: [itcd])
   transactionsMaster TransactionsMaster @relation(fields: [tran_id], references: [tran_id])
 }
 
 model DeliveryTerm {
   id            Int    @id @default(autoincrement())
   delivery_term String @db.Char(50)
+  company_id Int
+  company    Company @relation(fields: [company_id], references: [id])
 }
 
 model CommissionTerm {
   id            Int    @id @default(autoincrement())
   commission_term String @db.Char(50)
+  company_id Int
+  company    Company @relation(fields: [company_id], references: [id])
 }
 
 model Employee {
@@ -314,6 +335,8 @@ model Employee {
   documents        Document[]
   created_on       DateTime   @default(now()) @map("created_on")
   updated_on       DateTime   @updatedAt @map("updated_on")
+  company_id Int
+  company    Company @relation(fields: [company_id], references: [id])
 }
 
 model Leave {

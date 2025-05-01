@@ -9,11 +9,22 @@ const EntityPageLayout = ({ title, endpoint, fields, buttonText = null }) => {
   const [items, setItems] = useState([])
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  const [page, setPage] = useState(1);
+  const limit = 1; 
+  const [total, setTotal] = useState(0);
+
+  useEffect(() => {
+    fetchData();
+  }, [page]);
 
   const fetchData = async () => {
-    const res = await fetch(`/api/setup/${endpoint}`)
+    // setLoading(true)
+    const res = await fetch(`/api/${endpoint}`)
     const json = await res.json()
     setItems(json)
+    // setLoading(false)
   }
 
   const handleAddSubmit = async (formData) => {
@@ -70,6 +81,12 @@ const EntityPageLayout = ({ title, endpoint, fields, buttonText = null }) => {
         fields={fields} 
         onEdit={handleEdit} 
         onDelete={handleDelete} 
+        loading={loading}
+        page={page}
+        setPage={setPage}
+        limit={limit}
+        total={total}
+        setTotal={setTotal}
       />
 
       {isAddModalOpen && (

@@ -21,7 +21,7 @@ export async function GET(req, { params }) {
 }
 
 export async function PUT(req, { params }) {
-  const { entity, id } = params;
+  const { entity, id } = await params;
   const config = entityModelMap[entity];
 
   if (!config) {
@@ -41,7 +41,7 @@ export async function PUT(req, { params }) {
 }
 
 export async function DELETE(req, { params }) {
-  const { entity, id } = params;
+  const { entity, id } = await params;
   const config = entityModelMap[entity];
 
   if (!config) {
