@@ -3,18 +3,39 @@ import prisma from '@/lib/prisma'
 import { VOUCHER_CONFIG } from '@/components/Category/constants'
 
 // GET method
-export async function GET(req,{ params }) {
-  const {type} = await params
+export async function GET(req, { params }) {
+  const { type } = await params
+  const url = new URL(req.url)
+  const page = parseInt(url.searchParams.get('page') || '1')
+  const limit = parseInt(url.searchParams.get('limit') || '10')
+  const skip = (page - 1) * limit
 
   const tran_code = VOUCHER_CONFIG[type]?.tran_code
   if (!tran_code) {
     return NextResponse.json({ message: 'Invalid voucher type' }, { status: 400 })
   }
 
-  const vouchers = await prisma.transactionsMaster.findMany({ where: { tran_code } })
-  return NextResponse.json(vouchers)
-}
+  const [vouchers, total] = await Promise.all([
+    prisma.transactionsMaster.findMany({ 
+      where: { tran_code },
+      skip,
+      take: limit,
+      orderBy: { tran_id: 'desc' }
+    }),
+    prisma.transactionsMaster.count({ where: { tran_code } })
+  ])
 
+  const totalPages = Math.ceil(total / limit)
+  
+  return NextResponse.json({
+    data: vouchers,
+    totalPages,
+    page,
+    limit,
+    total,
+    status: 200
+  })
+}
 // POST method
 export async function POST(req, { params }) {
   try {

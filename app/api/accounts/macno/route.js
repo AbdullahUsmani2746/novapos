@@ -28,7 +28,7 @@ export async function GET(request) {
       where
     });
     
-    return NextResponse.json(macnos, { status: 200 });
+    return NextResponse.json({data:macnos, status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to fetch MACNO data' },
@@ -72,7 +72,7 @@ export async function POST(request) {
     //   },
     });
 
-    return NextResponse.json(newMacno, { status: 201 });
+    return NextResponse.json({data:newMacno, status: 201 });
   } catch (error) {
     if (error.code === 'P2002') {
       return NextResponse.json(

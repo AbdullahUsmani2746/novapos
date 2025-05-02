@@ -9,7 +9,7 @@ export async function GET() {
     
     });
     
-    return NextResponse.json(mbscds, { status: 200 });
+    return NextResponse.json( {data:mbscds, status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to fetch MBSCD data' },
@@ -38,7 +38,7 @@ export async function POST(request) {
       },
     });
     
-    return NextResponse.json(newMbscd, { status: 201 });
+    return NextResponse.json({data:newMbscd ,status: 201 });
   } catch (error) {
     if (error.code === 'P2002') {
       return NextResponse.json(

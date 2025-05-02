@@ -61,7 +61,7 @@ const DataTable = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {data.length === 0 ? (
+                {data.length <= 0 ? (
                   <tr>
                     <td
                       colSpan={fields.length + 1}
@@ -87,7 +87,7 @@ const DataTable = ({
                     </td>
                   </tr>
                 ) : (
-                  data?.map((item, index) => (
+                  data?.length > 0 && data?.map((item, index) => (
                     <tr
                       key={item.id || Math.random().toString(36)}
                       className={`${

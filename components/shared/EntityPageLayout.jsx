@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import DataTable from './DataTable'
 import AddModal from './AddModal'
 import EditModal from './EditModal'
+import axios from 'axios'
 
 const EntityPageLayout = ({ title, endpoint, fields, buttonText = null }) => {
   const [items, setItems] = useState([])
@@ -20,40 +21,42 @@ const EntityPageLayout = ({ title, endpoint, fields, buttonText = null }) => {
   }, [page]);
 
   const fetchData = async () => {
-    // setLoading(true)
-    const res = await fetch(`/api/${endpoint}`)
-    const json = await res.json()
-    setItems(json)
-    // setLoading(false)
+    try {
+      const res = await axios.get(`/api/setup/${endpoint}`)
+      setItems(res.data.data)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    }
   }
 
   const handleAddSubmit = async (formData) => {
-    await fetch(`/api/${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
-    })
-
-    setIsAddModalOpen(false)
-    fetchData()
+    try {
+      await axios.post(`/api/${endpoint}`, formData)
+      setIsAddModalOpen(false)
+      fetchData()
+    } catch (error) {
+      console.error('Error adding data:', error)
+    }
   }
 
   const handleEditSubmit = async (formData) => {
-    console.log("editingItem", editingItem)
-    await fetch(`/api/${endpoint}/${editingItem.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
-    })
-
-
-    setEditingItem(null)
-    fetchData()
+    try {
+      console.log("editingItem", editingItem)
+      await axios.put(`/api/${endpoint}/${editingItem.id}`, formData)
+      setEditingItem(null)
+      fetchData()
+    } catch (error) {
+      console.error('Error editing data:', error)
+    }
   }
 
   const handleDelete = async (id) => {
-    await fetch(`/api/${endpoint}/${id}`, { method: 'DELETE' })
-    fetchData()
+    try {
+      await axios.delete(`/api/${endpoint}/${id}`)
+      fetchData()
+    } catch (error) {
+      console.error('Error deleting data:', error)
+    }
   }
 
   const handleEdit = (item) => {

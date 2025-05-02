@@ -9,8 +9,10 @@ export async function GET(request) {
       // Get the mbscd query parameter from the URL
       const { searchParams } = new URL(request.url);
       const macno = searchParams.get('macno') || "";
+      const acno = searchParams.get('acno') || "";
+
   
-      const where = macno!=="" ? { macno: macno } : {};
+      const where = macno!=="" ? { macno: macno } : acno!=="" ? { acno: acno } : {};
   
     const acnos = await prisma.aCNO.findMany({
       where
@@ -101,7 +103,7 @@ export async function POST(request) {
     //   },
     });
     
-    return NextResponse.json(newAcno, { status: 201 });
+    return NextResponse.json({data:newAcno, status: 201 });
   } catch (error) {
     if (error.code === 'P2002') {
       return NextResponse.json(

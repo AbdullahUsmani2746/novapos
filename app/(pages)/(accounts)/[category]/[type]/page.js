@@ -14,29 +14,29 @@ const CONFIG = {
   voucher: {
     payment: {
       label: 'Payment',
-      stats: ['total', 'pending', 'completed'],
+      stats: ['total'],
       apiPath: 'payment'
     },
     receipt: {
       label: 'Receipt',
-      stats: ['total', 'verified', 'pending'],
+      stats: ['total'],
       apiPath: 'receipt'
     },
     journal: {
       label: 'Journal',
-      stats: ['total', 'verified', 'pending'],
+      stats: ['total'],
       apiPath: 'journal'
     }
   },
   invoice: {
     purchase: {
       label: 'Purchase Invoice',
-      stats: ['total', 'tax', 'net'],
+      stats: ['total'],
       apiPath: 'purchase'
     },
     sale: {
       label: 'Sales Invoice',
-      stats: ['total', 'discount', 'tax'],
+      stats: ['total'],
       apiPath: 'sale'
     }
   }

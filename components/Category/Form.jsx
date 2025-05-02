@@ -1,8 +1,23 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PlusCircle, Trash2, Save, X, AlertCircle } from "lucide-react";
+import {
+  PlusCircle,
+  Trash2,
+  Save,
+  X,
+  AlertCircle,
+  Search,
+  User,
+  Calendar,
+  Clock,
+  DollarSign,
+  FileText,
+  CreditCard,
+  Building,
+} from "lucide-react";
+import { toast, Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,8 +38,171 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import axios from "axios";
 import { VOUCHER_CONFIG } from "./constants";
+
+// Icon mapping for field types
+const ICON_MAP = {
+  date: Calendar,
+  time: Clock,
+  number: DollarSign,
+  text: FileText,
+  textarea: FileText,
+  select: Building,
+  acname: User,
+  ccname: Building,
+  currency: DollarSign,
+  invoice_no: FileText,
+  narration: FileText,
+  narration1: FileText,
+  narration2: FileText,
+  check_no: CreditCard,
+  check_date: Calendar,
+  pycd: Building,
+  rmk: FileText,
+  rmk1: FileText,
+  rmk2: FileText,
+  rmk3: FileText,
+  rmk4: FileText,
+  rmk5: FileText,
+  tran_no: FileText,
+  tran_id: FileText,
+  voucher_no: FileText,
+  st_inv_no: FileText,
+  godown: Building,
+  delv_n: FileText,
+  prd_cat: FileText,
+  com_inv_no: FileText,
+  product: FileText,
+  item: FileText,
+  packs: FileText,
+  qty_per_pack: FileText,
+  qty: FileText,
+  rate: DollarSign,
+  gross_amount: DollarSign,
+  st_rate: DollarSign,
+  st_amount: DollarSign,
+  additional_tax: DollarSign,
+  amount: DollarSign,
+};
+
+const FormInput = ({
+  icon: Icon,
+  error,
+  label,
+  required,
+  className,
+  ...props
+}) => (
+  <div className="space-y-1">
+    <Label className="text-xs text-gray-700">
+      {label}
+      {required && <span className="text-red-500">*</span>}
+    </Label>
+    <div className="relative">
+      {Icon && (
+        <Icon className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+      )}
+      <Input
+        className={`${
+          Icon ? "pl-8 pr-8" : "px-3"
+        } w-full rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500 ${
+          error ? "border-red-500 focus:ring-red-500" : ""
+        } ${className}`}
+        {...props}
+      />
+      {error && (
+        <AlertCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
+      )}
+    </div>
+    {error && <p className="text-xs text-red-500">{error}</p>}
+  </div>
+);
+
+// Searchable Select Component
+const SearchableSelect = ({
+  value,
+  onValueChange,
+  options,
+  placeholder,
+  label,
+  required,
+  error,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const inputRef = useRef(null);
+
+  const filteredOptions = options.filter((opt) =>
+    opt.label.toLowerCase().includes(search.toLowerCase())
+  );
+
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isOpen]);
+
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs text-gray-700">
+        {label}
+        {required && <span className="text-red-500">*</span>}
+      </Label>
+      <Select
+        value={value?.toString() || ""}
+        onValueChange={onValueChange}
+        open={isOpen}
+        onOpenChange={setIsOpen}
+      >
+        <SelectTrigger
+          className={`h-8 text-xs w-full rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500 ${
+            error ? "border-red-500" : ""
+          }`}
+          aria-label={placeholder}
+        >
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          <div className="p-2 sticky top-0 bg-white">
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+              <Input
+                ref={inputRef}
+                placeholder="Search..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8 w-full rounded-md text-xs"
+                onKeyDown={(e) => e.stopPropagation()}
+              />
+            </div>
+          </div>
+          {filteredOptions.length === 0 ? (
+            <div className="p-2 text-xs text-gray-500">No options found</div>
+          ) : (
+            filteredOptions.map((opt) => (
+              <SelectItem
+                key={opt.value}
+                value={opt.value}
+                className="text-xs hover:bg-blue-50 focus:bg-blue-50"
+              >
+                {opt.label}
+              </SelectItem>
+            ))
+          )}
+          <SelectItem
+            value="add_new"
+            className="text-blue-600 hover:bg-blue-50 focus:bg-blue-50"
+          >
+            Add New {placeholder.split("Select ")[1]}
+          </SelectItem>
+        </SelectContent>
+      </Select>
+      {error && <p className="text-xs text-red-500">{error}</p>}
+    </div>
+  );
+};
 
 export default function VoucherForm({ type, onClose }) {
   const voucherConfig = VOUCHER_CONFIG[type] || {};
@@ -41,6 +219,7 @@ export default function VoucherForm({ type, onClose }) {
     customers: [],
     products: [],
     godowns: [],
+    mainAccounts: [],
   });
   const [loading, setLoading] = useState({
     options: true,
@@ -50,11 +229,14 @@ export default function VoucherForm({ type, onClose }) {
   const [errors, setErrors] = useState({
     options: null,
     submit: null,
-    validation: null,
+    validation: {},
   });
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState(null);
   const [modalField, setModalField] = useState({});
+  // Add these refs at the component level
+  const prevMainLinesRef = useRef(null);
+  const prevDeductionLinesRef = useRef(null);
 
   const apiMap = {
     payment: "/api/voucher/payment",
@@ -64,6 +246,7 @@ export default function VoucherForm({ type, onClose }) {
     sale: "/api/voucher/sale",
   };
 
+  // Fetch options for select fields
   const getRequiredOptionTypes = useCallback(() => {
     return [
       ...new Set(
@@ -81,24 +264,27 @@ export default function VoucherForm({ type, onClose }) {
   const fetchOptions = useCallback(async () => {
     try {
       setLoading((prev) => ({ ...prev, options: true }));
-      const endpointMap = {
-        accounts: "/api/accounts/acno?macno=001",
-        costCenters: "/api/setup/cost_centers",
-        currencies: "/api/setup/currencies",
-        suppliers: "/api/setup/suppliers",
-        customers: "/api/setup/customers",
-        products: "/api/setup/products",
-        godowns: "/api/setup/godowns",
-      };
       const requiredOptionTypes = getRequiredOptionTypes();
-      const endpoints = Object.entries(endpointMap)
-        .filter(([key]) => requiredOptionTypes.includes(key))
-        .map(([key, url]) => ({ key, url }));
-
       const initialOptionsData = requiredOptionTypes.reduce(
         (acc, key) => ({ ...acc, [key]: [] }),
-        {}
+        { mainAccounts: [] } // Include mainAccounts for account creation
       );
+
+      const fields = [
+        ...(voucherConfig.masterFields || []),
+        ...(voucherConfig.lineFields || []),
+        ...(voucherConfig.deductionFields || []),
+      ];
+
+      const endpoints = requiredOptionTypes
+        .map((key) => {
+          const field = fields.find((f) => f.options === key);
+          return { key, url: field?.apiEndpoint };
+        })
+        .filter((e) => e.url);
+
+      // Add mainAccounts endpoint for account creation
+      endpoints.push({ key: "mainAccounts", url: "/api/accounts/macno" });
 
       const results = await Promise.all(
         endpoints.map(async ({ key, url }) => {
@@ -117,27 +303,17 @@ export default function VoucherForm({ type, onClose }) {
         ...prev,
         options: `Failed to load options: ${error.message}`,
       }));
+      toast.error(`Failed to load options: ${error.message}`);
     } finally {
       setLoading((prev) => ({ ...prev, options: false }));
     }
-  }, [getRequiredOptionTypes]);
-
-  const fetchNextVrNo = async (tran_code) => {
-    try {
-      const response = await axios.get(
-        `/api/voucher/next-vr-no?tran_code=${tran_code}`
-      );
-      return response.data.nextVrNo;
-    } catch (error) {
-      console.error("Error fetching next voucher number:", error);
-      return "";
-    }
-  };
+  }, [getRequiredOptionTypes, voucherConfig]);
 
   useEffect(() => {
     fetchOptions();
   }, [fetchOptions]);
 
+  // Initialize master data
   useEffect(() => {
     if (!voucherConfig.masterFields) return;
 
@@ -168,6 +344,29 @@ export default function VoucherForm({ type, onClose }) {
     setMasterData(defaultMasterData);
   }, [voucherConfig]);
 
+  // Fetch next voucher number
+  const fetchNextVrNo = async (tran_code) => {
+    try {
+      setLoading((prev) => ({ ...prev, vrNo: true }));
+      setErrors((prev) => ({ ...prev, vrNo: null }));
+
+      const response = await axios.get(
+        `/api/voucher/next-vr-no?tran_code=${tran_code}`
+      );
+      return response.data.nextVrNo;
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message;
+      setErrors((prev) => ({
+        ...prev,
+        vrNo: `Failed to get voucher number: ${errorMsg}`,
+      }));
+      toast.error("Error fetching next voucher number");
+      return "";
+    } finally {
+      setLoading((prev) => ({ ...prev, vrNo: false }));
+    }
+  };
+
   useEffect(() => {
     if (
       voucherConfig.masterFields?.some(
@@ -182,17 +381,35 @@ export default function VoucherForm({ type, onClose }) {
     }
   }, [voucherConfig]);
 
+  // Calculate totals
   useEffect(() => {
     if (!voucherConfig.totals) return;
 
+    // Use memo to avoid unnecessary recalculations
     const calculatedTotals = Object.entries(voucherConfig.totals).reduce(
       (acc, [key, config]) => {
-        const lines = key === "deductionTotal" ? deductionLines : mainLines;
-        acc[key] = config.calculate(lines, acc) || 0;
+        // Only calculate if this is the first run or if relevant data changed
+        if (
+          !totals[key] ||
+          (key === "deductionTotal" &&
+            JSON.stringify(deductionLines) !== prevDeductionLinesRef.current) ||
+          (key !== "deductionTotal" &&
+            JSON.stringify(mainLines) !== prevMainLinesRef.current)
+        ) {
+          const lines = key === "deductionTotal" ? deductionLines : mainLines;
+          acc[key] = config.calculate(lines, acc) || 0;
+        } else {
+          // Reuse existing value
+          acc[key] = totals[key];
+        }
         return acc;
       },
       {}
     );
+
+    // Store references for comparison
+    prevMainLinesRef.current = JSON.stringify(mainLines);
+    prevDeductionLinesRef.current = JSON.stringify(deductionLines);
 
     setTotals(calculatedTotals);
   }, [mainLines, deductionLines, voucherConfig]);
@@ -202,7 +419,10 @@ export default function VoucherForm({ type, onClose }) {
       ...prev,
       [name]: value === "placeholder" ? "" : value,
     }));
-    setErrors((prev) => ({ ...prev, validation: null }));
+    setErrors((prev) => ({
+      ...prev,
+      validation: { ...prev.validation, [name]: null },
+    }));
   };
 
   const calculateFieldValue = (line, fieldConfig) => {
@@ -252,7 +472,18 @@ export default function VoucherForm({ type, onClose }) {
     if (isMain) setMainLines(lines);
     else setDeductionLines(lines);
 
-    setErrors((prev) => ({ ...prev, validation: null }));
+    // Use a more reliable identifier that won't break when rows are reordered
+    // Store errors using a data attribute or other unique identifier instead of index
+    setErrors((prev) => {
+      const newValidation = { ...prev.validation };
+      // Use line's internal ID or create one if needed
+      const lineId = newLine.id || `${isMain ? "main" : "deduction"}-${index}`;
+      delete newValidation[`${lineId}-${fieldName}`];
+      return {
+        ...prev,
+        validation: newValidation,
+      };
+    });
   };
 
   const addLine = (isMain = true) => {
@@ -270,9 +501,13 @@ export default function VoucherForm({ type, onClose }) {
     else setDeductionLines([...deductionLines, newLine]);
   };
 
+  // Update removeLine function (around line 287)
   const removeLine = (index, isMain = true) => {
     const lines = isMain ? [...mainLines] : [...deductionLines];
     if (lines.length <= 1) return;
+
+    // Get the line being removed to clear its errors
+    const removedLine = lines[index];
 
     lines.splice(index, 1);
     if (isMain) setMainLines(lines);
@@ -281,6 +516,22 @@ export default function VoucherForm({ type, onClose }) {
     setSelectedRows((prev) =>
       prev.filter((k) => k !== `${isMain ? "main" : "deduction"}-${index}`)
     );
+
+    // Clear errors related to the removed line
+    setErrors((prev) => {
+      const newValidation = { ...prev.validation };
+      // Remove any errors that start with this line's identifier
+      const prefix = `${isMain ? "main" : "deduction"}-${index}`;
+      Object.keys(newValidation).forEach((key) => {
+        if (key.startsWith(prefix)) {
+          delete newValidation[key];
+        }
+      });
+      return {
+        ...prev,
+        validation: newValidation,
+      };
+    });
   };
 
   const toggleRowSelection = (index, isMain = true) => {
@@ -319,30 +570,62 @@ export default function VoucherForm({ type, onClose }) {
   };
 
   const validateForm = () => {
+    const newErrors = {};
     const missingFields = (
       voucherConfig.masterFields?.filter((f) => f.required) || []
     )
       .filter((f) => !masterData[f.formName || f.name]?.toString().trim())
-      .map((f) => f.label);
+      .map((f) => f.formName || f.name);
 
-    if (missingFields.length) {
-      setErrors((prev) => ({
-        ...prev,
-        validation: `Required fields missing: ${missingFields.join(", ")}`,
-      }));
-      return false;
-    }
+    missingFields.forEach((field) => {
+      newErrors[field] = `${
+        voucherConfig.masterFields.find((f) => (f.formName || f.name) === field)
+          .label
+      } is required`;
+    });
 
+    // Check if any line items exist
     if (
       !mainLines.some((line) =>
         Object.values(line).some((v) => v?.toString().trim())
       )
     ) {
-      setErrors((prev) => ({
-        ...prev,
-        validation: "At least one line item is required.",
-      }));
-      return false;
+      newErrors.mainLines = "At least one line item is required";
+    } else {
+      // Validate required fields in each line item
+      mainLines.forEach((line, index) => {
+        const linePrefix = `main-${index}`;
+        (voucherConfig.lineFields?.filter((f) => f.required) || []).forEach(
+          (field) => {
+            const fieldName = field.formName || field.name;
+            if (!line[fieldName]?.toString().trim()) {
+              newErrors[
+                `${linePrefix}-${fieldName}`
+              ] = `${field.label} is required`;
+            }
+          }
+        );
+      });
+
+      // Do the same for deduction lines if they exist
+      if (voucherConfig.hasDeductionBlock) {
+        deductionLines.forEach((line, index) => {
+          // Only validate non-empty deduction lines
+          if (Object.values(line).some((v) => v?.toString().trim())) {
+            const linePrefix = `deduction-${index}`;
+            (
+              voucherConfig.deductionFields?.filter((f) => f.required) || []
+            ).forEach((field) => {
+              const fieldName = field.formName || field.name;
+              if (!line[fieldName]?.toString().trim()) {
+                newErrors[
+                  `${linePrefix}-${fieldName}`
+                ] = `${field.label} is required`;
+              }
+            });
+          }
+        });
+      }
     }
 
     if (voucherConfig.balanceCheck) {
@@ -353,20 +636,20 @@ export default function VoucherForm({ type, onClose }) {
         totals,
       };
       if (!voucherConfig.balanceCheck.condition(formData)) {
-        const errorMsg = typeof voucherConfig.balanceCheck.errorMessage === 'function'
-          ? voucherConfig.balanceCheck.errorMessage(formData)
-          : voucherConfig.balanceCheck.errorMessage;
-        setErrors((prev) => ({
-          ...prev,
-          validation: errorMsg,
-        }));
-        return false;
+        const errorMsg =
+          typeof voucherConfig.balanceCheck.errorMessage === "function"
+            ? voucherConfig.balanceCheck.errorMessage(formData)
+            : voucherConfig.balanceCheck.errorMessage;
+        newErrors.balance = errorMsg;
       }
     }
 
-    return true;
+    setErrors((prev) => ({
+      ...prev,
+      validation: newErrors,
+    }));
+    return Object.keys(newErrors).length === 0;
   };
-
   const prepareFormData = () => ({
     master: { ...masterData, tran_code: voucherConfig.tran_code },
     lines: mainLines
@@ -383,7 +666,28 @@ export default function VoucherForm({ type, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+
+    // Check if any API operations are pending
+    if (loading.options || loading.vrNo) {
+      toast.error("Please wait for all operations to complete");
+      return;
+    }
+
+    if (!validateForm()) {
+      toast.error("Please fix validation errors");
+
+      // Scroll to the first error if any
+      const firstErrorField = Object.keys(errors.validation)[0];
+      if (firstErrorField) {
+        const element = document.querySelector(`[name="${firstErrorField}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          element.focus();
+        }
+      }
+
+      return;
+    }
 
     setLoading((prev) => ({ ...prev, submit: true }));
     setErrors((prev) => ({ ...prev, submit: null }));
@@ -391,83 +695,86 @@ export default function VoucherForm({ type, onClose }) {
     try {
       const formData = prepareFormData();
       await axios.post(apiMap[type], formData);
+      toast.success("Voucher saved successfully");
       onClose();
     } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message;
       setErrors((prev) => ({
         ...prev,
-        submit: `Failed to save: ${
-          error.response?.data?.message || error.message
-        }`,
+        submit: `Failed to save: ${errorMsg}`,
       }));
+      toast.error(`Failed to save: ${errorMsg}`);
     } finally {
       setLoading((prev) => ({ ...prev, submit: false }));
     }
   };
 
-  const getSelectOptions = (optionsType, valueKey = 'id', nameKey = 'name') => {
-    const options = optionsData[optionsType];
-    
-    if (!options || !Array.isArray(options)) {
-      console.warn(`No options available for ${optionsType} or not an array`);
-      return [];
-    }
-    
-    return options.map(opt => ({
-      value: opt[valueKey]?.toString() || '',
-      label: opt[nameKey] || opt.title || opt[valueKey]?.toString() || ''
+  const getSelectOptions = (optionsType, valueKey = "id", nameKey = "name") => {
+    const options = optionsData[optionsType] || [];
+    return options.map((opt) => ({
+      value: opt[valueKey]?.toString() || "",
+      label: opt[nameKey] || opt.title || opt[valueKey]?.toString() || "",
     }));
-  }
+  };
 
-  const renderSelectField = (field, value, onChange, optionsType) => {
+  const renderSelectField = (
+    field,
+    value,
+    onChange,
+    optionsType,
+    isMaster = true,
+    index = 0,
+    isMain = true
+  ) => {
     const options = getSelectOptions(
       optionsType,
       field.valueKey,
       field.nameKey
     );
+    const fieldName = field.formName || field.name;
 
     return (
-      <Select
-        value={value?.toString() || ""}
+      <SearchableSelect
+        value={value}
         onValueChange={(v) => {
           if (v === "add_new") {
             setModalType(optionsType);
             setModalField(field);
             setModalOpen(true);
           } else {
-            onChange(v);
+            onChange(fieldName, v);
           }
         }}
-      >
-        <SelectTrigger className="h-8 text-xs">
-          <SelectValue placeholder={`Select ${field.label}`} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="placeholder" className="text-gray-400">
-            Select {field.label}
-          </SelectItem>
-          {options.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value} className="text-xs">
-              {opt.label}
-            </SelectItem>
-          ))}
-          <SelectItem value="add_new" className="text-blue-600">
-            Add New {field.label}
-          </SelectItem>
-        </SelectContent>
-      </Select>
+        options={options}
+        placeholder={`Select ${field.label}`}
+        label={field.label}
+        required={field.required}
+        error={
+          isMaster
+            ? errors.validation[fieldName]
+            : errors.validation[
+                `${isMain ? "main" : "deduction"}-${index}-${fieldName}`
+              ]
+        }
+      />
     );
   };
 
   const renderInputField = (line, fieldConfig, index, isMain) => {
     const fieldName = fieldConfig.formName || fieldConfig.name;
     const value = calculateFieldValue(line, fieldConfig);
+    const Icon =
+      ICON_MAP[fieldConfig.name] || ICON_MAP[fieldConfig.type] || FileText;
 
     if (fieldConfig.type === "select") {
       return renderSelectField(
         fieldConfig,
         line[fieldName],
-        (v) => handleLineChange(index, fieldName, v, isMain),
-        fieldConfig.options
+        (name, v) => handleLineChange(index, name, v, isMain),
+        fieldConfig.options,
+        false,
+        index,
+        isMain
       );
     }
 
@@ -476,11 +783,43 @@ export default function VoucherForm({ type, onClose }) {
         ? "number"
         : fieldConfig.type === "date"
         ? "date"
+        : fieldConfig.type === "time"
+        ? "time"
         : "text";
     const isReadOnly = fieldConfig.calculate && fieldConfig.dependencies;
 
+    if (fieldConfig.type === "textarea") {
+      return (
+        <div className="space-y-1">
+          <Label className="text-xs text-gray-700">{fieldConfig.label}</Label>
+          <Textarea
+            value={value || ""}
+            onChange={(e) =>
+              handleLineChange(index, fieldName, e.target.value, isMain)
+            }
+            readOnly={isReadOnly}
+            disabled={loading.submit || isReadOnly}
+            className="h-16 text-xs w-full rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+          />
+          {errors.validation[
+            `${isMain ? "main" : "deduction"}-${index}-${fieldName}`
+          ] && (
+            <p className="text-xs text-red-500">
+              {
+                errors.validation[
+                  `${isMain ? "main" : "deduction"}-${index}-${fieldName}`
+                ]
+              }
+            </p>
+          )}
+        </div>
+      );
+    }
+
     return (
-      <Input
+      <FormInput
+        icon={Icon}
+        label={fieldConfig.label}
         type={inputType}
         value={
           fieldConfig.type === "number" && typeof value === "number"
@@ -492,41 +831,69 @@ export default function VoucherForm({ type, onClose }) {
         }
         readOnly={isReadOnly}
         disabled={loading.submit || isReadOnly}
-        className="h-8 text-xs w-full"
+        className="h-8 text-xs w-full px-8" // Add px-8 for proper icon padding
+        error={
+          errors.validation[
+            `${isMain ? "main" : "deduction"}-${index}-${fieldName}`
+          ]
+        }
       />
     );
   };
 
   const renderMasterFields = () => (
     <motion.div
-      className="flex flex-wrap gap-4 p-4 bg-gray-50 rounded-lg"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
     >
       {voucherConfig.masterFields
         ?.filter((f) => f.name !== "tran_code")
         .map((field) => {
           const fieldName = field.formName || field.name;
+          const Icon = ICON_MAP[field.name] || ICON_MAP[field.type] || FileText;
+
           return (
             <motion.div
               key={fieldName}
               className="flex flex-col space-y-1 min-w-[160px] flex-1"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.2 }}
             >
-              <Label className="text-xs text-gray-700">
-                {field.label}
-                {field.required && <span className="text-red-500">*</span>}
-              </Label>
               {field.type === "select" ? (
                 renderSelectField(
                   field,
                   masterData[fieldName],
-                  (v) => handleMasterChange(fieldName, v),
-                  field.options
+                  handleMasterChange,
+                  field.options,
+                  true
                 )
+              ) : field.type === "textarea" ? (
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-700">
+                    {field.label}
+                    {field.required && <span className="text-red-500">*</span>}
+                  </Label>
+                  <Textarea
+                    value={masterData[fieldName] || ""}
+                    onChange={(e) =>
+                      handleMasterChange(fieldName, e.target.value)
+                    }
+                    disabled={loading.submit}
+                    className="h-16 text-sm rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  {errors.validation[fieldName] && (
+                    <p className="text-xs text-red-500">
+                      {errors.validation[fieldName]}
+                    </p>
+                  )}
+                </div>
               ) : (
-                <Input
+                <FormInput
+                  icon={Icon}
+                  label={field.label}
                   type={field.type}
                   value={
                     field.name === "vr_no" && field.autoGenerate
@@ -543,7 +910,8 @@ export default function VoucherForm({ type, onClose }) {
                       field.autoGenerate &&
                       loading.vrNo)
                   }
-                  className="h-9 text-sm"
+                  required={field.required}
+                  error={errors.validation[fieldName]}
                 />
               )}
             </motion.div>
@@ -579,6 +947,7 @@ export default function VoucherForm({ type, onClose }) {
         className="mt-6 border rounded-lg bg-white shadow-sm"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
       >
         <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-3 flex justify-between items-center text-white rounded-t-lg">
           <div className="flex items-center gap-2">
@@ -589,7 +958,11 @@ export default function VoucherForm({ type, onClose }) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => deleteSelectedRows(isMain)}
+              onClick={(e) => {
+                e.preventDefault(); // Prevent form submission
+                e.stopPropagation(); // Stop event bubbling
+                deleteSelectedRows(isMain);
+              }}
               disabled={
                 !selectedRows.some((k) => k.startsWith(prefix)) ||
                 loading.submit
@@ -601,7 +974,11 @@ export default function VoucherForm({ type, onClose }) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => addLine(isMain)}
+              onClick={(e) => {
+                e.preventDefault(); // Prevent form submission
+                e.stopPropagation(); // Stop event bubbling
+                addLine(isMain);
+              }}
               disabled={loading.submit}
               className="bg-white text-blue-600 hover:bg-blue-100"
             >
@@ -624,6 +1001,7 @@ export default function VoucherForm({ type, onClose }) {
                     }
                     onChange={() => toggleAllRowSelection(isMain)}
                     disabled={loading.submit}
+                    className="cursor-pointer"
                   />
                 </th>
                 <th className="p-2 w-10">#</th>
@@ -643,11 +1021,20 @@ export default function VoucherForm({ type, onClose }) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
                     className={`border-b hover:bg-gray-50 ${
                       selectedRows.includes(`${prefix}-${idx}`)
                         ? "bg-blue-50"
                         : ""
                     }`}
+                    onClick={() => toggleRowSelection(idx, isMain)}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        toggleRowSelection(idx, isMain);
+                      }
+                    }}
                   >
                     <td className="p-1 text-center">
                       <input
@@ -655,11 +1042,14 @@ export default function VoucherForm({ type, onClose }) {
                         checked={selectedRows.includes(`${prefix}-${idx}`)}
                         onChange={() => toggleRowSelection(idx, isMain)}
                         disabled={loading.submit}
+                        className="cursor-pointer"
                       />
                     </td>
                     <td className="p-1 text-center text-sm">{idx + 1}</td>
                     {fields.map((f) => (
-                      <td key={f.name} className="p-1 min-w-[120px]">
+                      <td key={f.name} className="p-2 min-w-[150px]">
+                        {" "}
+                        {/* Increased padding and min-width */}
                         {renderInputField(line, f, idx, isMain)}
                       </td>
                     ))}
@@ -667,7 +1057,11 @@ export default function VoucherForm({ type, onClose }) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeLine(idx, isMain)}
+                        onClick={(e) => {
+                          e.preventDefault(); // Prevent form submission
+                          e.stopPropagation(); // Stop event bubbling
+                          removeLine(idx, isMain);
+                        }}
                         disabled={loading.submit || lines.length <= 1}
                         className="text-red-500 hover:text-red-700"
                       >
@@ -689,14 +1083,20 @@ export default function VoucherForm({ type, onClose }) {
                   (!isMain && ["deductionTotal", "netTotal"].includes(k))
               )
               .map(([k, config]) => (
-                <div key={k} className="text-right">
+                <motion.div
+                  key={k}
+                  className="text-right"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
                   <span className="text-xs text-gray-700">
                     {config.label}:{" "}
                   </span>
                   <span className="text-blue-600 font-bold">
                     {totals[k]?.toFixed(2) || "0.00"}
                   </span>
-                </div>
+                </motion.div>
               ))}
           </div>
         )}
@@ -704,20 +1104,51 @@ export default function VoucherForm({ type, onClose }) {
     );
   };
 
-  const AddAccountModal = ({ onClose, onSave }) => {
-    const [accountData, setAccountData] = useState({
-      acname: "",
-      macno: "001",
-    });
+  const AddEntityModal = ({ onClose, onSave, entityType, fieldConfig }) => {
+    const [entityData, setEntityData] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [modalErrors, setModalErrors] = useState({});
+
+    // Initialize entity data based on modalFields
+    useEffect(() => {
+      const initialData = fieldConfig.modalFields.reduce(
+        (acc, field) => ({
+          ...acc,
+          [field.name]: field.type === "number" ? 0 : field.defaultValue || "",
+        }),
+        {}
+      );
+      setEntityData(initialData);
+    }, [fieldConfig.modalFields]);
+
+    const validateModal = () => {
+      const newErrors = {};
+      fieldConfig.modalFields.forEach((field) => {
+        if (field.required && !entityData[field.name]?.toString().trim()) {
+          newErrors[field.name] = `${field.label} is required`;
+        }
+      });
+      setModalErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+    };
 
     const handleSave = async () => {
+      if (!validateModal()) {
+        toast.error("Please fix validation errors");
+        return;
+      }
+
       try {
         setIsSubmitting(true);
-        const response = await axios.post("/api/accounts/acno", accountData);
+        const response = await axios.post(
+          fieldConfig.createEndpoint,
+          entityData
+        );
         onSave(response.data);
+        toast.success(`${fieldConfig.label} added successfully`);
+        onClose();
       } catch (error) {
-        console.error("Error adding account:", error);
+        toast.error(`Error adding ${fieldConfig.label}: ${error.message}`);
       } finally {
         setIsSubmitting(false);
       }
@@ -725,105 +1156,92 @@ export default function VoucherForm({ type, onClose }) {
 
     return (
       <Dialog open onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-xl">
           <DialogHeader>
-            <DialogTitle>Add New Account</DialogTitle>
+            <DialogTitle>Add New {fieldConfig.label}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <Label>Account Name</Label>
-              <Input
-                placeholder="Account Name"
-                value={accountData.acname}
-                onChange={(e) =>
-                  setAccountData({ ...accountData, acname: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Main Account</Label>
-              <Select
-                value={accountData.macno}
-                onValueChange={(v) =>
-                  setAccountData({ ...accountData, macno: v })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Main Account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {optionsData.accounts.map((a) => (
-                    <SelectItem key={a.acno} value={a.acno}>
-                      {a.acname}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
+          <motion.div
+            className="space-y-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            {fieldConfig.modalFields.map((field) => {
+              const Icon =
+                ICON_MAP[field.name] || ICON_MAP[field.type] || FileText;
+              return (
+                <div key={field.name} className="space-y-1">
+                  {field.type === "select" ? (
+                    <SearchableSelect
+                      value={entityData[field.name]}
+                      onValueChange={(v) =>
+                        setEntityData({ ...entityData, [field.name]: v })
+                      }
+                      options={getSelectOptions(
+                        field.options,
+                        field.valueKey,
+                        field.nameKey
+                      )}
+                      placeholder={`Select ${field.label}`}
+                      label={field.label}
+                      required={field.required}
+                      error={modalErrors[field.name]}
+                    />
+                  ) : field.type === "textarea" ? (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-gray-700">
+                        {field.label}
+                        {field.required && (
+                          <span className="text-red-500">*</span>
+                        )}
+                      </Label>
+                      <Textarea
+                        value={entityData[field.name] || ""}
+                        onChange={(e) =>
+                          setEntityData({
+                            ...entityData,
+                            [field.name]: e.target.value,
+                          })
+                        }
+                        className="h-16 text-xs w-full rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        disabled={isSubmitting}
+                      />
+                      {modalErrors[field.name] && (
+                        <p className="text-xs text-red-500">
+                          {modalErrors[field.name]}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <FormInput
+                      icon={Icon}
+                      label={field.label}
+                      type={field.type}
+                      value={entityData[field.name] || ""}
+                      onChange={(e) =>
+                        setEntityData({
+                          ...entityData,
+                          [field.name]: e.target.value,
+                        })
+                      }
+                      required={field.required}
+                      disabled={isSubmitting}
+                      error={modalErrors[field.name]}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </motion.div>
+          <DialogFooter className="flex flex-col sm:flex-row gap-4">
             <Button
               onClick={handleSave}
               className="bg-blue-600 hover:bg-blue-700"
-              disabled={isSubmitting || !accountData.acname.trim()}
+              disabled={isSubmitting}
             >
               {isSubmitting ? "Saving..." : "Save"}
             </Button>
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  };
-
-  const AddCostCenterModal = ({ onClose, onSave }) => {
-    const [costCenterData, setCostCenterData] = useState({ ccname: "" });
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const handleSave = async () => {
-      try {
-        setIsSubmitting(true);
-        const response = await axios.post("/api/setup/cost_centers", costCenterData);
-        onSave(response.data);
-      } catch (error) {
-        console.error("Error adding cost center:", error);
-      } finally {
-        setIsSubmitting(false);
-      }
-    };
-
-    return (
-      <Dialog open onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add New Cost Center</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <Label>Cost Center Name</Label>
-              <Input
-                placeholder="Cost Center Name"
-                value={costCenterData.ccname}
-                onChange={(e) =>
-                  setCostCenterData({
-                    ...costCenterData,
-                    ccname: e.target.value,
-                  })
-                }
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              onClick={handleSave}
-              className="bg-blue-600 hover:bg-blue-700"
-              disabled={isSubmitting || !costCenterData.ccname.trim()}
-            >
-              {isSubmitting ? "Saving..." : "Save"}
-            </Button>
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
           </DialogFooter>
@@ -848,26 +1266,31 @@ export default function VoucherForm({ type, onClose }) {
   }
 
   return (
-    <div className="min-w-[320px] max-w-full bg-gray-100 min-h-screen p-4">
-      <motion.div
-        className="mb-4 flex justify-between items-center"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h1 className="text-2xl font-bold text-gray-800">
-          {type.charAt(0).toUpperCase() + type.slice(1)} Voucher
-        </h1>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onClose}
-          className="hover:bg-gray-200"
+    <div className="min-w-[320px] max-w-full min-h-screen p-1 ">
+      <Toaster richColors />
+      {loading.options && (
+        <motion.div
+          className="flex justify-center mb-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
         >
-          <X className="h-4 w-4 mr-1" />
-          Close
-        </Button>
-      </motion.div>
-
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full"
+          />
+        </motion.div>
+      )}
+      {Object.values(errors.validation).some(Boolean) && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Validation Error</AlertTitle>
+          <AlertDescription>
+            {Object.values(errors.validation).filter(Boolean).join("; ")}
+          </AlertDescription>
+        </Alert>
+      )}
       {errors.options && (
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
@@ -875,15 +1298,6 @@ export default function VoucherForm({ type, onClose }) {
           <AlertDescription>{errors.options}</AlertDescription>
         </Alert>
       )}
-
-      {errors.validation && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{errors.validation}</AlertDescription>
-        </Alert>
-      )}
-
       {errors.submit && (
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
@@ -891,7 +1305,6 @@ export default function VoucherForm({ type, onClose }) {
           <AlertDescription>{errors.submit}</AlertDescription>
         </Alert>
       )}
-
       <form onSubmit={handleSubmit}>
         <Card className="mb-6 shadow-sm">
           <CardHeader className="bg-gray-50 border-b">
@@ -901,23 +1314,27 @@ export default function VoucherForm({ type, onClose }) {
           </CardHeader>
           <CardContent className="p-0">{renderMasterFields()}</CardContent>
         </Card>
-
         {renderTable(true)}
         {voucherConfig.hasDeductionBlock && renderTable(false)}
-
-        <div className="mt-6 flex justify-end gap-3">
+        <motion.div
+          className="mt-6 flex justify-end gap-3"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={loading.submit}
+            className="rounded-md border-gray-300 text-gray-700 hover:bg-gray-100"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={loading.submit || loading.options || loading.vrNo}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="rounded-md bg-blue-600 hover:bg-blue-700 text-white"
           >
             {loading.submit ? (
               <>
@@ -931,40 +1348,60 @@ export default function VoucherForm({ type, onClose }) {
               </>
             )}
           </Button>
-        </div>
+        </motion.div>
       </form>
-
-      {modalOpen && modalType === "accounts" && (
-        <AddAccountModal
+      {modalOpen && (
+        <AddEntityModal
           onClose={() => setModalOpen(false)}
-          onSave={(newAccount) => {
+          onSave={(newEntity) => {
+            // Add the new entity to options data
             setOptionsData((prev) => ({
               ...prev,
-              accounts: [...prev.accounts, newAccount],
+              [modalType]: [...prev[modalType], newEntity],
             }));
-            handleMasterChange(
-              modalField.formName || modalField.name,
-              newAccount.acno
-            );
-            setModalOpen(false);
-          }}
-        />
-      )}
 
-      {modalOpen && modalType === "costCenters" && (
-        <AddCostCenterModal
-          onClose={() => setModalOpen(false)}
-          onSave={(newCostCenter) => {
-            setOptionsData((prev) => ({
-              ...prev,
-              costCenters: [...prev.costCenters, newCostCenter],
-            }));
-            handleMasterChange(
-              modalField.formName || modalField.name,
-              newCostCenter.ccno
-            );
+            // Update the field value
+            const fieldName = modalField.formName || modalField.name;
+            const newValue = newEntity[modalField.valueKey];
+
+            // Update in the appropriate location (master or line item)
+            if (modalField.container === "master") {
+              handleMasterChange(fieldName, newValue);
+
+              // Also update any dependent fields
+              voucherConfig.masterFields
+                ?.filter((f) => f.dependencies?.includes(fieldName))
+                .forEach((depField) => {
+                  const depName = depField.formName || depField.name;
+                  if (depField.calculate) {
+                    const dependencies = depField.dependencies.reduce(
+                      (acc, dep) => ({
+                        ...acc,
+                        [dep]:
+                          dep === fieldName ? newValue : masterData[dep] || 0,
+                      }),
+                      {}
+                    );
+                    handleMasterChange(
+                      depName,
+                      depField.calculate(dependencies) || 0
+                    );
+                  }
+                });
+            } else if (modalField.lineIndex !== undefined) {
+              const isMain = modalField.container === "main";
+              handleLineChange(
+                modalField.lineIndex,
+                fieldName,
+                newValue,
+                isMain
+              );
+            }
+
             setModalOpen(false);
           }}
+          entityType={modalType}
+          fieldConfig={modalField}
         />
       )}
     </div>

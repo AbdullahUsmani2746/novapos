@@ -1,0 +1,39 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build --no-cache . -t ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest --platform linux/amd64
+
+      - name: Push Docker image to GHCR
+        run: |
+          docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/accoutning:latest
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 2746
+          script: |
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+            docker stop accounting || true
+            docker rm accounting || true
+            docker image rm ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest || true
+            docker pull ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest
+            docker run -d --env-file .env -p 3001:3001 --name accounting ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest

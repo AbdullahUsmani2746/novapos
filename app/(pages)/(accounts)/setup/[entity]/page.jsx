@@ -54,7 +54,7 @@ const DynamicEntityPage = () => {
       console.log("im here")
       return {
         ...field,
-        options: relatedData[field.name]?.map((item) => ({
+        options:relatedData?.length > 0 && relatedData[field.name]?.map((item) => ({
           label: item[field.optionLabelKey],
           value: item[field.optionValueKey],
         })),
