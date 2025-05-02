@@ -31,6 +31,7 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: 2746
           script: |
+            cd accounting
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
             docker stop accounting || true
             docker rm accounting || true
