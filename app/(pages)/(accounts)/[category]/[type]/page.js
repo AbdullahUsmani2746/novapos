@@ -62,7 +62,7 @@ export default function DynamicVoucherPage({ params: paramsPromise}) {
       try {
         setIsLoading(true)
         
-        const res = await axios.get(`/api/${params.category}/${typeConfig.apiPath}`)
+        const res = await axios.get(`/api/voucher/${typeConfig.apiPath}`)
         const data = await res.data
         console.log('Fetched data:', data)
         

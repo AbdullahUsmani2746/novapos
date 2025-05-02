@@ -269,12 +269,13 @@ model Transactions {
   godown             Int?
   invoice_no         String?            @db.Char(150)
   sub_tran_id        Int?                @default(1)
-  currency           Int?             
+  currency           Int?  
+  gross_amount       Float?           
   fc_amount          Float?
-  no_of_pack         Int?
-  qty_per_pack       Int?
-  st_amount          Int?
-  additional_tax     Int?
+  no_of_pack         Float?
+  qty_per_pack       Float?
+  st_amount          Float?
+  additional_tax     Float?
   acnoDetails        ACNO?               @relation(fields: [acno], references: [acno])
   costCenter         CostCenter?         @relation(fields: [ccno], references: [ccno])
   currencyDetails    Currency?           @relation(fields: [currency], references: [id])

@@ -73,10 +73,16 @@ export async function POST(req, { params }) {
       return NextResponse.json({ message: 'Deductions must be a valid array if provided' }, { status: 400 })
     }
 
+ 
+    const parseOptionalInt = (value) => {
+      if (value === null || value === undefined || value === '') return null;
+      const parsed = parseInt(value, 10);
+      return isNaN(parsed) ? null : parsed;
+    };
 
     let masterDateTime;
     let masterCheckDateTime;
-    if(tran_code=== 2 || tran_code=== 1){
+    if(tran_code=== 2 || tran_code=== 1 || tran_code=== 6  || tran_code=== 4 ){
      masterCheckDateTime = new Date(`${master.check_date}T${master.time}`);
      masterDateTime = new Date(`${master.dateD}T${master.time}`);
 
@@ -84,6 +90,10 @@ export async function POST(req, { params }) {
     master.dateD = masterDateTime; // Format date as YYYY-MM-DD
     master.time = masterDateTime; // Format time as HH:MM:SS
     master.check_date = masterCheckDateTime; // Format check_date as YYYY-MM-DD HH:MM:SS
+
+    if(tran_code=== 4 || tran_code=== 6 ){
+      master.godown = parseOptionalInt(master.godown); 
+    }// Format check_date as YYYY-MM-DD HH:MM:SS
     }
     else if(tran_code=== 3 ){
       console.log('masterDate:', master.dateD)
@@ -94,6 +104,7 @@ export async function POST(req, { params }) {
     }
     console.log('master after:', master)
 
+   
     const masterData = await prisma.transactionsMaster.create({
       data:master
     })
@@ -101,11 +112,6 @@ export async function POST(req, { params }) {
     console.log('masterData:', masterData.tran_id)
 
 
-    const parseOptionalInt = (value) => {
-      if (value === null || value === undefined || value === '') return null;
-      const parsed = parseInt(value, 10);
-      return isNaN(parsed) ? null : parsed;
-    };
 
 
 
@@ -114,20 +120,34 @@ export async function POST(req, { params }) {
         const base = {
           ...line,
           tran_id: masterData.tran_id,
-          ccno: parseOptionalInt(line.ccno),
           sub_tran_id: 1,
         }
     
-        if (tran_code === 1 || tran_code === 2) {
+        // Handle currency for tran_code 1 or 2
+        if ([1, 2].includes(tran_code)) {
           const currencyValue = parseOptionalInt(line.currency)
           if (currencyValue !== undefined) {
             base.currency = currencyValue
           }
         }
-
-        console.log('base:', base)
-        
     
+        // Handle cost center for tran_code 1, 2, or 3
+        if ([1, 2, 3].includes(tran_code)) {
+          const costCenterValue = parseOptionalInt(line.ccno)
+          if (costCenterValue !== undefined) {
+            base.ccno = costCenterValue
+          }
+        }
+    
+        // Handle item code for tran_code 4 or 6
+        if ([4, 6].includes(tran_code)) {
+          const itemValue = parseOptionalInt(line.itcd)
+          if (itemValue !== undefined) {
+            base.itcd = itemValue
+          }
+        }
+    
+        console.log('base:', base)
         return base
       }),
     })
