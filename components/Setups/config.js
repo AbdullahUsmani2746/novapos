@@ -48,6 +48,7 @@ const entityConfig = {
         name: "company_id",
         label: "Company",
         fieldType: "select",
+        options:true,
         fetchFrom: "/api/setup/companies",
         optionLabelKey: "company",
         optionValueKey: "id",

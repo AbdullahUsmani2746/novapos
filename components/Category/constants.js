@@ -516,7 +516,7 @@ export const VOUCHER_CONFIG = {
         nameKey: "godown",
         valueKey: "id",
         modalFields: [
-          { name: "name", label: "Godown Name", type: "text", required: true },
+          { name: "godown", label: "Godown Name", type: "text", required: true },
         ],
       },
       { name: "rmk2", label: "Delivery No", type: "text" },
@@ -558,6 +558,8 @@ export const VOUCHER_CONFIG = {
         valueKey: "itcd",
         modalFields: [
           { name: "item", label: "Product Name", type: "text", required: true },
+          
+
         ],
       },
       { name: "no_of_pack", label: "No of Packs", type: "number" },

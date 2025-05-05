@@ -54,6 +54,8 @@ export async function POST(request) {
       crLimit,
       salesArea
     } = body;
+
+    console.log('body:', body);
     
     if (!macno || !acno || !acname) {
       return NextResponse.json(
@@ -63,7 +65,7 @@ export async function POST(request) {
     }
 
     const parentExists = await prisma.mACNO.findUnique({
-      where: { macno: macno },
+      where: { macno: parseInt(macno) },
     });
 
     if (!parentExists) {

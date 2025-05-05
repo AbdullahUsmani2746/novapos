@@ -32,7 +32,6 @@ export async function GET(req, { params }) {
 }
 
 export async function POST(req, { params }) {
-  console.log("params..", params)
   const { entity } = await params;
   const config = entityModelMap[entity];
 
@@ -42,8 +41,16 @@ export async function POST(req, { params }) {
 
   try {
     const body = await req.json();
+
+    console.log("body", body);
+    body.company_id = 1;
+
+   
+
+    // console.log("body..", config.fields(body))
+
     const newItem = await config.model.create({
-      data: config.fields(body),
+      data: body,
     });
     return Response.json(newItem);
   } catch (error) {

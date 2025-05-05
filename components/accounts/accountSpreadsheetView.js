@@ -1,209 +1,323 @@
 "use client"
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { File, FileText } from "lucide-react"
 import axios from "axios"
-import { motion, AnimatePresence } from "framer-motion"
-
-// Dynamic imports for performance
-let html2pdf
-let XLSX
+import { toast } from 'sonner'
+import html2pdf from 'html2pdf.js'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 const SiegwerkAccountsView = () => {
   const [loading, setLoading] = useState(true)
+  const [exportLoading, setExportLoading] = useState(false)
   const [accountData, setAccountData] = useState([])
   const [error, setError] = useState(null)
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const itemsPerPage = 20
 
-  useEffect(() => {
-    Promise.all([
-      import('html2pdf.js'),
-      import('xlsx')
-    ]).then(([html2pdfModule, XLSXModule]) => {
-      html2pdf = html2pdfModule.default
-      XLSX = XLSXModule
-    }).catch(err => console.error("Error loading modules:", err))
-
-    fetchAccountData()
-  }, [])
-
-  const fetchAccountData = async () => {
+  // Fetch account data with pagination
+  const fetchAccountData = useCallback(async (page = 1) => {
     try {
       setLoading(true)
       setError(null)
 
-      // Fetch all data concurrently from the four endpoints
-      const [mbscdRes, bscdRes, macnoRes, acnoRes] = await Promise.all([
-        axios.get("/api/accounts/mbscd"),
-        axios.get("/api/accounts/bscd"),
-        axios.get("/api/accounts/macno"),
-        axios.get("/api/accounts/acno")
-      ])
-
-      const mbscdData = mbscdRes.data.data
-      const bscdData = bscdRes.data.data
-      const macnoData = macnoRes.data.data
-      const acnoData = acnoRes.data.data
-
-      // Build the hierarchical structure on the frontend
-      const formattedData = []
-
-      for (const l1 of mbscdData) {
-        // Filter level 2 (bscd) for this mbscd
-        const level2Items = bscdData.filter(l2 => l2.mbscd === l1.bscd)
-
-        for (const l2 of level2Items) {
-          // Filter level 3 (macno) for this bscd
-          const level3Items = macnoData.filter(l3 => l3.bscd === l2.bscd)
-
-          for (const l3 of level3Items) {
-            // Filter level 4 (acno) for this macno
-            const level4Items = acnoData.filter(l4 => l4.macno === l3.macno)
-
-            formattedData.push({
-              balanceSheetCode: `${l1.bscd} ${l1.bscdDetail}`,
-              balanceSheetCategory: `${l2.bscd} ${l2.bscdDetail}`,
-              mainAccounts: `${l3.macno} ${l3.macname}`,
-              subAccounts: level4Items.map(acc => `${acc.acno} ${acc.acname}`)
-            })
-          }
-        }
+      // Get paginated data
+      const response = await axios.get(`/api/accounts/paged?page=${page}&limit=${itemsPerPage}`)
+      
+      if (response.data.success) {
+        setAccountData(response.data.data)
+        setTotalPages(Math.ceil(response.data.pagination.total / itemsPerPage))
+      } else {
+        throw new Error(response.data.message || "Failed to fetch data")
       }
-
-      setAccountData(formattedData)
     } catch (error) {
       console.error("Error fetching data:", error)
       setError("Failed to load account data. Please try again.")
+      toast.error("Error loading data", {
+        description: error.message || "Something went wrong. Please try again."
+      })
     } finally {
       setLoading(false)
     }
+  }, [])
+
+  // Handle page change
+  const handlePageChange = (page) => {
+    setCurrentPage(page)
+    fetchAccountData(page)
   }
 
-  const exportToExcel = () => {
-    if (!XLSX) return
+  // Initial data load
+  useEffect(() => {
+    fetchAccountData(currentPage)
+  }, [fetchAccountData, currentPage])
 
-    const flatData = accountData.flatMap(item => {
-      if (item.subAccounts.length === 0) {
-        return [{
+  // Export to Excel
+  const exportToExcel = async () => {
+    try {
+      setExportLoading(true)
+      
+      // Dynamically import XLSX
+      const XLSX = (await import('xlsx')).default
+      
+      // Fetch all data for export
+      const response = await axios.get('/api/accounts/all')
+      const exportData = response.data.data
+      
+      const flatData = exportData.flatMap(item => {
+        if (item.subAccounts.length === 0) {
+          return [{
+            'Balance Sheet Codes': item.balanceSheetCode,
+            'Balance Sheet Category': item.balanceSheetCategory,
+            'Main Accounts': item.mainAccounts,
+            'Sub Accounts': ''
+          }]
+        }
+        return item.subAccounts.map(subAccount => ({
           'Balance Sheet Codes': item.balanceSheetCode,
           'Balance Sheet Category': item.balanceSheetCategory,
           'Main Accounts': item.mainAccounts,
-          'Sub Accounts': ''
-        }]
-      }
-      return item.subAccounts.map(subAccount => ({
-        'Balance Sheet Codes': item.balanceSheetCode,
-        'Balance Sheet Category': item.balanceSheetCategory,
-        'Main Accounts': item.mainAccounts,
-        'Sub Accounts': subAccount
-      }))
-    })
+          'Sub Accounts': subAccount
+        }))
+      })
 
-    const ws = XLSX.utils.json_to_sheet(flatData)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, "Chart of Accounts")
-    
-    ws['!cols'] = [
-      { wch: 25 },
-      { wch: 35 },
-      { wch: 45 },
-      { wch: 45 }
-    ]
+      const ws = XLSX.utils.json_to_sheet(flatData)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, "Chart of Accounts")
+      
+      // Set column widths
+      ws['!cols'] = [
+        { wch: 25 },
+        { wch: 35 },
+        { wch: 45 },
+        { wch: 45 }
+      ]
 
-    XLSX.writeFile(wb, "chart-of-accounts.xlsx")
+      XLSX.writeFile(wb, "chart-of-accounts.xlsx")
+      
+      toast.success("Export Successful", {
+        description: "Your Excel file has been downloaded."
+      })
+    } catch (error) {
+      console.error("Export error:", error)
+      toast.error("Export Failed", {
+        description: "Failed to export to Excel. Please try again."
+      })
+    } finally {
+      setExportLoading(false)
+    }
   }
 
-  const exportToPDF = () => {
-    if (!html2pdf) return
-    
-    const element = document.getElementById('accounts-content')
-    const opt = {
-      margin: 0.5,
-      filename: 'chart-of-accounts.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+  // Export to PDF
+  const exportToPDF = async () => {
+    try {
+      setExportLoading(true)
+      
+      // Get all data for export
+      const response = await axios.get('/api/accounts/all')
+      const exportData = response.data.data
+
+
+      console.log("Export Data:", exportData)
+      
+      // Create a temporary div for PDF generation
+      const tempDiv = document.createElement('div')
+      tempDiv.id = 'pdf-content'
+      tempDiv.style.visibility = 'hidden'
+      tempDiv.style.position = 'absolute'
+      tempDiv.style.left = '-9999px'
+      document.body.appendChild(tempDiv)
+      
+      // Create PDF content with better formatting
+      tempDiv.innerHTML = `
+        <div style="padding: 20px; font-family: Arial, sans-serif;">
+          <h1 style="text-align: center; color: #4F46E5; margin-bottom: 20px;">Chart of Accounts</h1>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="background-color: #EEF2FF;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Balance Sheet Codes</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Balance Sheet Category</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Main Accounts</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Sub Accounts</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${exportData.map(item => `
+                <tr style="border-bottom: 1px solid #eee;">
+                  <td style="padding: 10px; border: 1px solid #ddd;">${item.balanceSheetCode}</td>
+                  <td style="padding: 10px; border: 1px solid #ddd;">${item.balanceSheetCategory}</td>
+                  <td style="padding: 10px; border: 1px solid #ddd;">${item.mainAccounts}</td>
+                  <td style="padding: 10px; border: 1px solid #ddd;">
+                    ${item.subAccounts.length > 0 
+                      ? item.subAccounts.map(sub => `<div style="margin-bottom: 5px;">${sub}</div>`).join('')
+                      : '<span style="color: #888;">No sub-accounts</span>'
+                    }
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `
+      
+      // Dynamically import html2pdf
+      
+      const opt = {
+        margin: 10,
+        filename: 'chart-of-accounts.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      }
+      
+      html2pdf().from(tempDiv).set(opt).save().then(() => {
+        // Clean up the temporary div
+        document.body.removeChild(tempDiv)
+        
+        toast.success("Export Successful", {
+          description: "Your PDF file has been downloaded."
+        })
+      })
+    } catch (error) {
+      console.error("PDF export error:", error)
+      toast.error("Export Failed", {
+        description: "Failed to export to PDF. Please try again."
+      })
+    } finally {
+      setExportLoading(false)
     }
-    html2pdf().set(opt).from(element).save()
+  }
+
+  // Generate pagination numbers
+  const paginationItems = () => {
+    const items = []
+    
+    // Always show first page
+    items.push(
+      <PaginationItem key="first">
+        <PaginationLink 
+          isActive={currentPage === 1}
+          onClick={() => handlePageChange(1)}
+        >
+          1
+        </PaginationLink>
+      </PaginationItem>
+    )
+    
+    // Add ellipsis if needed
+    if (currentPage > 3) {
+      items.push(
+        <PaginationItem key="ellipsis-1">
+          <PaginationEllipsis />
+        </PaginationItem>
+      )
+    }
+    
+    // Add pages around current page
+    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+      if (i <= totalPages - 1 && i >= 2) {
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink 
+              isActive={currentPage === i}
+              onClick={() => handlePageChange(i)}
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        )
+      }
+    }
+    
+    // Add ellipsis if needed
+    if (currentPage < totalPages - 2) {
+      items.push(
+        <PaginationItem key="ellipsis-2">
+          <PaginationEllipsis />
+        </PaginationItem>
+      )
+    }
+    
+    // Always show last page if there's more than one page
+    if (totalPages > 1) {
+      items.push(
+        <PaginationItem key="last">
+          <PaginationLink 
+            isActive={currentPage === totalPages}
+            onClick={() => handlePageChange(totalPages)}
+          >
+            {totalPages}
+          </PaginationLink>
+        </PaginationItem>
+      )
+    }
+    
+    return items
   }
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8"
-    >
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <motion.div 
-          initial={{ y: -20 }}
-          animate={{ y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="text-center bg-indigo-50 py-6 rounded-2xl shadow-sm"
-        >
-          <h1 className="text-3xl font-bold text-indigo-800">SIEGWERK PAKISTAN LIMITED</h1>
-          <h2 className="text-xl font-semibold text-indigo-600 mt-2">Chart of Accounts</h2>
-        </motion.div>
+        <div className="text-center bg-indigo-50 py-6 rounded-2xl shadow-sm">
+          <h1 className="text-3xl font-bold text-indigo-800">Chart of Accounts</h1>
+        </div>
 
         {/* Export Buttons */}
-        <motion.div 
-          initial={{ y: 20 }}
-          animate={{ y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-          className="flex flex-col sm:flex-row justify-end gap-3"
-        >
+        <div className="flex flex-col sm:flex-row justify-end gap-3">
           <Button 
             onClick={exportToExcel} 
             className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2 transition-colors"
-            disabled={loading}
+            disabled={loading || exportLoading}
           >
-            <FileText className="w-4 h-4" />
+            {exportLoading ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <FileText className="w-4 h-4" />
+            )}
             Export to Excel
           </Button>
           <Button 
             onClick={exportToPDF} 
             className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2 transition-colors"
-            disabled={loading}
+            disabled={loading || exportLoading}
           >
-            <File className="w-4 h-4" />
+            {exportLoading ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <File className="w-4 h-4" />
+            )}
             Export to PDF
           </Button>
-        </motion.div>
+        </div>
 
         {/* Accounts Table */}
         <Card className="overflow-hidden bg-white shadow-xl rounded-2xl">
           <CardContent className="p-0">
             <div id="accounts-content" className="overflow-x-auto">
-              <AnimatePresence>
-                {loading ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex items-center justify-center py-16"
-                  >
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full"
-                    />
-                  </motion.div>
-                ) : error ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center py-16 text-red-500"
-                  >
-                    {error}
-                  </motion.div>
-                ) : (
-                  <motion.table 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="w-full border-collapse"
-                  >
+              {loading ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : error ? (
+                <div className="text-center py-16 text-red-500">
+                  {error}
+                </div>
+              ) : (
+                <>
+                  <table className="w-full border-collapse">
                     <thead>
                       <tr className="bg-indigo-50 border-b border-indigo-100">
                         {[
@@ -223,11 +337,8 @@ const SiegwerkAccountsView = () => {
                     </thead>
                     <tbody>
                       {accountData.map((item, index) => (
-                        <motion.tr 
+                        <tr 
                           key={index}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.05 }}
                           className="border-b border-gray-100 hover:bg-indigo-50/50 transition-colors"
                         >
                           <td className="px-6 py-4 text-sm whitespace-nowrap border-r border-gray-100">
@@ -243,30 +354,48 @@ const SiegwerkAccountsView = () => {
                             <div className="space-y-2">
                               {item.subAccounts.length > 0 ? (
                                 item.subAccounts.map((subAccount, idx) => (
-                                  <motion.div 
-                                    key={idx}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ duration: 0.2, delay: idx * 0.1 }}
-                                  >
+                                  <div key={idx}>
                                     {subAccount}
-                                  </motion.div>))
+                                  </div>))
                               ) : (
                                 <span className="text-gray-400">No sub-accounts</span>
                               )}
                             </div>
                           </td>
-                        </motion.tr>
+                        </tr>
                       ))}
                     </tbody>
-                  </motion.table>
-                )}
-              </AnimatePresence>
+                  </table>
+                  
+                  {/* Pagination */}
+                  <div className="py-4 bg-white border-t border-gray-100">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                        
+                        {paginationItems()}
+                        
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
-    </motion.div>
+    </div>
   )
 }
 

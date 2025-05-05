@@ -1,9 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Modal from "./Modal";
+import axios from "axios";
 
 const AddModal = ({ title, fields, onSubmit, onClose }) => {
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
+  const [relationData, setRelationData] = useState({});
+
+  useEffect(() => {
+    // Fetch data for relation fields
+    const fetchRelationData = async () => {
+      const relationDataObj = {};
+      
+      for (const field of fields) {
+        if (field.fieldType === "select" && field.fetchFrom) {
+          try {
+            const response = await axios.get(field.fetchFrom);
+            const data = await response.data.data;
+            console.log(field.name);
+            relationDataObj[field.name] = data;
+          } catch (error) {
+            console.error(`Error fetching relation data for ${field.name}:`, error);
+          }
+        }
+      }
+      
+      setRelationData(relationDataObj);
+    };
+
+    fetchRelationData();
+  }, [fields]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -15,7 +41,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
     const newErrors = {};
 
     fields.forEach((field) => {
-      if (field.required && !formData[field.name]?.trim()) {
+      if (field.required && !formData[field.name]) {
         newErrors[field.name] = `${field.label} is required`;
       }
 
@@ -24,7 +50,15 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
           newErrors[field.name] = `${field.label} must be a number`;
         }
       }
+
+      if (field.fieldType === "email" && formData[field.name]) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData[field.name])) {
+          newErrors[field.name] = `Please enter a valid email address`;
+        }
+      }
     });
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -44,10 +78,11 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
               htmlFor={field.name}
               className="block text-sm font-medium text-gray-700"
             >
-              {field.label?.charAt(0).toUpperCase() + field.label.slice(1)}
+              {field.label}
+              {field.required && <span className="text-red-500 ml-1">*</span>}
             </label>
 
-            {(field.fieldType === "text" || field.fieldType === "email") && (
+            {field.fieldType === "text" && (
               <input
                 type="text"
                 id={field.name}
@@ -55,6 +90,19 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
                 value={formData[field.name] || ""}
                 onChange={handleChange}
                 className="border p-2 w-full rounded"
+                required={field.required}
+              />
+            )}
+
+            {field.fieldType === "email" && (
+              <input
+                type="email"
+                id={field.name}
+                name={field.name}
+                value={formData[field.name] || ""}
+                onChange={handleChange}
+                className="border p-2 w-full rounded"
+                required={field.required}
               />
             )}
 
@@ -66,6 +114,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
                 value={formData[field.name] || ""}
                 onChange={handleChange}
                 className="border p-2 w-full rounded"
+                required={field.required}
               />
             )}
 
@@ -77,6 +126,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
                 value={formData[field.name] || ""}
                 onChange={handleChange}
                 className="border p-2 w-full rounded"
+                required={field.required}
               />
             )}
 
@@ -87,13 +137,27 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
                 value={formData[field.name] || ""}
                 onChange={handleChange}
                 className="border p-2 w-full rounded"
+                required={field.required}
               >
                 <option value="">Select {field.label}</option>
-                {Array.isArray(field?.options) && field.options?.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
+                {field.options && Array.isArray(field.options) ? (
+                  // For static options
+                  field.options.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))
+                ) : (
+                  // For relation options fetched from API
+                  relationData[field.name]?.map((item) => (
+                    <option 
+                      key={item[field.optionValueKey]} 
+                      value={item[field.optionValueKey]}
+                    >
+                      {item[field.optionLabelKey]}
+                    </option>
+                  ))
+                )}
               </select>
             )}
 

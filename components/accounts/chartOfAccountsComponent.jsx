@@ -569,12 +569,17 @@ const ChartOfAccounts = () => {
     }
 
     const completeCreation = async () => {
+      // Set loading to true at the start
       setLoading(true)
+      
+      // Immediately close the modal
+      setActiveModal(null)
+      
       try {
         let macno = selectedMA
         let bscd = selectedBC
         let mbscd = selectedMBC
-
+    
         if (selectedMBC === "new" && newMBCName.trim()) {
           const nextMbscd = await getNextCode(1, 2)
           await axios.post("/api/accounts/mbscd", {
@@ -583,8 +588,10 @@ const ChartOfAccounts = () => {
           })
           mbscd = nextMbscd
           setLevel1Data(prev => [...prev, { bscd: nextMbscd, bscdDetail: newMBCName }])
+          // Set the newly created MBC as selected
+          setSelectedLevel1(nextMbscd)
         }
-
+    
         if (selectedBC === "new" && newBCName.trim()) {
           const nextBscd = await getNextCode(2, 2)
           await axios.post("/api/accounts/bscd", {
@@ -594,8 +601,18 @@ const ChartOfAccounts = () => {
           })
           bscd = nextBscd
           setAllLevel2Data(prev => [...prev, { bscd: nextBscd, bscdDetail: newBCName, mbscd: mbscd || selectedMBC }])
+          
+          // Update level2Data for the selected MBC
+          const actualMbscd = mbscd || selectedMBC
+          setLevel2Data(prev => ({
+            ...prev,
+            [actualMbscd]: [...(prev[actualMbscd] || []), { bscd: nextBscd, bscdDetail: newBCName, mbscd: actualMbscd }]
+          }))
+          
+          // Set the newly created BC as selected
+          setSelectedLevel2(nextBscd)
         }
-
+    
         if (selectedMA === "new" && newMAName.trim()) {
           const nextMacno = await getNextCode(3, 3)
           await axios.post("/api/accounts/macno", {
@@ -605,24 +622,39 @@ const ChartOfAccounts = () => {
           })
           macno = nextMacno
           setAllLevel3Data(prev => [...prev, { macno: nextMacno, macname: newMAName, bscd: bscd || selectedBC }])
+          
+          // Update level3Data for the selected BC
+          const actualBscd = bscd || selectedBC
+          setLevel3Data(prev => ({
+            ...prev,
+            [actualBscd]: [...(prev[actualBscd] || []), { macno: nextMacno, macname: newMAName, bscd: actualBscd }]
+          }))
+          
+          // Set the newly created MA as selected
+          setSelectedLevel3(nextMacno)
         }
-
+    
         const nextAcno = await getNextCode(4, 4)
         await axios.post("/api/accounts/acno", {
           ...accountData,
           acno: nextAcno,
           macno: macno || selectedMA
         })
-
+        
+        // Update accounts data for the selected MA
+        const actualMacno = macno || selectedMA
+        setAccounts(prev => ({
+          ...prev,
+          [actualMacno]: [...(prev[actualMacno] || []), { ...accountData, acno: nextAcno, macno: actualMacno }]
+        }))
+    
         toast.success("Account created successfully.")
-        setActiveModal(null)
-        setSelectedLevel1(null)
-        setSelectedLevel2(null)
-        setSelectedLevel3(null)
+        
       } catch (error) {
         console.error("Error creating account:", error)
         toast.error("Failed to create account. Please try again.")
       } finally {
+        // Set loading to false only after all operations are complete
         setLoading(false)
       }
     }
@@ -729,9 +761,12 @@ const ChartOfAccounts = () => {
 
     return (
       <Dialog 
-        open={activeModal === mode} 
-        onOpenChange={(open) => !open && setActiveModal(null)}
-      >
+      open={activeModal === mode && !loading} 
+      onOpenChange={(open) => {
+        if (!loading && !open) {
+          setActiveModal(null);
+        }
+      }}>
         <DialogContent className="max-w-2xl w-full p-6 bg-white rounded-xl shadow-2xl sm:max-w-[95vw]">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-indigo-700">
@@ -1015,6 +1050,19 @@ const ChartOfAccounts = () => {
       
       <AccountWizard mode="creation" />
       <AccountWizard mode="edit" />
+
+      {loading && (
+  <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex justify-center items-center">
+    <div className="bg-white p-6 rounded-xl shadow-xl flex flex-col items-center">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full mb-4"
+      />
+      <p className="text-gray-700 font-medium">Creating account...</p>
+    </div>
+  </div>
+)}
     </div>
   )
 }

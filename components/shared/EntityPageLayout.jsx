@@ -31,7 +31,7 @@ const EntityPageLayout = ({ title, endpoint, fields, buttonText = null }) => {
 
   const handleAddSubmit = async (formData) => {
     try {
-      await axios.post(`/api/${endpoint}`, formData)
+      await axios.post(`/api/setup/${endpoint}`, formData)
       setIsAddModalOpen(false)
       fetchData()
     } catch (error) {
@@ -42,7 +42,7 @@ const EntityPageLayout = ({ title, endpoint, fields, buttonText = null }) => {
   const handleEditSubmit = async (formData) => {
     try {
       console.log("editingItem", editingItem)
-      await axios.put(`/api/${endpoint}/${editingItem.id}`, formData)
+      await axios.put(`/api/setup/${endpoint}/${editingItem.id}`, formData)
       setEditingItem(null)
       fetchData()
     } catch (error) {
@@ -52,7 +52,7 @@ const EntityPageLayout = ({ title, endpoint, fields, buttonText = null }) => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`/api/${endpoint}/${id}`)
+      await axios.delete(`/api/setup/${endpoint}/${id}`)
       fetchData()
     } catch (error) {
       console.error('Error deleting data:', error)

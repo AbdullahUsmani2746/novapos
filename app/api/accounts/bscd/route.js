@@ -10,19 +10,12 @@ export async function GET(request) {
   
       // Get the mbscd query parameter from the URL
       const { searchParams } = new URL(request.url);
-      const mbscd = searchParams.get('mbscd');
+      const mbscd = searchParams.get('mbscd') || "";
   
-      const where = mbscd ? { mbscd:mbscd } : {};
+      const where = mbscd !== "" ? { mbscd:mbscd } : {};
   
   
       const bscds = await prisma.bSCD.findMany({
-        //   include: {
-        //     mainBsCd: true,
-        //     macnos: true,
-        //   },
-        //   orderBy: {
-        //     bscd: 'asc',
-        //   },
           where
         });
       
