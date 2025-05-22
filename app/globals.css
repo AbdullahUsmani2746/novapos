@@ -87,3 +87,18 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@media (max-width: 640px) {
+  .pos-container {
+    flex-direction: column;
+  }
+  
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  
+  .category-tree {
+    max-height: 150px;
+    overflow-y: auto;
+  }
+}

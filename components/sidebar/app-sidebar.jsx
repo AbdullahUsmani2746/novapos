@@ -89,6 +89,31 @@ const data = {
         
       ],
     },
+    {
+      title: "Returns",
+      url: "#",
+      icon: SquareTerminal,
+      isActive: true,
+      items: [
+        {
+          title: "Purchase Reuturn",
+          url: "/invoice/purchase",
+        },
+        {
+          title: "Sale Reuturn",
+          url: "/invoice/sale",
+        },
+        
+      ],
+    },
+
+    {
+      title: "POS",
+      url: "/pos",
+      icon: SquareTerminal,
+      isActive: true,
+     
+    },
 
     {
       title: "Setups",

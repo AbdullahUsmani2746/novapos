@@ -218,6 +218,7 @@ export default function VoucherForm({ type, onClose }) {
     suppliers: [],
     customers: [],
     products: [],
+    itemCategories:[],
     godowns: [],
     mainAccounts: [],
   });
@@ -285,6 +286,9 @@ export default function VoucherForm({ type, onClose }) {
 
       // Add mainAccounts endpoint for account creation
       endpoints.push({ key: "mainAccounts", url: "/api/accounts/macno" });
+      endpoints.push({ key: "itemCategories", url: "/api/setup/item_categories" });
+      // endpoints.push({ key: "mainAccounts", url: "/api/accounts/macno" });
+
 
       const results = await Promise.all(
         endpoints.map(async ({ key, url }) => {

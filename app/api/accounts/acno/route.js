@@ -57,15 +57,17 @@ export async function POST(request) {
 
     console.log('body:', body);
     
-    if (!macno || !acno || !acname) {
+    if (!macno || !acname) {
       return NextResponse.json(
         { error: 'macno, acno, and acname are required' },
         { status: 400 }
       );
     }
 
+    if(!acno ){}
+
     const parentExists = await prisma.mACNO.findUnique({
-      where: { macno: parseInt(macno) },
+      where: { macno },
     });
 
     if (!parentExists) {

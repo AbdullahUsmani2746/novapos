@@ -144,9 +144,16 @@ model ItemCategory {
 }
 
 model Item {
-  itcd         Int            @id @unique
+  itcd         Int        @id @unique @default(autoincrement())
   item    String?        @db.VarChar(250)
   ic_id        Int
+  sku           String?    @unique
+  price         Float?
+  stock         Int?
+  wc_product_id Int?       @unique
+  wc_parent_id  Int?
+  sync_status   String?    @default("synced")
+  last_sync     DateTime?
   itemCategories ItemCategory   @relation(fields: [ic_id], references: [id])
   Transactions Transactions[]
 }
