@@ -14,12 +14,14 @@ export async function syncProductToWooCommerce(product) {
     sku: product.sku,
     regular_price: product.price.toString(),
     stock_quantity: product.stock,
-    categories: [{ id: product.itemCategory.wc_category_id }],
+    categories: product.itemCategories?.map(cat => ({ id: cat.wc_category_id })) || [],
   };
 
   try {
     if (product.sync_status === 'deleted') {
-      await wooCommerce.delete(`products/${product.wc_product_id}`, { force: true });
+      if (product.wc_product_id) {
+        await wooCommerce.delete(`products/${product.wc_product_id}`, { force: true });
+      }
     } else if (product.wc_product_id) {
       await wooCommerce.put(`products/${product.wc_product_id}`, data);
     } else {
@@ -30,7 +32,7 @@ export async function syncProductToWooCommerce(product) {
       });
     }
   } catch (error) {
-    console.error('WooCommerce sync error:', error);
+    console.error('WooCommerce product sync error:', error);
     await prisma.item.update({
       where: { itcd: product.itcd },
       data: { sync_status: 'failed' },
@@ -41,7 +43,7 @@ export async function syncProductToWooCommerce(product) {
 export async function syncCategoryToWooCommerce(category) {
   const data = {
     name: category.ic_name,
-    parent: category.mainCategory.wc_category_id || 0,
+    parent: category.mainCategory?.wc_category_id || 0,
   };
 
   try {
@@ -49,15 +51,36 @@ export async function syncCategoryToWooCommerce(category) {
       await wooCommerce.put(`products/categories/${category.wc_category_id}`, data);
     } else {
       const response = await wooCommerce.post('products/categories', data);
+      const wcCategoryId = response.data.id;
+
       await prisma.itemCategory.update({
         where: { id: category.id },
-        data: { wc_category_id: response.data.id, sync_status: 'synced', last_sync: new Date() },
+        data: { wc_category_id: wcCategoryId, sync_status: 'synced', last_sync: new Date() },
       });
+
+      // Update related categories/groups/master categories with wc_category_id
       const parentCategory = await prisma.mainCategory.findUnique({ where: { id: category.mc_id } });
-      await prisma.productCategory.update({ where: { id: parentCategory.pc_id }, data: { wc_category_id: response.data.id, sync_status: 'synced', last_sync: new Date() } });
-      const parentGroup = await prisma.productGroup.findUnique({ where: { id: parentCategory.productCategory.pg_id } });
-      await prisma.productGroup.update({ where: { id: parentGroup.id }, data: { wc_category_id: response.data.id, sync_status: 'synced', last_sync: new Date() } });
-      await prisma.productMasterCategory.update({ where: { id: parentGroup.productMasterCategory.id }, data: { wc_category_id: response.data.id, sync_status: 'synced', last_sync: new Date() } });
+      if (parentCategory) {
+        await prisma.productCategory.update({
+          where: { id: parentCategory.pc_id },
+          data: { wc_category_id: wcCategoryId, sync_status: 'synced', last_sync: new Date() },
+        });
+
+        const parentGroup = await prisma.productGroup.findUnique({ where: { id: parentCategory.productCategory.pg_id } });
+        if (parentGroup) {
+          await prisma.productGroup.update({
+            where: { id: parentGroup.id },
+            data: { wc_category_id: wcCategoryId, sync_status: 'synced', last_sync: new Date() },
+          });
+
+          if (parentGroup.productMasterCategory) {
+            await prisma.productMasterCategory.update({
+              where: { id: parentGroup.productMasterCategory.id },
+              data: { wc_category_id: wcCategoryId, sync_status: 'synced', last_sync: new Date() },
+            });
+          }
+        }
+      }
     }
   } catch (error) {
     console.error('WooCommerce category sync error:', error);
@@ -72,7 +95,7 @@ export async function syncOrderToWooCommerce(order) {
   const data = {
     status: 'processing',
     line_items: order.transactions.map(t => ({
-      product_id: t.itemDetails.wc_product_id,
+      product_id: t.itemDetails?.wc_product_id,
       quantity: t.qty,
       price: t.rate,
     })),
@@ -96,10 +119,10 @@ export async function syncOrderToWooCommerce(order) {
 
 export async function syncFromWooCommerce() {
   try {
-    const products = await wooCommerce.get('products', { per_page: 100 });
-    for (const product of products.data) {
+    // Sync Products
+    const productsResponse = await wooCommerce.get('products', { per_page: 100 });
+    for (const product of productsResponse.data) {
       const existing = await prisma.item.findUnique({ where: { wc_product_id: product.id } });
-      cons
       if (!existing) {
         const category = await prisma.itemCategory.findFirst({ where: { wc_category_id: product.categories[0]?.id } });
         if (category) {
@@ -131,9 +154,9 @@ export async function syncFromWooCommerce() {
       }
     }
 
-    const categories = await wooCommerce.get('products/categories', { per_page: 100 });
-    console.log("Here are the categories", categories.data);
-    for (const category of categories.data) {
+    // Sync Categories
+    const categoriesResponse = await wooCommerce.get('products/categories', { per_page: 100 });
+    for (const category of categoriesResponse.data) {
       const existing = await prisma.itemCategory.findUnique({ where: { wc_category_id: category.id } });
       if (!existing && category.parent !== 0) {
         const parent = await prisma.mainCategory.findFirst({ where: { wc_category_id: category.parent } });
@@ -141,7 +164,7 @@ export async function syncFromWooCommerce() {
           await prisma.itemCategory.create({
             data: {
               ic_name: category.name,
-              mc_id: 1,
+              mc_id: parent.id,
               wc_category_id: category.id,
               sync_status: 'synced',
               last_sync: new Date(),
@@ -151,10 +174,24 @@ export async function syncFromWooCommerce() {
       }
     }
 
-    const orders = await wooCommerce.get('orders', { per_page: 100 });
-    for (const order of orders.data) {
+    // Sync Orders
+    const ordersResponse = await wooCommerce.get('orders', { per_page: 100 });
+    for (const order of ordersResponse.data) {
       const existing = await prisma.transactionsMaster.findUnique({ where: { wc_order_id: order.id } });
       if (!existing) {
+        // Resolve items for line items (async inside map is tricky, so use for-of)
+        const transactionsData = [];
+        for (const item of order.line_items) {
+          const productItem = await prisma.item.findFirst({ where: { wc_product_id: item.product_id } });
+          transactionsData.push({
+            itcd: productItem?.itcd || null,
+            qty: item.quantity,
+            rate: parseFloat(item.price),
+            gross_amount: item.quantity * parseFloat(item.price),
+            narration1: `WC Order: ${item.name}`,
+          });
+        }
+
         await prisma.transactionsMaster.create({
           data: {
             dateD: new Date(order.date_created),
@@ -166,13 +203,7 @@ export async function syncFromWooCommerce() {
             sync_status: 'synced',
             last_sync: new Date(),
             transactions: {
-              create: order.line_items.map(item => ({
-                itcd: (/* await */ prisma.item.findFirst({ where: { wc_product_id: item.product_id } }))?.itcd,
-                qty: item.quantity,
-                rate: item.price,
-                gross_amount: item.quantity * item.price,
-                narration1: `WC Order: ${item.name}`,
-              })),
+              create: transactionsData,
             },
           },
         });
