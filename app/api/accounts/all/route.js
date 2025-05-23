@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
+import prisma from '@/lib/prisma'; // Import Prisma client
 // Initialize Prisma client
-const prisma = new PrismaClient();
 
 // Database fetching functions
 async function fetchMbscd() {
