@@ -17,15 +17,23 @@ RUN \
   else echo "Lockfile not found." && exit 1; \
   fi
 
-
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# ✅ Copy environment file required for Prisma to work
-# COPY .env.production .env
+# ✅ Accept build arguments for secrets
+ARG DATABASE_URL
+ARG WOOCOMMERCE_URL
+ARG WOOCOMMERCE_CONSUMER_KEY
+ARG WOOCOMMERCE_CONSUMER_SECRET
+
+# ✅ Set environment variables for build time
+ENV DATABASE_URL=$DATABASE_URL
+ENV WOOCOMMERCE_URL=$WOOCOMMERCE_URL
+ENV WOOCOMMERCE_CONSUMER_KEY=$WOOCOMMERCE_CONSUMER_KEY
+ENV WOOCOMMERCE_CONSUMER_SECRET=$WOOCOMMERCE_CONSUMER_SECRET
 
 # ✅ Generate Prisma Client
 RUN npx prisma generate
@@ -38,7 +46,7 @@ RUN npx prisma generate
 # ✅ Build the project
 RUN \
   if [ -f yarn.lock ]; then yarn run build; \
-  elif [ -f package-lock.json ]; then npm run build --debug; \
+  elif [ -f package-lock.json ]; then npm run build; \
   elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
   else echo "Lockfile not found." && exit 1; \
   fi
@@ -49,6 +57,15 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV WOOCOMMERCE_URL=https://mediumorchid-stork-414208.hostingersite.com
+
+# ✅ Set runtime environment variables
+ENV DATABASE_URL=""
+ENV NEXTAUTH_SECRET=""
+ENV NEXTAUTH_URL=""
+ENV WOOCOMMERCE_CONSUMER_KEY=""
+ENV WOOCOMMERCE_CONSUMER_SECRET=""
+ENV NEXT_PUBLIC_APP_URL=""
+
 # Uncomment the following line in case you want to disable telemetry during runtime.
 # ENV NEXT_TELEMETRY_DISABLED=1
 
