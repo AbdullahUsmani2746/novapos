@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { syncOrderToWooCommerce } from '@/services/wooCommerceSync';
 import { NextResponse } from 'next/server';
 
@@ -41,6 +41,6 @@ export async function POST(request) {
     });
   }
 
-  await syncOrderToWooCommerce(order);
+  // await syncOrderToWooCommerce(order);
   return NextResponse.json(order);
 }

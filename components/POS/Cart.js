@@ -100,6 +100,9 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Plus, Minus, Trash2, CreditCard, Package, Search, Receipt, X } from 'lucide-react';
 import React from 'react'
+import axios from 'axios';
+import { toast } from 'sonner';
+
 
 // Mock data for demonstration
 const mockProducts = [
@@ -115,69 +118,101 @@ const formatCurrency = (amount) => `$${amount.toFixed(2)}`;
 
 const Cart = () => {
   const [cart, setCart] = useState([]);
-  const [products, setProducts] = useState(mockProducts);
+  const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showReceipt, setShowReceipt] = useState(false);
   const [orderNumber, setOrderNumber] = useState(null);
 
-  const categories = ['All', ...new Set(products.map(p => p.category))];
+  const categories = ['All', ...new Set(products.map(p => p.itemCategories.ic_name))];
   
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.item.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.barcode.includes(searchTerm);
-    const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
+                         product.sku.includes(searchTerm);
+    const matchesCategory = selectedCategory === 'All' || product.itemCategories.ic_name === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+useEffect(() => {
+    axios.get('/api/pos/products')
+      .then(res => setProducts(res.data))
+      .catch(() => toast.error('Failed to load products'));
+  }, []);
 
-  const addToCart = (product, quantity = 1) => {
-    if (product.stock < quantity) {
-      toast.error('Insufficient stock');
-      return;
-    }
+  // Add to cart with live stock check
+  const addToCart = async (productId, quantity = 1) => {
+    try {
+      const { data: product } = await axios.get(`/api/pos/products/${productId}`);
+      
+      if (product.stock < quantity) {
+        toast.error('Insufficient stock');
+        return;
+      }
 
-    const existingItem = cart.find(item => item.itcd === product.itcd);
-    if (existingItem) {
-      if (existingItem.quantity + quantity <= product.stock) {
-        setCart(cart.map(item => 
-          item.itcd === product.itcd 
+      const existingItem = cart.find(item => item.itcd === product.itcd);
+      if (existingItem) {
+        if (existingItem.quantity + quantity > product.stock) {
+          toast.error('Stock limit exceeded');
+          return;
+        }
+        setCart(cart.map(item =>
+          item.itcd === product.itcd
             ? { ...item, quantity: item.quantity + quantity }
             : item
         ));
+      } else {
+        setCart([...cart, { ...product, quantity }]);
+        toast.success(`${product.item} added to cart`);
       }
-    } else {
-      setCart([...cart, { ...product, quantity }]);
+    } catch (error) {
+      toast.error('Error adding to cart');
     }
   };
 
   const updateQuantity = (id, newQuantity) => {
+    const product = products.find(p => p.itcd === id);
+    if (!product) return;
+
     if (newQuantity <= 0) {
       removeFromCart(id);
       return;
     }
-    
-    const product = products.find(p => p.itcd === id);
-    if (newQuantity > product.stock) return;
-    
-    setCart(cart.map(item => 
+
+    if (newQuantity > product.stock) {
+      toast.error('Stock limit exceeded');
+      return;
+    }
+
+    setCart(cart.map(item =>
       item.itcd === id ? { ...item, quantity: newQuantity } : item
     ));
   };
 
   const removeFromCart = (id) => {
     setCart(cart.filter(item => item.itcd !== id));
+    toast.success('Item removed from cart');
+  };
+
+  const checkout = async () => {
+    try {
+      const total = cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
+
+      await axios.post('/api/pos/orders', {
+        cartItems: cart,
+        customer: 'POS Customer',
+        total
+      });
+
+      setCart([]);
+      toast.success('Order placed successfully');
+      router.push('/pos/orders');
+    } catch (error) {
+      toast.error('Checkout error');
+    }
   };
 
   const getSubtotal = () => cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
   const getTax = () => getSubtotal() * 0.08; // 8% tax
   const getTotal = () => getSubtotal() + getTax();
-
-  const checkout = () => {
-    const orderNum = 'ORD' + Date.now().toString().slice(-6);
-    setOrderNumber(orderNum);
-    setShowReceipt(true);
-    setCart([]);
-  };
 
   const clearCart = () => {
     setCart([]);
@@ -267,12 +302,12 @@ const Cart = () => {
                       transition={{ delay: index * 0.05 }}
                       whileHover={{ scale: 1.02, shadow: "0 10px 25px rgba(0,0,0,0.1)" }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => addToCart(product)}
+                      onClick={() => addToCart(product.itcd)}
                       className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl cursor-pointer border-2 border-gray-100 hover:border-blue-300 transition-all shadow-sm hover:shadow-md"
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                          {product.category}
+                          {product.itemCategories.ic_name}
                         </span>
                         <span className="text-xs text-gray-500">
                           Stock: {product.stock}

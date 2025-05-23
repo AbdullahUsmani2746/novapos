@@ -208,6 +208,7 @@ const ModernPosLayout = ({ children }) => {
               <span className="text-slate-600 font-medium">Settings</span>
             </Button>
             <Button
+              onClick={()=>router.push('/')}
               variant="ghost"
               className="w-full justify-start p-3 hover:bg-red-50 text-red-600 hover:text-red-700 transition-all duration-300"
             >

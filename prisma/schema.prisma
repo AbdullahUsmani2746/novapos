@@ -249,6 +249,9 @@ model TransactionsMaster {
   godownDetails Godown?       @relation(fields: [godown], references: [id])
   acno          ACNO?          @relation(fields: [pycd], references: [acno])
   transactions  Transactions[]
+  wc_order_id   Int?          @unique
+  sync_status   String?       @default("synced") @db.VarChar(20)
+  last_sync     DateTime?     @default(now())
 
   @@unique([tran_code, vr_no]) // Enforces no duplicate voucher numbers per tran_code
   @@map("TRANSACTIONS_MASTER")

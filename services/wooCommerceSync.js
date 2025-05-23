@@ -99,6 +99,7 @@ export async function syncFromWooCommerce() {
     const products = await wooCommerce.get('products', { per_page: 100 });
     for (const product of products.data) {
       const existing = await prisma.item.findUnique({ where: { wc_product_id: product.id } });
+      cons
       if (!existing) {
         const category = await prisma.itemCategory.findFirst({ where: { wc_category_id: product.categories[0]?.id } });
         if (category) {

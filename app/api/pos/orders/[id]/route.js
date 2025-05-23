@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { syncOrderToWooCommerce } from '@/services/wooCommerceSync';
 import { NextResponse } from 'next/server';
 

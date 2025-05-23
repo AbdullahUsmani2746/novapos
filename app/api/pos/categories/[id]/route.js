@@ -1,11 +1,11 @@
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { syncCategoryToWooCommerce } from '@/services/wooCommerceSync';
 import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
   const category = await prisma.itemCategory.findUnique({
     where: { id: parseInt(params.id) },
-    include: { mainCategory: { include: { productCategory: { include: { productGroup: { include: { productMasterCategory: true } } } } } }},
+    include: { mainCategory: { include: { ProductCategories: { include: { ProductGroups: { include: { ProductMasterCategories: true } } } } } }},
 
   });
   return category ? NextResponse.json(category) : NextResponse.json({ error: 'Category not found' }, { status: 404 });
@@ -16,7 +16,7 @@ export async function PUT(request, { params }) {
   const category = await prisma.itemCategory.update({
     where: { id: parseInt(params.id) },
     data: { ...data, sync_status: 'pending' },
-    include: { mainCategory: { include: { productCategory: { include: { productGroup: { include: { productMasterCategory: true } } } } } }},
+    include: { mainCategory: { include: { ProductCategories: { include: { ProductGroups: { include: { ProductMasterCategories: true } } } } } }},
   });
 
   const parentCategory = await prisma.mainCategory.findUnique({ where: { id: category.mc_id } });

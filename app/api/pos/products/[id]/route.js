@@ -16,9 +16,9 @@ export async function PUT(request, { params }) {
   const product = await prisma.item.update({
     where: { itcd: parseInt(params.id) },
     data: { ...data, sync_status: 'pending' },
-    include: { itemCategory: true },
+    include: { itemCategories: true },
   });
-  await syncProductToWooCommerce(product);
+  // await syncProductToWooCommerce(product);
   return NextResponse.json(product);
 }
 
@@ -27,7 +27,7 @@ export async function DELETE(request, { params }) {
     where: { itcd: parseInt(params.id) },
     data: { sync_status: 'deleted' },
   });
-  await syncProductToWooCommerce(product);
+  // await syncProductToWooCommerce(product);
   await prisma.item.delete({ where: { itcd: parseInt(params.id) } });
   return NextResponse.json({ message: 'Product deleted' });
 }

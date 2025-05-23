@@ -41,6 +41,8 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Search, Filter, Calendar, DollarSign, Receipt, Eye, ArrowRight, TrendingUp } from 'lucide-react';
+import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
@@ -48,42 +50,31 @@ const OrderList = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
+  const router = useRouter();
+
   // Mock data for demonstration
   useEffect(() => {
     // Simulate API call
     setTimeout(() => {
-      setOrders([
-        {
-          tran_id: '1',
-          invoice_no: 'INV-2024-001',
-          dateD: '2024-05-23T10:30:00Z',
-          transactions: [{ gross_amount: 125.50 }, { gross_amount: 75.25 }],
-          status: 'completed',
-          customer: 'John Doe',
-          items: 3
-        },
-        {
-          tran_id: '2',
-          invoice_no: 'INV-2024-002',
-          dateD: '2024-05-23T14:15:00Z',
-          transactions: [{ gross_amount: 89.99 }],
-          status: 'pending',
-          customer: 'Jane Smith',
-          items: 2
-        },
-        {
-          tran_id: '3',
-          invoice_no: 'INV-2024-003',
-          dateD: '2024-05-22T16:45:00Z',
-          transactions: [{ gross_amount: 234.00 }, { gross_amount: 45.50 }],
-          status: 'completed',
-          customer: 'Mike Johnson',
-          items: 5
-        }
-      ]);
+    
+     
+   const fetchOrders = async () => {
+  try {
+    const response = await axios.get('/api/pos/orders');
+    setOrders(response.data);
+  } catch (error) {
+    toast.error('Failed to fetch orders');
+  }
+};
+fetchOrders();
+
       setIsLoading(false);
     }, 1000);
   }, []);
+
+  const handleView = (order) => {
+     router.push(`/pos/orders/${order.tran_id}`)
+  }
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -182,7 +173,10 @@ const OrderList = () => {
                 }}
                 onClick={() => setSelectedOrder(order)}
               >
-                <Card className="relative overflow-hidden bg-white/90 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-300 rounded-2xl">
+                <Card 
+                 onClick={() => router.push(`/pos/orders/${order.tran_id}`)}
+
+                className="relative overflow-hidden bg-white/90 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-300 rounded-2xl">
                   {/* Gradient Accent */}
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
                   
@@ -198,7 +192,7 @@ const OrderList = () => {
                       </div>
                       
                       <div className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)}`}>
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        {order.sync_status.charAt(0).toUpperCase() + order.sync_status.slice(1)}
                       </div>
                     </div>
 

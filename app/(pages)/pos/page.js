@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
+import { useRouter } from 'next/navigation';
 import { 
   ShoppingCart, 
   Package, 
@@ -17,6 +18,7 @@ import {
 const ModernPOSDashboard = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
+  const router = useRouter();
 
   useEffect(() => {
     setIsLoaded(true);
@@ -27,6 +29,7 @@ const ModernPOSDashboard = () => {
       id: 'products',
       title: 'Products',
       description: 'Manage your inventory and product catalog',
+      href: '/pos/products',
       icon: Package,
       color: 'from-blue-500 to-blue-600',
       delay: 0.1
@@ -34,6 +37,7 @@ const ModernPOSDashboard = () => {
     {
       id: 'categories',
       title: 'Categories',
+      href: '/pos/categories',
       description: 'Organize products into categories',
       icon: Grid3X3,
       color: 'from-purple-500 to-purple-600',
@@ -42,6 +46,7 @@ const ModernPOSDashboard = () => {
     {
       id: 'cart',
       title: 'Shopping Cart',
+      href: '/pos/cart',
       description: 'Process customer transactions',
       icon: ShoppingCart,
       color: 'from-green-500 to-green-600',
@@ -49,6 +54,7 @@ const ModernPOSDashboard = () => {
     },
     {
       id: 'orders',
+      href: '/pos/orders',
       title: 'Orders',
       description: 'View and manage order history',
       icon: Receipt,
@@ -163,8 +169,9 @@ const ModernPOSDashboard = () => {
               } ${activeCard === card.id ? 'scale-105 -translate-y-2' : ''}`}
               style={{ transitionDelay: `${0.8 + card.delay}s` }}
               onMouseEnter={() => setActiveCard(card.id)}
+              onClick={() => router.push(card.href)}
               onMouseLeave={() => setActiveCard(null)}
-              onTouchStart={() => setActiveCard(card.id)}
+              onTouchStart={() => router.push(card.href)}
             >
               {/* Gradient Background */}
               <div className={`absolute inset-0 bg-gradient-to-br ${card.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />

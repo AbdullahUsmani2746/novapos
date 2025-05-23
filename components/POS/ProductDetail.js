@@ -93,6 +93,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Package, Edit3, Save, ArrowLeft, DollarSign, Hash, Barcode, Tag, Warehouse, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import React from 'react';
+import axios from 'axios';
 
 // Mock data for demonstration
 const mockProduct = {
@@ -124,32 +125,40 @@ const ProductDetail = ({ productId = '001' }) => {
   const [saveStatus, setSaveStatus] = useState(null); // 'success' | 'error' | null
   const [errors, setErrors] = useState({});
 
-  // Mock API calls with delay to simulate real API
-  useEffect(() => {
-    const fetchData = async () => {
+ useEffect(() => {
+  const fetchData = async () => {
+    try {
       setIsLoading(true);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock product fetch
-      setProduct(mockProduct);
+
+      // Fetch product by ID
+      const productRes = await axios.get(`/api/pos/products/${productId}`);
+      const productData = productRes.data;
+
+      // Set product data
+      setProduct(productData);
       setForm({
-        item: mockProduct.item,
-        ic_id: mockProduct.ic_id,
-        sku: mockProduct.sku,
-        price: mockProduct.price.toString(),
-        stock: mockProduct.stock.toString()
+        item: productData.item,
+        ic_id: productData.ic_id,
+        sku: productData.sku,
+        price: productData.price.toString(),
+        stock: productData.stock.toString(),
       });
-      
-      // Mock categories fetch
-      setCategories(mockCategories);
+
+      // Fetch categories
+      const categoriesRes = await axios.get('/api/pos/categories');
+      setCategories(categoriesRes.data);
+
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
       setIsLoading(false);
-    };
+    }
+  };
 
+  if (productId) {
     fetchData();
-  }, [productId]);
-
+  }
+}, [productId]);
   const validateForm = () => {
     const newErrors = {};
     
@@ -163,26 +172,34 @@ const ProductDetail = ({ productId = '001' }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
-    
-    setIsSaving(true);
-    setSaveStatus(null);
-    
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock successful update
+const handleSubmit = async () => {
+  if (!validateForm()) return;
+  
+  setIsSaving(true);
+  setSaveStatus(null);
+
+  try {
+    const payload = {
+       ...form, ic_id: parseInt(form.ic_id), price: parseFloat(form.price), stock: parseInt(form.stock) 
+    };
+
+    const response = await axios.put(`/api/pos/products/${productId}`, payload);
+
+    if (response.status === 200 || response.status === 201) {
       setSaveStatus('success');
-      setTimeout(() => setSaveStatus(null), 3000);
-    } catch (error) {
+    } else {
       setSaveStatus('error');
-      setTimeout(() => setSaveStatus(null), 3000);
-    } finally {
-      setIsSaving(false);
     }
-  };
+
+    setTimeout(() => setSaveStatus(null), 3000);
+  } catch (error) {
+    console.error('API Error:', error);
+    setSaveStatus('error');
+    setTimeout(() => setSaveStatus(null), 3000);
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   const handleInputChange = (field, value) => {
     setForm({ ...form, [field]: value });

@@ -163,22 +163,8 @@ const ProductList = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const router = useRouter();
 
-  const categories = ['All', ...new Set(products.map(p => p.category))];
+  const categories = [...new Set(products.map(p => p.itemCategories))];
   const statuses = ['All', 'active', 'low_stock', 'out_of_stock'];
-
-  // Mock API call
-  // useEffect(() => {
-  //   const fetchProducts = async () => {
-  //     setIsLoading(true);
-  //     // Simulate API delay
-  //     await new Promise(resolve => setTimeout(resolve, 1000));
-  //     setProducts(mockProducts);
-  //     setFilteredProducts(mockProducts);
-  //     setIsLoading(false);
-  //   };
-
-  //   fetchProducts();
-  // }, []);
 
    useEffect(() => {
   setIsLoading(true);
@@ -200,7 +186,7 @@ const ProductList = () => {
     let filtered = products.filter(product => {
       const matchesSearch = product.item.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            product.sku.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
+      const matchesCategory = selectedCategory === 'All' || product.ic_id  === parseInt(selectedCategory);
       const matchesStatus = selectedStatus === 'All' || product.status === selectedStatus;
       
       return matchesSearch && matchesCategory && matchesStatus;
@@ -235,28 +221,28 @@ const ProductList = () => {
       }
     });
 
+    
+
     setFilteredProducts(filtered);
   }, [products, searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder]);
 
   const handleDelete = async (id) => {
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setProducts(products.filter(p => p.itcd !== id));
-      setDeleteConfirm(null);
-      // toast.success('Product deleted successfully');
-    } catch (error) {
-      // toast.error('Failed to delete product');
-    }
-  };
-
+  try {
+    await axios.delete(`/api/pos/products/${id}`);
+    setProducts(prev => prev.filter(p => p.itcd !== id));
+    toast.success('Product deleted successfully');
+  } catch (error) {
+    console.error('Delete error:', error);
+    toast.error('Failed to delete product');
+  }
+};
   const handleView = (id) => {
     router.push(`/pos/products/${id}`);
     // console.log('View product:', id);
   };
 
   const handleEdit = (id) => {
-    // router.push(`/pos/products/${id}/edit`);
+    router.push(`/pos/products/${id}`);
     console.log('Edit product:', id);
   };
 
@@ -437,8 +423,11 @@ const ProductList = () => {
                       onChange={(e) => setSelectedCategory(e.target.value)}
                       className="px-3 py-2 border border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
                     >
+                   <option key="All" value="All">All</option>
+
                       {categories.map(category => (
-                        <option key={category} value={category}>{category}</option>
+                        <option key={category.id} value={category.id}>{category.ic_name}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -451,6 +440,7 @@ const ProductList = () => {
                     >
                       {statuses.map(status => (
                         <option key={status} value={status}>
+                          
                           {status === 'All' ? 'All Status' : status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </option>
                       ))}
@@ -494,7 +484,7 @@ const ProductList = () => {
                       </div>
                       <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${getStatusColor(product.status)}`}>
                         {getStatusIcon(product.status)}
-                        <span>{product.status.replace('_', ' ')}</span>
+                        <span>{product.sync_status.replace('_', ' ')}</span>
                       </div>
                     </div>
                     
@@ -569,7 +559,7 @@ const ProductList = () => {
                         </div>
                         <div className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${getStatusColor(product.status)}`}>
                           {getStatusIcon(product.status)}
-                          <span>{product.status.replace('_', ' ')}</span>
+                          <span>{product.sync_status.replace('_', ' ')}</span>
                         </div>
                       </div>
                     </div>
