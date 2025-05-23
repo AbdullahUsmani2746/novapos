@@ -38,7 +38,7 @@ RUN npx prisma generate
 # ✅ Build the project
 RUN \
   if [ -f yarn.lock ]; then yarn run build; \
-  elif [ -f package-lock.json ]; then npm run build; \
+  elif [ -f package-lock.json ]; then npm run build --debug; \
   elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
   else echo "Lockfile not found." && exit 1; \
   fi
