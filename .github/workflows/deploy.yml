@@ -7,7 +7,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: production  # Add this line to access environment variables
 
     steps:
       - name: Checkout code
@@ -18,13 +17,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build --no-cache . -t ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest \
-            --platform linux/amd64 \
-            --build-arg DATABASE_URL="${{ vars.DATABASE_URL }}" \
-            --build-arg WOOCOMMERCE_URL="${{ vars.WOOCOMMERCE_URL }}" \
-            --build-arg WOOCOMMERCE_CONSUMER_KEY="${{ vars.WOOCOMMERCE_CONSUMER_KEY }}" \
-            --build-arg WOOCOMMERCE_CONSUMER_SECRET="${{ vars.WOOCOMMERCE_CONSUMER_SECRET }}" \
-            --build-arg NODE_ENV="production"
+          docker build --no-cache . -t ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest --platform linux/amd64
 
       - name: Push Docker image to GHCR
         run: |
