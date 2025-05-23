@@ -20,6 +20,21 @@ RUN \
 
 # Rebuild the source code only when needed
 FROM base AS builder
+
+# Add build arguments - these come from GitHub Actions
+ARG DATABASE_URL
+ARG WOOCOMMERCE_URL
+ARG WOOCOMMERCE_CONSUMER_KEY
+ARG WOOCOMMERCE_CONSUMER_SECRET
+ARG NODE_ENV=production
+
+# Set as environment variables for the build process
+ENV DATABASE_URL=$DATABASE_URL
+ENV WOOCOMMERCE_URL=$WOOCOMMERCE_URL
+ENV WOOCOMMERCE_CONSUMER_KEY=$WOOCOMMERCE_CONSUMER_KEY
+ENV WOOCOMMERCE_CONSUMER_SECRET=$WOOCOMMERCE_CONSUMER_SECRET
+ENV NODE_ENV=$NODE_ENV
+
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
