@@ -47,14 +47,6 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV WOOCOMMERCE_URL=https://mediumorchid-stork-414208.hostingersite.com
 
-# ✅ Set runtime environment variables
-ENV DATABASE_URL=""
-ENV NEXTAUTH_SECRET=""
-ENV NEXTAUTH_URL=""
-ENV WOOCOMMERCE_CONSUMER_KEY=""
-ENV WOOCOMMERCE_CONSUMER_SECRET=""
-ENV NEXT_PUBLIC_APP_URL=""
-
 # Uncomment the following line in case you want to disable telemetry during runtime.
 # ENV NEXT_TELEMETRY_DISABLED=1
 
