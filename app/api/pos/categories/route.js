@@ -80,7 +80,7 @@ export async function POST(request) {
   try {
     console.log('Category to sync:', category);
 
-  await syncCategoryToWooCommerce(category);
+  // await syncCategoryToWooCommerce(category);
 } catch (error) {
   console.error('WooCommerce sync failed:', error);
   // Optionally log the failure in DB or return a warning message

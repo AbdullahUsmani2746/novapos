@@ -34,7 +34,7 @@ export async function PUT(request, { params }) {
       include: { transactions: true },
     });
 
-    await syncOrderToWooCommerce(order);
+    // await syncOrderToWooCommerce(order);
 
     return NextResponse.json(order);
   } catch (error) {

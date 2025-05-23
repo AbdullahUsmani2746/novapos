@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST() {
   try {
-    await syncFromWooCommerce();
+    // await syncFromWooCommerce();
     return NextResponse.json({ message: 'Sync completed' });
   } catch (error) {
     console.error('Sync from WooCommerce failed:', error);

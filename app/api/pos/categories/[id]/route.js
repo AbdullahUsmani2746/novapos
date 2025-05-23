@@ -79,7 +79,7 @@ export async function PUT(request, { params }) {
       data: { pmc_name: data.ic_name, sync_status: 'pending' },
     });
 
-    await syncCategoryToWooCommerce(category);
+    // await syncCategoryToWooCommerce(category);
     return NextResponse.json(category);
   } catch (error) {
     console.error('PUT error:', error);
@@ -94,7 +94,7 @@ export async function DELETE(request, { params }) {
       data: { sync_status: 'deleted' },
     });
 
-    await syncCategoryToWooCommerce(category);
+    // await syncCategoryToWooCommerce(category);
 
     await prisma.itemCategory.delete({
       where: { id: parseInt(params.id) },
