@@ -1,11 +1,11 @@
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { syncProductToWooCommerce } from '@/services/wooCommerceSync';
 import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
   const product = await prisma.item.findUnique({
     where: { itcd: parseInt(params.id) },
-    include: { itemCategory: { include: { mainCategory: { include: { productCategory: { include: { productGroup: { include: { productMasterCategory: true } } } } } } } } },
+    include: { itemCategories: { include: { mainCategory: { include: { ProductCategories: { include: { ProductGroups: { include: { ProductMasterCategories: true } } } } } } } } },
 
   });
   return product ? NextResponse.json(product) : NextResponse.json({ error: 'Product not found' }, { status: 404 });

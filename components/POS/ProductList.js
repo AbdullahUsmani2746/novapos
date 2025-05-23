@@ -82,6 +82,8 @@ import {
   ShoppingCart
 } from 'lucide-react';
 import React from 'react';
+import Link from 'next/link';
+import axios from 'axios';
 
 // Mock data for demonstration
 const mockProducts = [
@@ -165,18 +167,33 @@ const ProductList = () => {
   const statuses = ['All', 'active', 'low_stock', 'out_of_stock'];
 
   // Mock API call
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setIsLoading(true);
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setProducts(mockProducts);
-      setFilteredProducts(mockProducts);
-      setIsLoading(false);
-    };
+  // useEffect(() => {
+  //   const fetchProducts = async () => {
+  //     setIsLoading(true);
+  //     // Simulate API delay
+  //     await new Promise(resolve => setTimeout(resolve, 1000));
+  //     setProducts(mockProducts);
+  //     setFilteredProducts(mockProducts);
+  //     setIsLoading(false);
+  //   };
 
-    fetchProducts();
-  }, []);
+  //   fetchProducts();
+  // }, []);
+
+   useEffect(() => {
+  setIsLoading(true);
+
+  axios.get('/api/pos/products')
+    .then(res => {
+      setProducts(res.data);
+      setFilteredProducts(res.data); // use res.data, not products
+      setIsLoading(false);
+    })
+    .catch(err => {
+      console.error('Error fetching products:', err);
+      setIsLoading(false); // Ensure loading state is reset on error too
+    });
+}, []);
 
   // Filter and sort products
   useEffect(() => {
@@ -288,7 +305,7 @@ const ProductList = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen ">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -313,6 +330,7 @@ const ProductList = () => {
                 </div>
                 <div className="text-sm text-gray-500">Products</div>
               </div>
+              <Link href="/pos/products/create">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -322,6 +340,7 @@ const ProductList = () => {
                 <Plus className="w-5 h-5" />
                 <span>Add Product</span>
               </motion.button>
+              </Link>
             </div>
           </div>
         </motion.div>

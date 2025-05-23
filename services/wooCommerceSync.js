@@ -1,5 +1,5 @@
 import WooCommerceRestApi from '@woocommerce/woocommerce-rest-api';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 
 const wooCommerce = new WooCommerceRestApi({
   url: process.env.WOOCOMMERCE_URL,
@@ -131,6 +131,7 @@ export async function syncFromWooCommerce() {
     }
 
     const categories = await wooCommerce.get('products/categories', { per_page: 100 });
+    console.log("Here are the categories", categories.data);
     for (const category of categories.data) {
       const existing = await prisma.itemCategory.findUnique({ where: { wc_category_id: category.id } });
       if (!existing && category.parent !== 0) {
@@ -139,7 +140,7 @@ export async function syncFromWooCommerce() {
           await prisma.itemCategory.create({
             data: {
               ic_name: category.name,
-              mc_id: parent.id,
+              mc_id: 1,
               wc_category_id: category.id,
               sync_status: 'synced',
               last_sync: new Date(),

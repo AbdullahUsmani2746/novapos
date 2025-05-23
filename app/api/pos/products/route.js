@@ -1,10 +1,10 @@
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { syncProductToWooCommerce, syncProductFromWooCommerce } from '@/services/wooCommerceSync';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   const products = await prisma.item.findMany({
-    include: { itemCategory: { include: { mainCategory: { include: { productCategory: { include: { productGroup: { include: { productMasterCategory: true } } } } } } } } },
+    include: { itemCategories: { include: { mainCategory: { include: { ProductCategories: { include: { ProductGroups: { include: { ProductMasterCategories: true } } } } } } } } },
     orderBy: { item: 'asc' },
   });
   return NextResponse.json(products);

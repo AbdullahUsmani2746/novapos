@@ -136,11 +136,14 @@ model MainCategory {
 }
 
 model ItemCategory {
-  id         Int     @id @default(autoincrement())
-  ic_name  String? @db.VarChar(250)
-  mc_id      Int
-  items       Item[]
-  MainCategories       MainCategory @relation(fields: [mc_id], references: [id])
+  id            Int           @id @default(autoincrement())
+  ic_name       String        @db.VarChar(250)
+  mc_id         Int
+  wc_category_id Int?         @unique
+  sync_status   String?       @default("synced") @db.VarChar(20)
+  last_sync     DateTime?     @default(now())
+  mainCategory  MainCategory  @relation(fields: [mc_id], references: [id])
+  items         Item[]
 }
 
 model Item {

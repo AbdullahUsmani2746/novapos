@@ -69,16 +69,18 @@ import {
   Eye
 } from 'lucide-react';
 import React from 'react';
+import axios from 'axios';
+
 
 const CategoryManager = () => {
   const [categories, setCategories] = useState([
     // Mock data for demonstration
-    { id: 1, ic_name: 'Beverages', mainCategory: { mc_name: 'Food & Drinks' }, itemCount: 24 },
-    { id: 2, ic_name: 'Electronics', mainCategory: { mc_name: 'Technology' }, itemCount: 15 },
-    { id: 3, ic_name: 'Clothing', mainCategory: { mc_name: 'Fashion' }, itemCount: 38 },
-    { id: 4, ic_name: 'Books', mainCategory: { mc_name: 'Education' }, itemCount: 12 },
-    { id: 5, ic_name: 'Home & Garden', mainCategory: { mc_name: 'Lifestyle' }, itemCount: 29 },
-    { id: 6, ic_name: 'Sports', mainCategory: { mc_name: 'Recreation' }, itemCount: 17 }
+    // { id: 1, ic_name: 'Beverages', mainCategory: { mc_name: 'Food & Drinks' }, itemCount: 24 },
+    // { id: 2, ic_name: 'Electronics', mainCategory: { mc_name: 'Technology' }, itemCount: 15 },
+    // { id: 3, ic_name: 'Clothing', mainCategory: { mc_name: 'Fashion' }, itemCount: 38 },
+    // { id: 4, ic_name: 'Books', mainCategory: { mc_name: 'Education' }, itemCount: 12 },
+    // { id: 5, ic_name: 'Home & Garden', mainCategory: { mc_name: 'Lifestyle' }, itemCount: 29 },
+    // { id: 6, ic_name: 'Sports', mainCategory: { mc_name: 'Recreation' }, itemCount: 17 }
   ]);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('grid');
@@ -87,13 +89,15 @@ const CategoryManager = () => {
   const router = useRouter();
 
   useEffect(() => {
-    // Uncomment when API is available
-    // fetch('/pos/api/categories')
-    //   .then(res => res.json())
-    //   .then(data => setCategories(data));
-  }, []);
-
-  const filteredCategories = categories.filter(category =>
+  axios.get('/api/pos/categories')
+    .then(res => {
+      setCategories(res.data);
+    })
+    .catch(err => {
+      console.error(err);
+    });
+}, []);
+  const filteredCategories = categories.length > 0 && categories.filter(category =>
     category.ic_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     category.mainCategory.mc_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -106,7 +110,7 @@ const CategoryManager = () => {
     setLoading(true);
     try {
       // await fetch(`/pos/api/categories/${id}`, { method: 'DELETE' });
-      setCategories(categories.filter(c => c.id !== id));
+      setCategories(categories.length > 0 && categories.filter(c => c.id !== id));
       toast.success('Category deleted successfully');
     } catch (error) {
       toast.error('Failed to delete category');
@@ -296,7 +300,7 @@ const CategoryManager = () => {
               <p className="text-gray-600 mt-1">Manage your product categories and inventory</p>
             </div>
             <Button 
-              onClick={() => router.push('/pos/categories/new')}
+              onClick={() => router.push('/pos/categories/create')}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
             >
               <Plus className="w-5 h-5 mr-2" />
@@ -359,7 +363,7 @@ const CategoryManager = () => {
           }
         >
           <AnimatePresence mode="popLayout">
-            {filteredCategories.map(category => (
+            {filteredCategories.length > 0 && filteredCategories.map(category => (
               viewMode === 'grid' 
                 ? <CategoryCard key={category.id} category={category} />
                 : <CategoryListItem key={category.id} category={category} />

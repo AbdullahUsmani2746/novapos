@@ -8,10 +8,7 @@ import React from 'react'
 
   return (
     <div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4">
-      <div className="flex justify-between mb-4">
-        <h2 className="text-2xl font-bold">Categories</h2>
-        <Link href="/pos/categories/create"><Button>Create Category</Button></Link>
-      </div>
+      
       <CategoryManager />
     </div>
   );

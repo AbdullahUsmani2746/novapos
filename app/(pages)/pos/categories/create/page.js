@@ -79,6 +79,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
+
 import { 
   Plus, 
   Tag, 
@@ -101,32 +103,24 @@ const CreateCategory = () => {
     mc_id: '',
     description: ''
   });
-  const [mainCategories, setMainCategories] = useState([
-    // Mock data for demonstration
-    { id: 1, mc_name: 'Food & Drinks' },
-    { id: 2, mc_name: 'Technology' },
-    { id: 3, mc_name: 'Fashion' },
-    { id: 4, mc_name: 'Education' },
-    { id: 5, mc_name: 'Lifestyle' },
-    { id: 6, mc_name: 'Recreation' }
-  ]);
+  // const [mainCategories, setMainCategories] = useState([
+  //   // Mock data for demonstration
+  //   { id: 1, mc_name: 'Food & Drinks' },
+  //   { id: 2, mc_name: 'Technology' },
+  //   { id: 3, mc_name: 'Fashion' },
+  //   { id: 4, mc_name: 'Education' },
+  //   { id: 5, mc_name: 'Lifestyle' },
+  //   { id: 6, mc_name: 'Recreation' }
+  // ]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const router = useRouter();
-
-  useEffect(() => {
-    // Uncomment when API is available
-    // fetch('/pos/api/categories')
-    //   .then(res => res.json())
-    //   .then(data => setMainCategories(data.map(c => c.mainCategory)));
-  }, []);
 
   const validateForm = () => {
     const newErrors = {};
     
     if (!form.ic_name.trim()) newErrors.ic_name = 'Category name is required';
     if (form.ic_name.length < 2) newErrors.ic_name = 'Category name must be at least 2 characters';
-    if (!form.mc_id) newErrors.mc_id = 'Main category is required';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -155,21 +149,16 @@ const CreateCategory = () => {
 
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await axios.post('/api/pos/categories', {
+      ic_name: form.ic_name,
+    });
       
-      // const response = await fetch('/pos/api/categories', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ ic_name: form.ic_name, mc_id: parseInt(form.mc_id) }),
-      // });
-      
-      // if (response.ok) {
+      if (response.ok) {
         toast.success('Category created successfully!');
         router.push('/pos/categories');
-      // } else {
-      //   toast.error('Failed to create category');
-      // }
+      } else {
+        toast.error('Failed to create category');
+      }
     } catch (error) {
       toast.error('Error creating category');
     } finally {
@@ -346,7 +335,7 @@ const CreateCategory = () => {
                   </motion.div>
 
                   {/* Main Category */}
-                  <motion.div variants={itemVariants} className="md:col-span-2">
+                  {/* <motion.div variants={itemVariants} className="md:col-span-2">
                     <Label className="text-sm font-medium text-gray-700 flex items-center mb-2">
                       <Folder className="w-4 h-4 mr-2 text-gray-500" />
                       Main Category
@@ -381,7 +370,7 @@ const CreateCategory = () => {
                         {errors.mc_id}
                       </motion.div>
                     )}
-                  </motion.div>
+                  </motion.div> */}
 
                   {/* Description */}
                   <motion.div variants={itemVariants} className="md:col-span-2 space-y-2">
