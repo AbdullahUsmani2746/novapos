@@ -25,7 +25,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # ✅ Copy environment file required for Prisma to work
-COPY .env.production .env
+# COPY .env.production .env
 
 # ✅ Generate Prisma Client
 RUN npx prisma generate
