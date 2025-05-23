@@ -45,7 +45,7 @@ const CreateProduct = () => {
 
   useEffect(() => {
     const fetchCategories = async () => {
-      try {
+      try{
         const response = await axios.get("/api/pos/categories");
         setCategories(response.data);
       } catch (error) {
