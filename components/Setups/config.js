@@ -16,6 +16,16 @@ const entityConfig = {
     ],
   },
 
+  currencies: {
+    title: "Currencies",
+    endpoint: "currencies",
+    buttonText: "Add Currency", 
+    fields: [
+      { name: "currency", label: "Currency", fieldType: "text", required: true },
+
+    ],
+  },
+
   departments: {
     title: "Departments",
     endpoint: "departments",

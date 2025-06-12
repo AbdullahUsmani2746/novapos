@@ -1,77 +1,4 @@
-// "use client"
-// import { useState, useEffect } from 'react';
-// import { motion } from 'framer-motion';
-// import { toast } from 'sonner';
-// import { Button } from '@/components/ui/button';
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-// import { formatCurrency } from '@/lib/utils';
-// import React from 'react';
 
-// const OrderDetail = ({ orderId }) =>  {
-//   const [order, setOrder] = useState(null);
-//   const [status, setStatus] = useState('');
-
-//   useEffect(() => {
-//     fetch(`/pos/api/orders/${orderId}`)
-//       .then(res => res.json())
-//       .then(data => {
-//         setOrder(data);
-//         setStatus(data.rmk || 'processing');
-//       });
-//   }, [orderId]);
-
-//   const handleUpdateStatus = async () => {
-//     try {
-//       const response = await fetch(`/pos/api/orders/${orderId}`, {
-//         method: 'PUT',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({ status }),
-//       });
-//       if (response.ok) {
-//         toast.success('Order status updated');
-//         setOrder({ ...order, rmk: status });
-//       } else {
-//         toast.error('Failed to update status');
-//       }
-//     } catch (error) {
-//       toast.error('Error updating status');
-//     }
-//   };
-
-//   if (!order) return <div>Loading...</div>;
-
-//   return (
-//     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 max-w-md mx-auto">
-//       <h2 className="text-2xl font-bold mb-4">Order #{order.invoice_no}</h2>
-//       <div className="space-y-4">
-//         <p>Date: {new Date(order.dateD).toLocaleDateString()}</p>
-//         <p>Total: {formatCurrency(order.transactions.reduce((sum, t) => sum + t.gross_amount, 0))}</p>
-//         <div>
-//           {order.transactions.map(t => (
-//             <div key={t.id} className="flex justify-between">
-//               <span>{t.itemDetails?.item}</span>
-//               <span>{t.qty} x {formatCurrency(t.rate)}</span>
-//             </div>
-//           ))}
-//         </div>
-//         <div>
-//           <Select value={status} onValueChange={setStatus}>
-//             <SelectTrigger>
-//               <SelectValue placeholder="Select status" />
-//             </SelectTrigger>
-//             <SelectContent>
-//               <SelectItem value="processing">Processing</SelectItem>
-//               <SelectItem value="completed">Completed</SelectItem>
-//               <SelectItem value="cancelled">Cancelled</SelectItem>
-//             </SelectContent>
-//           </Select>
-//           <Button onClick={handleUpdateStatus} className="mt-2">Update Status</Button>
-//         </div>
-//       </div>
-//     </motion.div>
-//   );
-// }
-// export default OrderDetail;
 "use client"
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -94,55 +21,80 @@ import {
   Mail,
   MapPin
 } from 'lucide-react';
+import { useRouter } from 'next/navigation'
+
 
 const OrderDetail = ({ orderId }) => {
+
+  const router = useRouter(); 
+  const handleBack = () => {
+    router.back();
+  };
+
   const [order, setOrder] = useState(null);
   const [status, setStatus] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Mock data for demonstration
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      const mockOrder = {
-        invoice_no: 'INV-2024-001',
-        dateD: '2024-05-23T10:30:00Z',
-        rmk: 'processing',
-        customer: {
+  // useEffect(() => {
+  //   // Simulate API call
+  //   setTimeout(() => {
+  //     const mockOrder = {
+  //       invoice_no: 'INV-2024-001',
+  //       dateD: '2024-05-23T10:30:00Z',
+  //       rmk: 'processing',
+  //       customer: {
+  //         name: 'John Doe',
+  //         email: 'john.doe@example.com',
+  //         phone: '+1 (555) 123-4567',
+  //         address: '123 Main St, New York, NY 10001'
+  //       },
+  //       transactions: [
+  //         {
+  //           id: 1,
+  //           itemDetails: { item: 'Premium Coffee Blend' },
+  //           qty: 2,
+  //           rate: 15.99,
+  //           gross_amount: 31.98
+  //         },
+  //         {
+  //           id: 2,
+  //           itemDetails: { item: 'Chocolate Croissant' },
+  //           qty: 3,
+  //           rate: 4.50,
+  //           gross_amount: 13.50
+  //         },
+  //         {
+  //           id: 3,
+  //           itemDetails: { item: 'Organic Green Tea' },
+  //           qty: 1,
+  //           rate: 12.99,
+  //           gross_amount: 12.99
+  //         }
+  //       ]
+  //     };
+  //     setOrder(mockOrder);
+  //     setStatus(mockOrder.rmk || 'processing');
+  //     setIsLoading(false);
+  //   }, 1000);
+  // }, [orderId]);
+
+    useEffect(() => {
+    fetch(`/api/pos/orders/${orderId}`)
+      .then(res => res.json())
+      .then(data => {
+        data.customer = {
           name: 'John Doe',
           email: 'john.doe@example.com',
           phone: '+1 (555) 123-4567',
           address: '123 Main St, New York, NY 10001'
-        },
-        transactions: [
-          {
-            id: 1,
-            itemDetails: { item: 'Premium Coffee Blend' },
-            qty: 2,
-            rate: 15.99,
-            gross_amount: 31.98
-          },
-          {
-            id: 2,
-            itemDetails: { item: 'Chocolate Croissant' },
-            qty: 3,
-            rate: 4.50,
-            gross_amount: 13.50
-          },
-          {
-            id: 3,
-            itemDetails: { item: 'Organic Green Tea' },
-            qty: 1,
-            rate: 12.99,
-            gross_amount: 12.99
-          }
-        ]
-      };
-      setOrder(mockOrder);
-      setStatus(mockOrder.rmk || 'processing');
-      setIsLoading(false);
-    }, 1000);
+        }
+        console.log("data", data)
+        setOrder(data);
+        setStatus(data.rmk || 'processing');
+        setIsLoading(false);
+      });
   }, [orderId]);
 
   const formatCurrency = (amount) => {
@@ -275,6 +227,7 @@ const OrderDetail = ({ orderId }) => {
               variant="ghost" 
               size="sm"
               className="w-10 h-10 rounded-full hover:bg-gray-100 transition-all duration-200"
+              onClick={handleBack}
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>

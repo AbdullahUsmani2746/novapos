@@ -13,6 +13,7 @@ import {
   Zap,
   Settings,
   LogOut,
+  Notebook,
   Bell
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -63,6 +64,14 @@ const ModernPosLayout = ({ children }) => {
       href: '/pos/orders',
       icon: Receipt,
       color: 'from-pink-500 to-pink-600'
+    },
+
+    {
+      id: 'reports',
+      label: 'Reports',
+      href: '/pos/reports',
+      icon: Notebook,
+      color: 'from-indigo-500 to-indigo-600'
     }
   ];
 

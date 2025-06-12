@@ -87,6 +87,8 @@ export async function POST(req, { params }) {
 
     if (body.ic_id) {
       body.ic_id = parseInt(body.ic_id);
+    }else if(body.company|| body.currency) {
+      console.log("body.company", body)
     }
     else {
       body.company_id = 1;

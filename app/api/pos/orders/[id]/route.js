@@ -4,8 +4,10 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
   try {
+    const id = await params.id;
+    console.log('Fetching order with ID:', typeof id === 'string' ? "Yes" : "NOOT FOUND");
     const order = await prisma.transactionsMaster.findUnique({
-      where: { tran_id: parseInt(params.id) },
+      where: { tran_id: parseInt(id) },
       include: {
         transactions: {
           include: {

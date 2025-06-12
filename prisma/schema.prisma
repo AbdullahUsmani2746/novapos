@@ -153,7 +153,9 @@ model Item {
   sku           String?    @unique
   price         Float?
   stock         Int?
+  description   String?    @db.VarChar(500)
   wc_product_id Int?       @unique
+  image_url    String?    @db.VarChar(500)  // New field for product image
   wc_parent_id  Int?
   sync_status   String?    @default("synced")
   last_sync     DateTime?

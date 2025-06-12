@@ -1,7 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma'; 
 import { NextResponse } from 'next/server';
 
-const prisma = new PrismaClient();
 
 export async function GET(request) {
   try {
@@ -76,6 +75,21 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+    // Check if the combination of macno and acno already exists
+    const existingAcno = await prisma.aCNO.findFirst({
+      where: {
+        macno: macno,
+        acno: acno,
+      },
+    });
+
+    if (existingAcno) {
+      console.log('ACNO combination already exists:', existingAcno);
+      return NextResponse.json(
+        { error: 'ACNO combination already exists' },
+        { status: 400 }
+      );
+    }
 
     const newAcno = await prisma.aCNO.create({
       data: {
@@ -106,6 +120,8 @@ export async function POST(request) {
     //     mainAccount: true,
     //   },
     });
+
+    console.log('New ACNO created:', newAcno);
     
     return NextResponse.json({data:newAcno, status: 201 });
   } catch (error) {

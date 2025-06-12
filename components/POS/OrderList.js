@@ -166,7 +166,7 @@ fetchOrders();
             
             return (
               <div
-                key={order.tran_id}
+                key={order.id}
                 className="group cursor-pointer transform transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1"
                 style={{
                   animationDelay: `${index * 100}ms`

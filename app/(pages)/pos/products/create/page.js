@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,10 @@ import {
   Barcode,
   AlertCircle,
   CheckCircle2,
+  Upload,
+  Image,
+  X,
+  Camera,
 } from "lucide-react";
 import React from "react";
 import axios from "axios";
@@ -40,7 +44,11 @@ const CreateProduct = () => {
   });
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -76,6 +84,45 @@ const CreateProduct = () => {
     return `${prefix}${random}${timestamp}`;
   };
 
+  const handleImageSelect = (event) => {
+    setImageUploading(true);
+    setImagePreview(null);
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error("Please select a valid image file");
+        return;
+      }
+      
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size should be less than 5MB");
+        return;
+      }
+
+      setSelectedImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target.result);
+        setImageUploading(false);
+
+      };
+      reader.readAsDataURL(file);
+
+    }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
@@ -85,19 +132,42 @@ const CreateProduct = () => {
 
     setLoading(true);
     try {
-      const payload = {
-        ...form,
-        ic_id: parseInt(form.ic_id),
-        price: parseFloat(form.price),
-        stock: parseInt(form.stock),
-      };
+      // Create FormData to handle both data and image
+      const formData = new FormData();
+      
+      // Append form data
+      formData.append('item', form.item);
+      formData.append('ic_id', form.ic_id);
+      formData.append('sku', form.sku);
+      formData.append('price', form.price);
+      formData.append('stock', form.stock);
+      
+      if (form.description) {
+        formData.append('description', form.description);
+      }
+      
+      // Append image if selected
+      if (selectedImage) {
+        formData.append('image', selectedImage);
+      }
 
-      const response = await axios.post("/api/pos/products", payload);
-      toast.success("Product created successfully!");
-      router.push("/pos/products");
+      const response = await axios.post("/api/pos/products", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      if (response.data.success) {
+        toast.success(response.data.message || "Product created successfully!");
+        router.push("/pos/products");
+      } else {
+        toast.error(response.data.error || "Failed to create product");
+      }
     } catch (error) {
       console.error(error);
-      if (error.response && error.response.data?.message) {
+      if (error.response?.data?.error) {
+        toast.error(error.response.data.error);
+      } else if (error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else {
         toast.error("Error creating product");
@@ -176,6 +246,87 @@ const CreateProduct = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Product Image Upload */}
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium text-gray-700 flex items-center">
+                    <Image className="w-4 h-4 mr-2 text-gray-500" />
+                    Product Image
+                  </Label>
+                  
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    {/* Image Preview */}
+                    <div className="flex-1">
+                      {imagePreview ? (
+                        <div className="relative group">
+                          <div className="aspect-square w-full max-w-xs mx-auto bg-gray-100 rounded-lg overflow-hidden border-2 border-dashed border-gray-300">
+                            <img
+                              src={imagePreview}
+                              alt="Product preview"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                            onClick={removeImage}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div 
+                          className="aspect-square w-full max-w-xs mx-auto bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-colors duration-200"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <Camera className="w-12 h-12 text-gray-400 mb-4" />
+                          <p className="text-sm text-gray-500 text-center">
+                            Click to upload image
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            PNG, JPG up to 5MB
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Upload Controls */}
+                    <div className="flex flex-col gap-2 justify-center">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                      />
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-2"
+                        disabled={loading}
+                      >
+                        <Upload className="w-4 h-4" />
+                        {selectedImage ? 'Change Image' : 'Upload Image'}
+                      </Button>
+                      
+                      {selectedImage && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={removeImage}
+                          className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <X className="w-4 h-4" />
+                          Remove Image
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Product Name */}
                   <div className="md:col-span-2 space-y-2">
@@ -369,13 +520,18 @@ const CreateProduct = () => {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || imageUploading}
                     className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
                   >
                     {loading ? (
                       <>
                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                         Creating Product...
+                      </>
+                    ) : imageUploading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Uploading Image...
                       </>
                     ) : (
                       <>
@@ -409,6 +565,7 @@ const CreateProduct = () => {
                     <ul className="text-sm text-blue-700 space-y-1">
                       <li>• Use descriptive product names for better searchability</li>
                       <li>• SKU should be unique across your entire inventory</li>
+                      <li>• Upload high-quality images (recommended: 800x800px)</li>
                       <li>• Set realistic initial stock levels</li>
                       <li>• Double-check pricing before creating the product</li>
                     </ul>
