@@ -65,7 +65,7 @@ const ProductDetail = ({ productId}) => {
           description: productData.description || "",
         });
 
-        setImagePreview(productData.image_url);
+        setImagePreview(`/api${productData.image_url}`);
 
 
         // Fetch categories
