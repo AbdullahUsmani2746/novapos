@@ -465,7 +465,7 @@ const ProductList = () => {
                       <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden relative">
                         {product.image_url ? (
                           <Image
-                            src={`/api${product.image_url}`}
+                            src={`/api/pos/products/uploads${product.image_url}`}
                             alt={product.item}
                             fill
                             className="object-cover"
