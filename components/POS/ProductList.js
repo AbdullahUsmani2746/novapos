@@ -464,7 +464,7 @@ const ProductList = () => {
                     <div className="relative">
                       <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden relative">
                         {product.image_url ? (
-                          <Image
+                          <img
                             src={`http://82.112.254.65:3001${product.image_url}`}
                             alt={product.item}
                             fill
