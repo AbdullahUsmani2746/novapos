@@ -37,4 +37,4 @@ jobs:
             docker rm accounting || true
             docker image rm ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest || true
             docker pull ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest
-            docker run -d --env-file .env -p 3001:3001 --name accounting ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest
+            docker run -d --env-file .env -p 3001:3001 -v /var/www/uploads:/app/public/uploads --name accounting ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest
