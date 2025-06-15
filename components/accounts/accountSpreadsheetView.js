@@ -1,9 +1,18 @@
 "use client"
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { File, FileText, AlertCircle } from "lucide-react"
-import axios from "axios"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { 
+  FileText, 
+  FileSpreadsheet, 
+  Download, 
+  AlertCircle, 
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Database
+} from "lucide-react"
+import axios from "axios" 
 import { toast } from 'sonner'
 import {
   Pagination,
@@ -15,7 +24,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 
-const SiegwerkAccountsView = () => {
+const ChartOfAccountsView = () => {
   const [loading, setLoading] = useState(true)
   const [exportLoading, setExportLoading] = useState(false)
   const [accountData, setAccountData] = useState([])
@@ -35,10 +44,10 @@ const SiegwerkAccountsView = () => {
 
       const response = await axios.get(`/api/accounts/paged`, {
         params: { page, limit: itemsPerPage },
-        timeout: 10000 // 10 second timeout
+        timeout: 10000
       })
       
-      if (response.data && response.data.success) {
+      if (response.data?.success) {
         setAccountData(response.data.data || [])
         setTotalItems(response.data.pagination?.total || 0)
         setTotalPages(Math.ceil((response.data.pagination?.total || 0) / itemsPerPage))
@@ -72,80 +81,79 @@ const SiegwerkAccountsView = () => {
     fetchAccountData(currentPage)
   }, [fetchAccountData, currentPage])
 
+  // Prepare export data
+  const prepareExportData = (data) => {
+    return data.flatMap(item => {
+      const balanceSheetCode = item.balanceSheetCode || ''
+      const balanceSheetCategory = item.balanceSheetCategory || ''
+      const mainAccounts = item.mainAccounts || ''
+      const subAccounts = Array.isArray(item.subAccounts) ? item.subAccounts : []
+      
+      if (subAccounts.length === 0) {
+        return [{
+          'Balance Sheet Code': balanceSheetCode,
+          'Balance Sheet Category': balanceSheetCategory,
+          'Main Account': mainAccounts,
+          'Sub Account': ''
+        }]
+      }
+      
+      return subAccounts.map(subAccount => ({
+        'Balance Sheet Code': balanceSheetCode,
+        'Balance Sheet Category': balanceSheetCategory,
+        'Main Account': mainAccounts,
+        'Sub Account': subAccount || ''
+      }))
+    })
+  }
+
   // Export to Excel
   const exportToExcel = async () => {
     try {
       setExportLoading(true)
       
-      // Dynamically import XLSX
-      const XLSX = (await import('xlsx')).default
-      
-      // Fetch all data for export
       const response = await axios.get('/api/accounts/all', {
-        timeout: 30000 // 30 second timeout for large exports
+        timeout: 30000
       })
       
-      if (!response.data || !response.data.success) {
+      if (!response.data?.success) {
         throw new Error(response.data?.message || "Failed to fetch export data")
       }
       
       const exportData = response.data.data || []
       
       if (exportData.length === 0) {
-        toast.error("No data to export")
+        toast.warning("No data available for export")
         return
       }
       
-      const flatData = exportData.flatMap(item => {
-        // Ensure item has required properties
-        const balanceSheetCode = item.balanceSheetCode || ''
-        const balanceSheetCategory = item.balanceSheetCategory || ''
-        const mainAccounts = item.mainAccounts || ''
-        const subAccounts = Array.isArray(item.subAccounts) ? item.subAccounts : []
-        
-        if (subAccounts.length === 0) {
-          return [{
-            'Balance Sheet Codes': balanceSheetCode,
-            'Balance Sheet Category': balanceSheetCategory,
-            'Main Accounts': mainAccounts,
-            'Sub Accounts': ''
-          }]
-        }
-        
-        return subAccounts.map(subAccount => ({
-          'Balance Sheet Codes': balanceSheetCode,
-          'Balance Sheet Category': balanceSheetCategory,
-          'Main Accounts': mainAccounts,
-          'Sub Accounts': subAccount || ''
-        }))
-      })
-
+      const XLSX = (await import('xlsx')).default
+      const flatData = prepareExportData(exportData)
+      
       const ws = XLSX.utils.json_to_sheet(flatData)
       const wb = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(wb, ws, "Chart of Accounts")
       
       // Set column widths
       ws['!cols'] = [
-        { wch: 25 },
-        { wch: 35 },
-        { wch: 45 },
-        { wch: 45 }
+        { wch: 20 },
+        { wch: 30 },
+        { wch: 40 },
+        { wch: 40 }
       ]
 
-      // Generate filename with timestamp
       const timestamp = new Date().toISOString().split('T')[0]
       const filename = `chart-of-accounts-${timestamp}.xlsx`
       
       XLSX.writeFile(wb, filename)
       
-      toast.success("Export Successful", {
-        description: `Excel file "${filename}" has been downloaded.`
+      toast.success("Excel export completed", {
+        description: `File "${filename}" has been downloaded successfully.`
       })
     } catch (error) {
-      console.error("Export error:", error)
-      const errorMessage = error.response?.data?.message || error.message || "Failed to export to Excel"
-      toast.error("Export Failed", {
-        description: errorMessage
+      console.error("Excel export error:", error)
+      toast.error("Excel export failed", {
+        description: error.response?.data?.message || error.message || "Failed to export to Excel"
       })
     } finally {
       setExportLoading(false)
@@ -157,32 +165,27 @@ const SiegwerkAccountsView = () => {
     try {
       setExportLoading(true)
       
-      // Get all data for export
       const response = await axios.get('/api/accounts/all', {
-        timeout: 30000 // 30 second timeout for large exports
+        timeout: 30000
       })
       
-      if (!response.data || !response.data.success) {
+      if (!response.data?.success) {
         throw new Error(response.data?.message || "Failed to fetch export data")
       }
       
       const exportData = response.data.data || []
       
       if (exportData.length === 0) {
-        toast.error("No data to export")
+        toast.warning("No data available for export")
         return
       }
       
-      // Dynamically import html2pdf
       const html2pdf = (await import('html2pdf.js')).default
       
-      // Create a temporary div for PDF generation
       const tempDiv = document.createElement('div')
-      tempDiv.id = 'pdf-content'
-      tempDiv.style.cssText = 'visibility: hidden; position: absolute; left: -9999px; top: 0;'
+      tempDiv.style.cssText = 'position: absolute; left: -9999px; top: 0; visibility: hidden;'
       document.body.appendChild(tempDiv)
       
-      // Create PDF content with better formatting
       const tableRows = exportData.map(item => {
         const balanceSheetCode = item.balanceSheetCode || ''
         const balanceSheetCategory = item.balanceSheetCategory || ''
@@ -190,14 +193,14 @@ const SiegwerkAccountsView = () => {
         const subAccounts = Array.isArray(item.subAccounts) ? item.subAccounts : []
         
         return `
-          <tr style="border-bottom: 1px solid #eee;">
-            <td style="padding: 8px; border: 1px solid #ddd; font-size: 10px;">${balanceSheetCode}</td>
-            <td style="padding: 8px; border: 1px solid #ddd; font-size: 10px;">${balanceSheetCategory}</td>
-            <td style="padding: 8px; border: 1px solid #ddd; font-size: 10px;">${mainAccounts}</td>
-            <td style="padding: 8px; border: 1px solid #ddd; font-size: 10px;">
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd; font-size: 10px; word-wrap: break-word;">${balanceSheetCode}</td>
+            <td style="padding: 8px; border: 1px solid #ddd; font-size: 10px; word-wrap: break-word;">${balanceSheetCategory}</td>
+            <td style="padding: 8px; border: 1px solid #ddd; font-size: 10px; word-wrap: break-word;">${mainAccounts}</td>
+            <td style="padding: 8px; border: 1px solid #ddd; font-size: 10px; word-wrap: break-word;">
               ${subAccounts.length > 0 
-                ? subAccounts.map(sub => `<div style="margin-bottom: 3px;">${sub || ''}</div>`).join('')
-                : '<span style="color: #888;">No sub-accounts</span>'
+                ? subAccounts.map(sub => `<div style="margin-bottom: 2px;">${sub || ''}</div>`).join('')
+                : '<span style="color: #888;">—</span>'
               }
             </td>
           </tr>
@@ -205,15 +208,18 @@ const SiegwerkAccountsView = () => {
       }).join('')
       
       tempDiv.innerHTML = `
-        <div style="padding: 15px; font-family: Arial, sans-serif;">
-          <h1 style="text-align: center; color: #4F46E5; margin-bottom: 15px; font-size: 16px;">Chart of Accounts</h1>
-          <table style="width: 100%; border-collapse: collapse;">
+        <div style="padding: 20px; font-family: 'Segoe UI', Arial, sans-serif;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="color: #1e40af; margin: 0; font-size: 18px; font-weight: bold;">Chart of Accounts</h1>
+            <p style="color: #64748b; margin: 5px 0 0 0; font-size: 12px;">Generated on ${new Date().toLocaleDateString()}</p>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
             <thead>
-              <tr style="background-color: #EEF2FF;">
-                <th style="padding: 8px; text-align: left; border: 1px solid #ddd; font-size: 11px;">Balance Sheet Codes</th>
-                <th style="padding: 8px; text-align: left; border: 1px solid #ddd; font-size: 11px;">Balance Sheet Category</th>
-                <th style="padding: 8px; text-align: left; border: 1px solid #ddd; font-size: 11px;">Main Accounts</th>
-                <th style="padding: 8px; text-align: left; border: 1px solid #ddd; font-size: 11px;">Sub Accounts</th>
+              <tr style="background-color: #f1f5f9;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold; color: #1e40af;">Balance Sheet Code</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold; color: #1e40af;">Category</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold; color: #1e40af;">Main Account</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold; color: #1e40af;">Sub Accounts</th>
               </tr>
             </thead>
             <tbody>
@@ -224,65 +230,59 @@ const SiegwerkAccountsView = () => {
       `
       
       const opt = {
-        margin: 8,
+        margin: 10,
         filename: `chart-of-accounts-${new Date().toISOString().split('T')[0]}.pdf`,
-        image: { type: 'jpeg', quality: 0.95 },
+        image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
-          scale: 1.5, 
+          scale: 2, 
           useCORS: true,
-          letterRendering: true,
-          allowTaint: true
+          letterRendering: true
         },
         jsPDF: { 
           unit: 'mm', 
           format: 'a4', 
-          orientation: 'landscape',
-          compress: true
+          orientation: 'landscape'
         }
       }
       
       await html2pdf().from(tempDiv).set(opt).save()
       
-      // Clean up the temporary div
-      if (document.body.contains(tempDiv)) {
-        document.body.removeChild(tempDiv)
-      }
+      document.body.removeChild(tempDiv)
       
-      toast.success("Export Successful", {
-        description: "PDF file has been downloaded."
+      toast.success("PDF export completed", {
+        description: "PDF file has been downloaded successfully."
       })
     } catch (error) {
       console.error("PDF export error:", error)
-      const errorMessage = error.message || "Failed to export to PDF"
-      toast.error("Export Failed", {
-        description: errorMessage
+      toast.error("PDF export failed", {
+        description: error.message || "Failed to export to PDF"
       })
     } finally {
       setExportLoading(false)
     }
   }
 
-  // Generate pagination numbers with improved logic
-  const paginationItems = () => {
+  // Generate pagination items
+  const generatePaginationItems = () => {
     const items = []
-    const delta = 2 // Number of pages to show around current page
+    const delta = 2
     
     if (totalPages <= 1) return items
     
-    // Always show first page
+    // First page
     items.push(
       <PaginationItem key="first">
         <PaginationLink 
           isActive={currentPage === 1}
           onClick={() => handlePageChange(1)}
-          className="cursor-pointer"
+          className="cursor-pointer hover:bg-blue-50"
         >
           1
         </PaginationLink>
       </PaginationItem>
     )
     
-    // Add ellipsis if needed
+    // Left ellipsis
     if (currentPage > delta + 2) {
       items.push(
         <PaginationItem key="ellipsis-1">
@@ -291,7 +291,7 @@ const SiegwerkAccountsView = () => {
       )
     }
     
-    // Add pages around current page
+    // Pages around current
     const start = Math.max(2, currentPage - delta)
     const end = Math.min(totalPages - 1, currentPage + delta)
     
@@ -301,7 +301,7 @@ const SiegwerkAccountsView = () => {
           <PaginationLink 
             isActive={currentPage === i}
             onClick={() => handlePageChange(i)}
-            className="cursor-pointer"
+            className="cursor-pointer hover:bg-blue-50"
           >
             {i}
           </PaginationLink>
@@ -309,7 +309,7 @@ const SiegwerkAccountsView = () => {
       )
     }
     
-    // Add ellipsis if needed
+    // Right ellipsis
     if (currentPage < totalPages - delta - 1) {
       items.push(
         <PaginationItem key="ellipsis-2">
@@ -318,14 +318,14 @@ const SiegwerkAccountsView = () => {
       )
     }
     
-    // Always show last page if there's more than one page
+    // Last page
     if (totalPages > 1) {
       items.push(
         <PaginationItem key="last">
           <PaginationLink 
             isActive={currentPage === totalPages}
             onClick={() => handlePageChange(totalPages)}
-            className="cursor-pointer"
+            className="cursor-pointer hover:bg-blue-50"
           >
             {totalPages}
           </PaginationLink>
@@ -336,187 +336,199 @@ const SiegwerkAccountsView = () => {
     return items
   }
 
-  // Loading spinner component
-  const LoadingSpinner = ({ size = "w-8 h-8" }) => (
-    <div className={`${size} border-4 border-indigo-600 border-t-transparent rounded-full animate-spin`} />
+  const LoadingSpinner = () => (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+    </div>
   )
 
-  // Error display component
-  const ErrorDisplay = ({ message, onRetry }) => (
-    <div className="text-center py-16">
-      <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-      <p className="text-red-600 mb-4">{message}</p>
-      {onRetry && (
-        <Button 
-          onClick={onRetry}
-          variant="outline"
-          className="text-red-600 border-red-600 hover:bg-red-50"
-        >
-          Try Again
-        </Button>
-      )}
+  const ErrorState = ({ message, onRetry }) => (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">Something went wrong</h3>
+      <p className="text-gray-600 mb-6 max-w-md">{message}</p>
+      <Button 
+        onClick={onRetry}
+        variant="outline"
+        className="text-red-600 border-red-300 hover:bg-red-50"
+      >
+        Try Again
+      </Button>
+    </div>
+  )
+
+  const EmptyState = () => (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <Database className="w-12 h-12 text-gray-400 mb-4" />
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">No Data Available</h3>
+      <p className="text-gray-600">There are no account records to display at this time.</p>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center bg-indigo-50 py-6 rounded-2xl shadow-sm">
-          <h1 className="text-3xl font-bold text-indigo-800">Chart of Accounts</h1>
+        {/* Header Section */}
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Chart of Accounts</h1>
+          <p className="text-gray-600">Manage and view your organizational account structure</p>
           {totalItems > 0 && (
-            <p className="text-indigo-600 mt-2">
-              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
-            </p>
+            <div className="mt-4 inline-flex items-center px-4 py-2 bg-blue-100 rounded-full text-blue-800 text-sm font-medium">
+              Showing {((currentPage - 1) * itemsPerPage) + 1}–{Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
+            </div>
           )}
         </div>
 
-        {/* Export Buttons */}
-        <div className="flex flex-col sm:flex-row justify-end gap-3">
-          <Button 
-            onClick={exportToExcel} 
-            className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={loading || exportLoading || accountData.length === 0}
-          >
-            {exportLoading ? (
-              <LoadingSpinner size="w-4 h-4" />
-            ) : (
-              <FileText className="w-4 h-4" />
-            )}
-            Export to Excel
-          </Button>
-          <Button 
-            onClick={exportToPDF} 
-            className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={loading || exportLoading || accountData.length === 0}
-          >
-            {exportLoading ? (
-              <LoadingSpinner size="w-4 h-4" />
-            ) : (
-              <File className="w-4 h-4" />
-            )}
-            Export to PDF
-          </Button>
+        {/* Actions Section */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Database className="w-5 h-5 text-gray-500" />
+            <span className="text-sm text-gray-600">Account Management System</span>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button 
+              onClick={exportToExcel} 
+              className="bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+              disabled={loading || exportLoading || accountData.length === 0}
+            >
+              {exportLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+              )}
+              Export Excel
+            </Button>
+            
+            <Button 
+              onClick={exportToPDF} 
+              className="bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+              disabled={loading || exportLoading || accountData.length === 0}
+            >
+              {exportLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <FileText className="w-4 h-4 mr-2" />
+              )}
+              Export PDF
+            </Button>
+          </div>
         </div>
 
-        {/* Accounts Table */}
-        <Card className="overflow-hidden bg-white shadow-xl rounded-2xl">
+        {/* Main Content */}
+        <Card className="shadow-xl border-0 bg-white/70 backdrop-blur-sm">
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              {loading ? (
-                <div className="flex items-center justify-center py-16">
-                  <LoadingSpinner />
-                </div>
-              ) : error ? (
-                <ErrorDisplay 
-                  message={error} 
-                  onRetry={() => fetchAccountData(currentPage)}
-                />
-              ) : accountData.length === 0 ? (
-                <div className="text-center py-16 text-gray-500">
-                  <File className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No account data available</p>
-                </div>
-              ) : (
-                <>
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="bg-indigo-50 border-b border-indigo-100">
-                        {[
-                          'Balance Sheet Codes',
-                          'Balance Sheet Category',
-                          'Main Accounts',
-                          'Sub Accounts'
-                        ].map((header) => (
-                          <th 
-                            key={header}
-                            className="px-6 py-4 text-left text-sm font-semibold text-indigo-800 border-r border-indigo-100 last:border-r-0"
-                          >
-                            {header}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {accountData.map((item, index) => {
-                        const balanceSheetCode = item?.balanceSheetCode || ''
-                        const balanceSheetCategory = item?.balanceSheetCategory || ''
-                        const mainAccounts = item?.mainAccounts || ''
-                        const subAccounts = Array.isArray(item?.subAccounts) ? item.subAccounts : []
-                        
-                        return (
-                          <tr 
-                            key={`${index}-${balanceSheetCode}`}
-                            className="border-b border-gray-100 hover:bg-indigo-50/50 transition-colors"
-                          >
-                            <td className="px-6 py-4 text-sm whitespace-nowrap border-r border-gray-100">
-                              {balanceSheetCode}
-                            </td>
-                            <td className="px-6 py-4 text-sm border-r border-gray-100">
-                              {balanceSheetCategory}
-                            </td>
-                            <td className="px-6 py-4 text-sm border-r border-gray-100">
-                              {mainAccounts}
-                            </td>
-                            <td className="px-6 py-4 text-sm">
-                              <div className="space-y-2">
-                                {subAccounts.length > 0 ? (
-                                  subAccounts.map((subAccount, idx) => (
-                                    <div key={idx} className="break-words">
-                                      {subAccount || ''}
-                                    </div>
-                                  ))
-                                ) : (
-                                  <span className="text-gray-400">No sub-accounts</span>
-                                )}
+            {loading ? (
+              <LoadingSpinner />
+            ) : error ? (
+              <ErrorState 
+                message={error} 
+                onRetry={() => fetchAccountData(currentPage)}
+              />
+            ) : accountData.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                      {[
+                        'Balance Sheet Code',
+                        'Balance Sheet Category', 
+                        'Main Account',
+                        'Sub Accounts'
+                      ].map((header) => (
+                        <th 
+                          key={header}
+                          className="px-6 py-4 text-left text-sm font-semibold tracking-wide first:rounded-tl-lg last:rounded-tr-lg"
+                        >
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {accountData.map((item, index) => {
+                      const balanceSheetCode = item?.balanceSheetCode || ''
+                      const balanceSheetCategory = item?.balanceSheetCategory || ''
+                      const mainAccounts = item?.mainAccounts || ''
+                      const subAccounts = Array.isArray(item?.subAccounts) ? item.subAccounts : []
+                      
+                      return (
+                        <tr 
+                          key={`${index}-${balanceSheetCode}`}
+                          className="hover:bg-blue-50/50 transition-colors duration-150"
+                        >
+                          <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                            {balanceSheetCode}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-700">
+                            {balanceSheetCategory}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-700">
+                            {mainAccounts}
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            {subAccounts.length > 0 ? (
+                              <div className="space-y-1">
+                                {subAccounts.map((subAccount, idx) => (
+                                  <div 
+                                    key={idx} 
+                                    className="px-2 py-1 bg-gray-100 rounded text-gray-700 text-xs"
+                                  >
+                                    {subAccount || '—'}
+                                  </div>
+                                ))}
                               </div>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                  
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="py-4 bg-white border-t border-gray-100">
-                      <Pagination>
-                        <PaginationContent>
-                          <PaginationItem>
-                            <PaginationPrevious 
-                              onClick={() => handlePageChange(currentPage - 1)}
-                              className={
-                                currentPage === 1 
-                                  ? "pointer-events-none opacity-50" 
-                                  : "cursor-pointer hover:bg-indigo-50"
-                              }
-                            />
-                          </PaginationItem>
-                          
-                          {paginationItems()}
-                          
-                          <PaginationItem>
-                            <PaginationNext 
-                              onClick={() => handlePageChange(currentPage + 1)}
-                              className={
-                                currentPage === totalPages 
-                                  ? "pointer-events-none opacity-50" 
-                                  : "cursor-pointer hover:bg-indigo-50"
-                              }
-                            />
-                          </PaginationItem>
-                        </PaginationContent>
-                      </Pagination>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+                            ) : (
+                              <span className="text-gray-400 italic">No sub-accounts</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </CardContent>
         </Card>
+
+        {/* Pagination */}
+        {totalPages > 1 && !loading && !error && (
+          <div className="flex justify-center">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    className={
+                      currentPage === 1 
+                        ? "pointer-events-none opacity-50" 
+                        : "cursor-pointer hover:bg-blue-50"
+                    }
+                  />
+                </PaginationItem>
+                
+                {generatePaginationItems()}
+                
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    className={
+                      currentPage === totalPages 
+                        ? "pointer-events-none opacity-50" 
+                        : "cursor-pointer hover:bg-blue-50"
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-export default SiegwerkAccountsView
+export default ChartOfAccountsView

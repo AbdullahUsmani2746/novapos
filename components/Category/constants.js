@@ -493,7 +493,7 @@ export const VOUCHER_CONFIG = {
         label: "Vendor",
         type: "select",
         options: "accounts",
-        apiEndpoint: "/api/accounts/acno?macno=001",
+        apiEndpoint: "/api/accounts/acno?macno=006",
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
