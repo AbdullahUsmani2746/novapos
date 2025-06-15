@@ -40,7 +40,7 @@ export async function POST(request) {
     }
 
     const parentExists = await prisma.mBSCD.findUnique({
-      where: { bscd: mbscd },
+      where: { mbscd: mbscd },
     });
 
     if (!parentExists) {
@@ -74,5 +74,65 @@ export async function POST(request) {
       { error: 'Failed to create BSCD' },
       { status: 500 }
     );
+  }
+}
+
+// PUT update existing BSCD
+export async function PUT(request) {
+  try {
+    const body = await request.json();
+    const { bscd, bscdDetail, mbscd } = body;
+
+    if (!bscd || !bscdDetail || !mbscd) {
+      return NextResponse.json(
+        { error: 'bscd, bscdDetail, and mbscd are required' },
+        { status: 400 }
+      );
+    }
+
+    const parentExists = await prisma.mBSCD.findUnique({ where: { mbscd } });
+
+    if (!parentExists) {
+      return NextResponse.json(
+        { error: 'Parent MBSCD does not exist' },
+        { status: 400 }
+      );
+    }
+
+    const updated = await prisma.bSCD.update({
+      where: { bscd },
+      data: { bscdDetail, mbscd },
+    });
+
+    return NextResponse.json({ data: updated, status: 200 });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return NextResponse.json({ error: 'Record not found' }, { status: 404 });
+    }
+    return NextResponse.json({ error: 'Failed to update BSCD' }, { status: 500 });
+  }
+}
+
+// DELETE BSCD by query param (?code=XYZ)
+export async function DELETE(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const bscd = searchParams.get('code');
+
+    if (!bscd) {
+      return NextResponse.json(
+        { error: 'Query parameter "code" is required' },
+        { status: 400 }
+      );
+    }
+
+    await prisma.bSCD.delete({ where: { bscd } });
+
+    return NextResponse.json({ message: 'BSCD deleted successfully', status: 200 });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return NextResponse.json({ error: 'Record not found' }, { status: 404 });
+    }
+    return NextResponse.json({ error: 'Failed to delete BSCD' }, { status: 500 });
   }
 }

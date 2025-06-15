@@ -84,3 +84,72 @@ export async function POST(request) {
     );
   }
 }
+
+// PUT update MACNO
+export async function PUT(request) {
+  try {
+    const { macno, macname, bscd } = await request.json();
+
+    if (!macno || !macname || !bscd) {
+      return NextResponse.json(
+        { error: 'macno, macname, and bscd are required' },
+        { status: 400 }
+      );
+    }
+
+    const parentExists = await prisma.bSCD.findUnique({
+      where: { bscd },
+    });
+
+    if (!parentExists) {
+      return NextResponse.json(
+        { error: 'Parent BSCD does not exist' },
+        { status: 400 }
+      );
+    }
+
+    const updatedMacno = await prisma.mACNO.update({
+      where: { macno },
+      data: { macname, bscd },
+    });
+
+    return NextResponse.json({ data: updatedMacno, status: 200 });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return NextResponse.json({ error: 'MACNO not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(
+      { error: 'Failed to update MACNO' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE MACNO using query param (?code=XYZ)
+export async function DELETE(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const macno = searchParams.get('code');
+
+    if (!macno) {
+      return NextResponse.json(
+        { error: 'Query parameter "code" is required' },
+        { status: 400 }
+      );
+    }
+
+    await prisma.mACNO.delete({ where: { macno } });
+
+    return NextResponse.json({ message: 'MACNO deleted successfully', status: 200 });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return NextResponse.json({ error: 'MACNO not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(
+      { error: 'Failed to delete MACNO' },
+      { status: 500 }
+    );
+  }
+}

@@ -8,8 +8,8 @@ datasource db {
 }
 
 model MBSCD {
-  bscd       String @id @unique @db.VarChar(2)
-  bscdDetail String @db.VarChar(100)
+  mbscd       String @id @unique @db.VarChar(2)
+  mbscdDetail String @db.VarChar(100)
   bscdItems  BSCD[]
 }
 
@@ -17,7 +17,7 @@ model BSCD {
   bscd       String  @unique @db.VarChar(2)
   mbscd      String  @db.VarChar(2)
   bscdDetail String  @db.VarChar(100)
-  mainBscd   MBSCD   @relation(fields: [mbscd], references: [bscd])
+  mainBscd   MBSCD   @relation(fields: [mbscd], references: [mbscd])
   macnoItems MACNO[]
 
   @@id([mbscd, bscd])

@@ -66,22 +66,22 @@ const ModernPOSDashboard = () => {
   const statsCards = [
     {
       title: 'Today\'s Sales',
-      value: '$2,847',
-      change: '+12.5%',
+      value: '0',
+      change: '0',
       icon: DollarSign,
       color: 'text-green-500'
     },
     {
       title: 'Transactions',
-      value: '127',
-      change: '+8.2%',
+      value: '0',
+      change: '0',
       icon: TrendingUp,
       color: 'text-blue-500'
     },
     {
       title: 'Customers',
-      value: '89',
-      change: '+15.3%',
+      value: '0',
+      change: '0',
       icon: Users,
       color: 'text-purple-500'
     }

@@ -138,3 +138,131 @@ export async function POST(request) {
     );
   }
 }
+
+// PUT (Update an ACNO)
+export async function PUT(request) {
+  try {
+    const body = await request.json();
+    const {
+      macno,
+      acno,
+      acname,
+      bankAccountNo,
+      address,
+      city,
+      phoneFax,
+      email,
+      website,
+      crDays,
+      stRate,
+      area,
+      category,
+      subCategory,
+      country,
+      customerBank,
+      customerBankAddr,
+      stRegNo,
+      ntnNo,
+      contactPerson,
+      crLimit,
+      salesArea,
+    } = body;
+
+    if (!macno || !acno || !acname) {
+      return NextResponse.json(
+        { error: 'macno, acno, and acname are required' },
+        { status: 400 }
+      );
+    }
+
+    // Ensure parent MACNO exists
+    const parentExists = await prisma.mACNO.findUnique({ where: { macno } });
+    if (!parentExists) {
+      return NextResponse.json(
+        { error: 'Parent MACNO does not exist' },
+        { status: 400 }
+      );
+    }
+
+    const updatedAcno = await prisma.aCNO.update({
+      where: {
+        macno_acno: {
+          macno,
+          acno,
+        },
+      },
+      data: {
+        acname,
+        bankAccountNo,
+        address,
+        city,
+        phoneFax,
+        email,
+        website,
+        crDays: crDays ?? null,
+        stRate: stRate ?? null,
+        area,
+        category,
+        subCategory,
+        country,
+        customerBank,
+        customerBankAddr,
+        stRegNo,
+        ntnNo,
+        contactPerson,
+        crLimit: crLimit ?? null,
+        salesArea,
+      },
+    });
+
+    return NextResponse.json({ data: updatedAcno, status: 200 });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return NextResponse.json({ error: 'ACNO not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(
+      { error: 'Failed to update ACNO' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE (?macno=XX&acno=YY)
+export async function DELETE(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const macno = searchParams.get('macno');
+    const acno = searchParams.get('acno');
+
+    if (!macno || !acno) {
+      return NextResponse.json(
+        { error: 'Both macno and acno query parameters are required' },
+        { status: 400 }
+      );
+    }
+
+    await prisma.aCNO.delete({
+      where: {
+        macno_acno: {
+          macno,
+          acno,
+        },
+      },
+    });
+
+    return NextResponse.json({
+      message: 'ACNO deleted successfully',
+      status: 200,
+    });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return NextResponse.json({ error: 'ACNO not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(
+      { error: 'Failed to delete ACNO' },
+      { status: 500 }
+    );
+  }
+}
