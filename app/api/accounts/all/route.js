@@ -49,7 +49,7 @@ function buildAccountsHierarchy(mbscdData, bscdData, macnoData, acnoData) {
   
   for (const l1 of mbscdData) {
     // Filter level 2 (bscd) for this mbscd
-    const level2Items = bscdData.filter(l2 => l2.mbscd === l1.bscd);
+    const level2Items = bscdData.filter(l2 => l2.mbscd === l1.mbscd);
     
     for (const l2 of level2Items) {
       // Filter level 3 (macno) for this bscd
