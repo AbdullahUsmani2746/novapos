@@ -49,7 +49,7 @@ function buildAccountsHierarchy(mbscdData, bscdData, macnoData, acnoData) {
   
   for (const l1 of mbscdData) {
     // Filter level 2 (bscd) for this mbscd
-    const level2Items = bscdData.filter(l2 => l2.mbscd === l1.bscd);
+    const level2Items = bscdData.filter(l2 => l2.mbscd === l1.mbscd);
     
     for (const l2 of level2Items) {
       // Filter level 3 (macno) for this bscd
@@ -60,7 +60,7 @@ function buildAccountsHierarchy(mbscdData, bscdData, macnoData, acnoData) {
         const level4Items = acnoData.filter(l4 => l4.macno === l3.macno);
         
         formattedData.push({
-          balanceSheetCode: `${l1.bscd} ${l1.bscdDetail}`,
+          balanceSheetCode: `${l1.mbscd} ${l1.mbscdDetail}`,
           balanceSheetCategory: `${l2.bscd} ${l2.bscdDetail}`,
           mainAccounts: `${l3.macno} ${l3.macname}`,
           subAccounts: level4Items.map(acc => `${acc.acno} ${acc.acname}`)

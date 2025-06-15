@@ -35,60 +35,104 @@ export async function GET() {
 
 
 export async function POST(request) {
-  const data = await request.json();
-  const { ic_name } = data;
+  try {
+    const data = await request.json();
+    const { ic_name } = data;
 
-  const FIXED_MAIN_CATEGORY_ID = 1; // use the ID of your static/shared mainCategory
+    if (!ic_name) {
+      return NextResponse.json({ error: 'Category name is required' }, { status: 400 });
+    }
 
-  try{
-    // Check if the category already exists
-    const existingCategory = await prisma.itemCategory.findFirst({
+    const FIXED_NAME = 'Default'; // You can replace this per request
+
+    // 1. Check or Create ProductMasterCategory
+    let pmc = await prisma.productMasterCategory.findFirst({
+      where: { pmc_name: FIXED_NAME },
+    });
+
+    if (!pmc) {
+      pmc = await prisma.productMasterCategory.create({
+        data: {
+          pmc_name: FIXED_NAME,
+        },
+      });
+    }
+
+    // 2. Check or Create ProductGroup
+    let pg = await prisma.productGroup.findFirst({
+      where: {
+        pg_name: FIXED_NAME,
+        pmc_id: pmc.id,
+      },
+    });
+
+    if (!pg) {
+      pg = await prisma.productGroup.create({
+        data: {
+          pg_name: FIXED_NAME,
+          pmc_id: pmc.id,
+        },
+      });
+    }
+
+    // 3. Check or Create ProductCategory
+    let pc = await prisma.productCategory.findFirst({
+      where: {
+        pc_name: FIXED_NAME,
+        pg_id: pg.id,
+      },
+    });
+
+    if (!pc) {
+      pc = await prisma.productCategory.create({
+        data: {
+          pc_name: FIXED_NAME,
+          pg_id: pg.id,
+        },
+      });
+    }
+
+    // 4. Check or Create MainCategory
+    let mc = await prisma.mainCategory.findFirst({
+      where: {
+        mc_name: FIXED_NAME,
+        pc_id: pc.id,
+      },
+    });
+
+    if (!mc) {
+      mc = await prisma.mainCategory.create({
+        data: {
+          mc_name: FIXED_NAME,
+          pc_id: pc.id,
+        },
+      });
+    }
+
+    // 5. Check if ItemCategory exists
+    const existingItemCategory = await prisma.itemCategory.findFirst({
       where: { ic_name },
     });
 
-    if (existingCategory) {
-      return NextResponse.json({ error: 'Category already exists' }, { status: 400 });
+    if (existingItemCategory) {
+      return NextResponse.json({ error: 'Item Category already exists' }, { status: 400 });
     }
-  
-    // Create new itemCategory linked to fixed mainCategory
-    const category = await prisma.itemCategory.create({
+
+    // 6. Create ItemCategory
+    const newItemCategory = await prisma.itemCategory.create({
       data: {
         ic_name,
-        mc_id: FIXED_MAIN_CATEGORY_ID,
-        sync_status: 'pending'
+        mc_id: mc.id,
+        sync_status: 'pending',
+        wc_category_id: null, // or default value
       },
-      include: {
-        mainCategory: {
-          include: {
-            ProductCategories: {
-              include: {
-                ProductGroups: {
-                  include: {
-                    ProductMasterCategories: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
     });
 
-  // No need to update mainCategory or other levels now
-
-  
-  try {
-    console.log('Category to sync:', category);
-
-  // await syncCategoryToWooCommerce(category);
-} catch (error) {
-  console.error('WooCommerce sync failed:', error);
-  // Optionally log the failure in DB or return a warning message
-}
-  return NextResponse.json(category);
-}
-  catch (error) {
+    return NextResponse.json(newItemCategory);
+  } catch (error) {
     console.error('Error creating category:', error);
     return NextResponse.json({ error: 'Failed to create category' }, { status: 500 });
   }
 }
+
+

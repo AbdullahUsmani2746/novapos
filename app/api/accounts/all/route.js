@@ -60,7 +60,7 @@ function buildAccountsHierarchy(mbscdData, bscdData, macnoData, acnoData) {
         const level4Items = acnoData.filter(l4 => l4.macno === l3.macno);
         
         formattedData.push({
-          balanceSheetCode: `${l1.bscd} ${l1.bscdDetail}`,
+          balanceSheetCode: `${l1.mbscd} ${l1.mbscdDetail}`,
           balanceSheetCategory: `${l2.bscd} ${l2.bscdDetail}`,
           mainAccounts: `${l3.macno} ${l3.macname}`,
           subAccounts: level4Items.map(acc => `${acc.acno} ${acc.acname}`)
