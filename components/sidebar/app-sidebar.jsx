@@ -1,5 +1,5 @@
 "use client"
-
+import Image from "next/image"
 import * as React from "react"
 import {
   BookOpen,
@@ -236,9 +236,15 @@ export function AppSidebar({
             <SidebarMenuButton size="lg" asChild>
               <a href="#">
                 <div
-                  className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Command className="size-4" />
-                </div>
+  className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary-foreground text-sidebar-primary-foreground">
+  <Image
+    src="/logo.webp" // replace with your actual image path
+    alt="Logo"
+    width={64}
+    height={64}
+    className="rounded-sm object-contain"
+  />
+</div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">Silky Silk Flowers</span>
                   <span className="truncate text-xs">Enterprise</span>
