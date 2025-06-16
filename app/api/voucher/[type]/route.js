@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { VOUCHER_CONFIG } from "@/components/Category/constants";
+import { BadgeCent } from "lucide-react";
 
 // GET method
 export async function GET(req, { params }) {
@@ -154,16 +155,17 @@ export async function POST(req, { params }) {
             base.ccno = costCenterValue;
           }
         }
-
         // Handle item code for tran_code 4 or 6
         if ([4, 6].includes(tran_code)) {
+          if (tran_code === 4) {
+            base.acno = "0004";
+          }
+
           const itemValue = parseOptionalInt(line.itcd);
           if (itemValue !== undefined) {
             base.itcd = itemValue;
-            base.acno = "0004"
           }
         }
-
         console.log("base:", base);
         return base;
       }),
