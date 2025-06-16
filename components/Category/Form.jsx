@@ -96,7 +96,7 @@ const FormInput = ({
   ...props
 }) => (
   <div className="space-y-1">
-    <Label className="text-xs text-gray-700">
+    <Label className="text-xs text-primary">
       {label}
       {required && <span className="text-red-500">*</span>}
     </Label>
@@ -146,7 +146,7 @@ const SearchableSelect = ({
 
   return (
     <div className="space-y-1">
-      <Label className="text-xs text-gray-700">
+      <Label className="text-xs text-primary">
         {label}
         {required && <span className="text-red-500">*</span>}
       </Label>
@@ -795,7 +795,7 @@ export default function VoucherForm({ type, onClose }) {
     if (fieldConfig.type === "textarea") {
       return (
         <div className="space-y-1">
-          <Label className="text-xs text-gray-700">{fieldConfig.label}</Label>
+          <Label className="text-xs text-primary">{fieldConfig.label}</Label>
           <Textarea
             value={value || ""}
             onChange={(e) =>
@@ -827,7 +827,7 @@ export default function VoucherForm({ type, onClose }) {
         type={inputType}
         value={
           fieldConfig.type === "number" && typeof value === "number"
-            ? value.toFixed(2)
+            ? value
             : value || ""
         }
         onChange={(e) =>
@@ -847,7 +847,7 @@ export default function VoucherForm({ type, onClose }) {
 
   const renderMasterFields = () => (
     <motion.div
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-secondary rounded-lg"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -876,7 +876,7 @@ export default function VoucherForm({ type, onClose }) {
                 )
               ) : field.type === "textarea" ? (
                 <div className="space-y-1">
-                  <Label className="text-xs text-gray-700">
+                  <Label className="text-xs text-primary">
                     {field.label}
                     {field.required && <span className="text-red-500">*</span>}
                   </Label>
@@ -993,7 +993,7 @@ export default function VoucherForm({ type, onClose }) {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-100 text-xs border-b text-gray-700">
+              <tr className="bg-gray-100 text-xs border-b text-primary">
                 <th className="p-2 w-10">
                   <input
                     type="checkbox"
@@ -1094,7 +1094,7 @@ export default function VoucherForm({ type, onClose }) {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <span className="text-xs text-gray-700">
+                  <span className="text-xs text-primary">
                     {config.label}:{" "}
                   </span>
                   <span className="text-primary font-bold">
@@ -1193,7 +1193,7 @@ export default function VoucherForm({ type, onClose }) {
                     />
                   ) : field.type === "textarea" ? (
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-700">
+                      <Label className="text-xs text-primary">
                         {field.label}
                         {field.required && (
                           <span className="text-red-500">*</span>
