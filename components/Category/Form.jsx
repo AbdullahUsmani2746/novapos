@@ -1311,8 +1311,8 @@ export default function VoucherForm({ type, onClose }) {
       )}
       <form onSubmit={handleSubmit}>
         <Card className="mb-6 shadow-sm">
-          <CardHeader className="bg-gray-50 border-b">
-            <CardTitle className="text-lg text-gray-800">
+          <CardHeader className="bg-primary border-b">
+            <CardTitle className="text-lg text-white">
               Voucher Details
             </CardTitle>
           </CardHeader>
