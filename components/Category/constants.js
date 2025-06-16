@@ -504,7 +504,6 @@ export const VOUCHER_CONFIG = {
       { name: "check_no", label: "ST Inv No", type: "text" },
       { name: "check_date", label: "ST Inv Date", type: "Date" },
       { name: "rmk", label: "Narration", type: "textarea" },
-      { name: "rmk3", label: "Prd Cat", type: "text" },
       { name: "invoice_no", label: "Com Inv No", type: "text" },
       {
         name: "godown",

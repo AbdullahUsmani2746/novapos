@@ -110,7 +110,7 @@ const ModernPosLayout = ({ children }) => {
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
         <div className="rounded-xl shadow-lg">
-          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary-foreground text-sidebar-primary-foreground">
+          <div className="flex aspect-square 12 items-center justify-center rounded-lg bg-sidebar-primary-foreground text-sidebar-primary-foreground">
             <Image
               src="/logo.webp"
               alt="Logo"

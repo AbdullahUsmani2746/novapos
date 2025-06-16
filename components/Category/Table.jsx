@@ -768,8 +768,8 @@ export default function VoucherTable({ type = 'voucher',refreshTrigger=0,isLoadi
     >
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-primary mb-2">Voucher Management</h1>
-        <p className="text-primary">Manage and track your vouchers efficiently</p>
+        <h1 className="text-3xl font-bold text-primary mb-2">{String(type).charAt(0).toUpperCase() + String(type).slice(1)} Management</h1>
+        <p className="text-primary">Manage and track your {type}s efficiently</p>
       </div>
 
       {error && (

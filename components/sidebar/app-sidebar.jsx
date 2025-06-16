@@ -236,7 +236,7 @@ export function AppSidebar({
             <SidebarMenuButton size="lg" asChild>
               <a href="#">
                 <div
-  className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary-foreground text-sidebar-primary-foreground">
+  className="flex aspect-square size-12 items-center justify-center rounded-lg bg-sidebar-primary-foreground text-sidebar-primary-foreground">
   <Image
     src="/logo.webp" // replace with your actual image path
     alt="Logo"
