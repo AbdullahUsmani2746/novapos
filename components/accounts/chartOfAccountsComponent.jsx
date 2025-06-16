@@ -347,7 +347,7 @@ const handleCreate = async (formData) => {
         )}
         <Input
           className={`${Icon ? "pl-10" : ""} w-full ${
-            error ? "border-red-500 focus:ring-red-500" : "focus:ring-blue-500"
+            error ? "border-red-500 focus:ring-red-500" : "focus:ring-primary"
           }`}
           {...props}
         />
@@ -450,7 +450,7 @@ const handleCreate = async (formData) => {
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
                     errors[parentLevelConfig.codeField]
                       ? "border-red-500 focus:ring-red-500"
-                      : "focus:ring-blue-500"
+                      : "focus:ring-primary"
                   }`}
                   value={formData[parentLevelConfig.codeField] || ""}
                   onChange={(e) =>
@@ -507,7 +507,7 @@ const handleCreate = async (formData) => {
             <Button
               onClick={handleSubmit}
               disabled={loading}
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              className="flex-1 bg-primary hover:bg-primary/90"
             >
               {loading ? (
                 <motion.div
@@ -590,21 +590,21 @@ const handleCreate = async (formData) => {
     return (
       <Card className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden">
         <CardHeader
-          className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 cursor-pointer"
+          className="bg-gradient-to-r from-secondary to-muted p-4 cursor-pointer"
           onClick={() =>
             setExpandedCards((prev) => ({ ...prev, [index]: !prev[index] }))
           }
         >
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-blue-800">
+            <h2 className="text-lg font-semibold text-primary">
               {levelConfig?.title}
             </h2>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-blue-600 bg-blue-200 px-2 py-1 rounded-full">
+              <span className="text-sm text-primary bg-muted px-2 py-1 rounded-full">
                 {filteredData.length}
               </span>
               <ChevronDown
-                className={`w-5 h-5 text-blue-600 transition-transform ${
+                className={`w-5 h-5 text-primary transition-transform ${
                   isExpanded ? "rotate-180" : ""
                 }`}
               />
@@ -645,7 +645,7 @@ const handleCreate = async (formData) => {
                       });
                       setActiveModal("form");
                     }}
-                    className="bg-blue-600 hover:bg-blue-700 h-10 px-4"
+                    className="bg-primary hover:bg-primary/90 h-10 px-4"
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
@@ -661,7 +661,7 @@ const handleCreate = async (formData) => {
                       >
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-mono text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                            <span className="text-sm font-mono text-primary bg-secondary px-2 py-1 rounded">
                               {item[levelConfig?.codeField]}
                             </span>
                             <span className="text-sm font-medium text-gray-900 truncate">
@@ -696,9 +696,9 @@ const handleCreate = async (formData) => {
                               });
                               setActiveModal("form");
                             }}
-                            className="h-8 w-8 p-0 hover:bg-blue-100"
+                            className="h-8 w-8 p-0 hover:bg-secondary/80"
                           >
-                            <Edit className="w-4 h-4 text-blue-600" />
+                            <Edit className="w-4 h-4 text-primary" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -740,7 +740,7 @@ const handleCreate = async (formData) => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-background p-4">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -756,7 +756,7 @@ const handleCreate = async (formData) => {
               setModalData({ mode: "create", level: "acno", item: {} });
               setActiveModal("form");
             }}
-            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+            className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
             Quick Add Account
@@ -769,7 +769,7 @@ const handleCreate = async (formData) => {
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"
+              className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full"
             />
           </div>
         )}

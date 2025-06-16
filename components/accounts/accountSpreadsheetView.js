@@ -275,7 +275,7 @@ const ChartOfAccountsView = () => {
         <PaginationLink 
           isActive={currentPage === 1}
           onClick={() => handlePageChange(1)}
-          className="cursor-pointer hover:bg-blue-50"
+          className="cursor-pointer hover:bg-secondary"
         >
           1
         </PaginationLink>
@@ -301,7 +301,7 @@ const ChartOfAccountsView = () => {
           <PaginationLink 
             isActive={currentPage === i}
             onClick={() => handlePageChange(i)}
-            className="cursor-pointer hover:bg-blue-50"
+            className="cursor-pointer hover:bg-secondary"
           >
             {i}
           </PaginationLink>
@@ -325,7 +325,7 @@ const ChartOfAccountsView = () => {
           <PaginationLink 
             isActive={currentPage === totalPages}
             onClick={() => handlePageChange(totalPages)}
-            className="cursor-pointer hover:bg-blue-50"
+            className="cursor-pointer hover:bg-secondary"
           >
             {totalPages}
           </PaginationLink>
@@ -338,7 +338,7 @@ const ChartOfAccountsView = () => {
 
   const LoadingSpinner = () => (
     <div className="flex items-center justify-center py-12">
-      <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
     </div>
   )
 
@@ -346,7 +346,7 @@ const ChartOfAccountsView = () => {
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
       <h3 className="text-lg font-semibold text-gray-900 mb-2">Something went wrong</h3>
-      <p className="text-gray-600 mb-6 max-w-md">{message}</p>
+      <p className="text-primary mb-6 max-w-md">{message}</p>
       <Button 
         onClick={onRetry}
         variant="outline"
@@ -359,21 +359,21 @@ const ChartOfAccountsView = () => {
 
   const EmptyState = () => (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <Database className="w-12 h-12 text-gray-400 mb-4" />
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">No Data Available</h3>
-      <p className="text-gray-600">There are no account records to display at this time.</p>
+      <Database className="w-12 h-12 text-primary mb-4" />
+      <h3 className="text-lg font-semibold text-secondary mb-2">No Data Available</h3>
+      <p className="text-primary">There are no account records to display at this time.</p>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-secondary to-muted p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header Section */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Chart of Accounts</h1>
-          <p className="text-gray-600">Manage and view your organizational account structure</p>
+          <h1 className="text-4xl font-bold text-primary mb-2">Chart of Accounts</h1>
+          <p className="text-primary">Manage and view your organizational account structure</p>
           {totalItems > 0 && (
-            <div className="mt-4 inline-flex items-center px-4 py-2 bg-blue-100 rounded-full text-blue-800 text-sm font-medium">
+            <div className="mt-4 inline-flex items-center px-4 py-2 bg-secondary rounded-full text-primary text-sm font-medium">
               Showing {((currentPage - 1) * itemsPerPage) + 1}–{Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
             </div>
           )}
@@ -382,14 +382,14 @@ const ChartOfAccountsView = () => {
         {/* Actions Section */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-2">
-            <Database className="w-5 h-5 text-gray-500" />
-            <span className="text-sm text-gray-600">Account Management System</span>
+            <Database className="w-5 h-5 text-primary" />
+            <span className="text-sm text-primary">Account Management System</span>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-3">
             <Button 
               onClick={exportToExcel} 
-              className="bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+              className="bg-primary hover:bg-primary/80 text-white shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
               disabled={loading || exportLoading || accountData.length === 0}
             >
               {exportLoading ? (
@@ -402,7 +402,7 @@ const ChartOfAccountsView = () => {
             
             <Button 
               onClick={exportToPDF} 
-              className="bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+              className="bg-primary hover:bg-primary/80 text-white shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
               disabled={loading || exportLoading || accountData.length === 0}
             >
               {exportLoading ? (
@@ -431,7 +431,7 @@ const ChartOfAccountsView = () => {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                    <tr className="bg-gradient-to-r from-primary to-primary text-white">
                       {[
                         'Balance Sheet Code',
                         'Balance Sheet Category', 
@@ -457,7 +457,7 @@ const ChartOfAccountsView = () => {
                       return (
                         <tr 
                           key={`${index}-${balanceSheetCode}`}
-                          className="hover:bg-blue-50/50 transition-colors duration-150"
+                          className="hover:bg-secondary/50 transition-colors duration-150"
                         >
                           <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                             {balanceSheetCode}
@@ -474,7 +474,7 @@ const ChartOfAccountsView = () => {
                                 {subAccounts.map((subAccount, idx) => (
                                   <div 
                                     key={idx} 
-                                    className="px-2 py-1 bg-gray-100 rounded text-gray-700 text-xs"
+                                    className="px-2 py-1 bg-secondary rounded text-primary font-semibold text-xs"
                                   >
                                     {subAccount || '—'}
                                   </div>
@@ -505,7 +505,7 @@ const ChartOfAccountsView = () => {
                     className={
                       currentPage === 1 
                         ? "pointer-events-none opacity-50" 
-                        : "cursor-pointer hover:bg-blue-50"
+                        : "cursor-pointer hover:bg-secondary"
                     }
                   />
                 </PaginationItem>
@@ -518,7 +518,7 @@ const ChartOfAccountsView = () => {
                     className={
                       currentPage === totalPages 
                         ? "pointer-events-none opacity-50" 
-                        : "cursor-pointer hover:bg-blue-50"
+                        : "cursor-pointer hover:bg-secondary"
                     }
                   />
                 </PaginationItem>

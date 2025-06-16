@@ -160,6 +160,7 @@ export async function POST(req, { params }) {
           const itemValue = parseOptionalInt(line.itcd);
           if (itemValue !== undefined) {
             base.itcd = itemValue;
+            base.acno = "0004"
           }
         }
 

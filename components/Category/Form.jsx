@@ -107,7 +107,7 @@ const FormInput = ({
       <Input
         className={`${
           Icon ? "pl-8 pr-8" : "px-3"
-        } w-full rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500 ${
+        } w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary ${
           error ? "border-red-500 focus:ring-red-500" : ""
         } ${className}`}
         {...props}
@@ -157,7 +157,7 @@ const SearchableSelect = ({
         onOpenChange={setIsOpen}
       >
         <SelectTrigger
-          className={`h-8 text-xs w-full rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500 ${
+          className={`h-8 text-xs w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary ${
             error ? "border-red-500" : ""
           }`}
           aria-label={placeholder}
@@ -185,7 +185,7 @@ const SearchableSelect = ({
               <SelectItem
                 key={opt.value}
                 value={opt.value}
-                className="text-xs hover:bg-blue-50 focus:bg-blue-50"
+                className="text-xs hover:bg-primary focus:bg-primary"
               >
                 {opt.label}
               </SelectItem>
@@ -193,7 +193,7 @@ const SearchableSelect = ({
           )}
           <SelectItem
             value="add_new"
-            className="text-blue-600 hover:bg-blue-50 focus:bg-blue-50"
+            className="text-primary hover:bg-primary focus:bg-primary"
           >
             Add New {placeholder.split("Select ")[1]}
           </SelectItem>
@@ -803,7 +803,7 @@ export default function VoucherForm({ type, onClose }) {
             }
             readOnly={isReadOnly}
             disabled={loading.submit || isReadOnly}
-            className="h-16 text-xs w-full rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+            className="h-16 text-xs w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary"
           />
           {errors.validation[
             `${isMain ? "main" : "deduction"}-${index}-${fieldName}`
@@ -886,7 +886,7 @@ export default function VoucherForm({ type, onClose }) {
                       handleMasterChange(fieldName, e.target.value)
                     }
                     disabled={loading.submit}
-                    className="h-16 text-sm rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                    className="h-16 text-sm rounded-md border-gray-300 focus:ring-primary focus:border-primary"
                   />
                   {errors.validation[fieldName] && (
                     <p className="text-xs text-red-500">
@@ -953,9 +953,9 @@ export default function VoucherForm({ type, onClose }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-3 flex justify-between items-center text-white rounded-t-lg">
+        <div className="bg-gradient-to-r from-primary to-primary p-3 flex justify-between items-center text-white rounded-t-lg">
           <div className="flex items-center gap-2">
-            <Badge className="bg-white text-blue-600">{lines.length}</Badge>
+            <Badge className="bg-white text-primary">{lines.length}</Badge>
             <span className="text-sm font-medium">{title}</span>
           </div>
           <div className="flex gap-2">
@@ -971,7 +971,7 @@ export default function VoucherForm({ type, onClose }) {
                 !selectedRows.some((k) => k.startsWith(prefix)) ||
                 loading.submit
               }
-              className="bg-white text-blue-600 hover:bg-blue-100"
+              className="bg-white text-primary hover:bg-secondary hover:text-primary"
             >
               <Trash2 className="h-4 w-4 mr-1" /> Delete
             </Button>
@@ -984,7 +984,7 @@ export default function VoucherForm({ type, onClose }) {
                 addLine(isMain);
               }}
               disabled={loading.submit}
-              className="bg-white text-blue-600 hover:bg-blue-100"
+              className="bg-white text-primary hover:bg-secondary hover:text-primary"
             >
               <PlusCircle className="h-4 w-4 mr-1" /> Add
             </Button>
@@ -1028,7 +1028,7 @@ export default function VoucherForm({ type, onClose }) {
                     transition={{ duration: 0.2 }}
                     className={`border-b hover:bg-gray-50 ${
                       selectedRows.includes(`${prefix}-${idx}`)
-                        ? "bg-blue-50"
+                        ? "bg-primary"
                         : ""
                     }`}
                     onClick={() => toggleRowSelection(idx, isMain)}
@@ -1097,7 +1097,7 @@ export default function VoucherForm({ type, onClose }) {
                   <span className="text-xs text-gray-700">
                     {config.label}:{" "}
                   </span>
-                  <span className="text-blue-600 font-bold">
+                  <span className="text-primary font-bold">
                     {totals[k]?.toFixed(2) || "0.00"}
                   </span>
                 </motion.div>
@@ -1207,7 +1207,7 @@ export default function VoucherForm({ type, onClose }) {
                             [field.name]: e.target.value,
                           })
                         }
-                        className="h-16 text-xs w-full rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        className="h-16 text-xs w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary"
                         disabled={isSubmitting}
                       />
                       {modalErrors[field.name] && (
@@ -1240,7 +1240,7 @@ export default function VoucherForm({ type, onClose }) {
           <DialogFooter className="flex flex-col sm:flex-row gap-4">
             <Button
               onClick={handleSave}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-primary hover:bg-secondary hover:text-primary"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Saving..." : "Save"}
@@ -1282,7 +1282,7 @@ export default function VoucherForm({ type, onClose }) {
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full"
+            className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full"
           />
         </motion.div>
       )}
@@ -1331,14 +1331,14 @@ export default function VoucherForm({ type, onClose }) {
             variant="outline"
             onClick={onClose}
             disabled={loading.submit}
-            className="rounded-md border-gray-300 text-gray-700 hover:bg-gray-100"
+            className="rounded-md text-primary bg-secondary hover:bg-primary "
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={loading.submit || loading.options || loading.vrNo}
-            className="rounded-md bg-blue-600 hover:bg-blue-700 text-white"
+            className="rounded-md bg-primary hover:bg-secondary text-white hover:text-primary"
           >
             {loading.submit ? (
               <>

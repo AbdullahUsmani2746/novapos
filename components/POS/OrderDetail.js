@@ -164,7 +164,7 @@ const OrderDetail = ({ orderId }) => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-full mx-auto">
           <div className="animate-pulse space-y-6">
             {/* Header skeleton */}
             <div className="flex items-center gap-4 mb-8">
@@ -221,7 +221,7 @@ const OrderDetail = ({ orderId }) => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="max-w-full mx-auto px-4 py-6">
           <div className="flex items-center gap-4">
             <Button 
               variant="ghost" 
@@ -243,7 +243,7 @@ const OrderDetail = ({ orderId }) => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto p-4 pb-8">
+      <div className="max-w-full mx-auto p-4 pb-8">
         {/* Status Header Card */}
         <Card className="mb-6 overflow-hidden bg-white/90 backdrop-blur-sm border-0 shadow-lg rounded-2xl">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>

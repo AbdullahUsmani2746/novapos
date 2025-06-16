@@ -18,21 +18,21 @@ const CONFIG = {
       stats: ['total'],
       apiPath: 'payment',
       icon: TrendingUp,
-      gradient: 'from-blue-500 to-cyan-500'
+      gradient: 'from-primary to-primary'
     },
     receipt: {
       label: 'Receipt',
       stats: ['total'],
       apiPath: 'receipt',
       icon: BarChart3,
-      gradient: 'from-green-500 to-emerald-500'
+      gradient: 'from-primary to-primary'
     },
     journal: {
       label: 'Journal',
       stats: ['total'],
       apiPath: 'journal',
       icon: Layers,
-      gradient: 'from-purple-500 to-pink-500'
+      gradient: 'from-primary to-primary'
     }
   },
   invoice: {
@@ -41,14 +41,14 @@ const CONFIG = {
       stats: ['total'],
       apiPath: 'purchase',
       icon: TrendingUp,
-      gradient: 'from-orange-500 to-red-500'
+      gradient: 'from-primary to-primary'
     },
     sale: {
       label: 'Sales Invoice',
       stats: ['total'],
       apiPath: 'sale',
       icon: Sparkles,
-      gradient: 'from-indigo-500 to-blue-500'
+      gradient: 'from-primary to-primary'
     }
   }
 }
@@ -229,7 +229,7 @@ export default function DynamicVoucherPage({ params: paramsPromise }) {
       </div>
 
       <motion.div
-        className="relative container mx-auto px-4 py-8 max-w-7xl"
+        className="relative container mx-auto px-8 py-8 max-w-full"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -270,7 +270,7 @@ export default function DynamicVoucherPage({ params: paramsPromise }) {
               onClick={refreshData}
               variant="outline"
               size="lg"
-              className="flex-1 lg:flex-none h-12 px-6 bg-white/80 backdrop-blur-xl border-slate-200/50 hover:bg-white hover:border-slate-300 hover:shadow-lg transition-all duration-300 group"
+              className="flex-1 lg:flex-none h-10 px-6 bg-primary/80 text-white hover:bg-secondary hover:text-primary group hover:shadow-lg transition-all duration-300 group"
               disabled={isLoading}
             >
               <RefreshCw 
@@ -278,7 +278,7 @@ export default function DynamicVoucherPage({ params: paramsPromise }) {
                 className={`mr-2 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-300`} 
               />
               Refresh
-              <span className="hidden sm:inline ml-1 text-xs text-slate-400">(Ctrl+R)</span>
+              <span className="hidden sm:inline ml-1 text-xs text-white group-hover:text-primary">(Ctrl+R)</span>
             </Button>
 
             <Modal 
@@ -337,7 +337,7 @@ export default function DynamicVoucherPage({ params: paramsPromise }) {
         >
           <Card className="border-0 bg-white/60 backdrop-blur-xl shadow-2xl shadow-black/5 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/20" />
-            <CardContent className="relative p-6 lg:p-8">
+            <CardContent className="relative p-0 lg:p-0">
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -347,10 +347,10 @@ export default function DynamicVoucherPage({ params: paramsPromise }) {
                   category={params.category}
                   type={params.type}
                   isLoading={isLoading}
-                  refreshData={refreshData}
+                  refreshTrigger={refreshTrigger+1}
                 />
               </motion.div>
-            </CardContent>
+            </CardContent>  
           </Card>
         </motion.div>
 
@@ -361,7 +361,7 @@ export default function DynamicVoucherPage({ params: paramsPromise }) {
           transition={{ delay: 1, duration: 0.6 }}
           className="fixed bottom-6 right-6 hidden lg:block"
         >
-          <div className="bg-black/80 backdrop-blur-xl text-white px-4 py-2 rounded-full text-xs font-medium shadow-2xl">
+          <div className="bg-primary/80 backdrop-blur-xl text-white px-4 py-2 rounded-full text-xs font-medium shadow-2xl">
             Press Ctrl+R to refresh
           </div>
         </motion.div>

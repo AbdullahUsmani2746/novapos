@@ -32,7 +32,7 @@ const DataTable = ({
   console.log("DataTable", data, fields, loading);
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-lg border border-secondary overflow-hidden">
       <div className="overflow-x-auto">
         {loading ? (
           <div className="py-20 flex justify-center items-center">
@@ -46,30 +46,30 @@ const DataTable = ({
         ) : (
             <table className="w-full">
               <thead>
-                <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                <tr className="bg-gradient-to-r from-primary to-primary">
                   {fields?.map((field) => (
                     <th
                       key={field.label || field.name}
-                      className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                      className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider"
                     >
                       {field.label || field.name}
                     </th>
                   ))}
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-white uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-secondary">
                 {data.length <= 0 ? (
                   <tr>
                     <td
                       colSpan={fields.length + 1}
-                      className="px-6 py-8 text-center text-sm text-gray-500 bg-gray-50"
+                      className="px-6 py-8 text-center text-sm text-white bg-primary"
                     >
                       <div className="flex flex-col items-center justify-center">
                         <svg
-                          className="w-12 h-12 text-gray-300 mb-2"
+                          className="w-12 h-12 text-white mb-2"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -92,8 +92,8 @@ const DataTable = ({
                       key={item.id || Math.random().toString(36)}
                       className={`${
                         hoveredRow === item.id
-                          ? "bg-blue-50"
-                          : "hover:bg-gray-50"
+                          ? "bg-secondary"
+                          : "hover:bg-secondary"
                       } transition-all duration-200`}
                       onMouseEnter={() => setHoveredRow(item.id)}
                       onMouseLeave={() => setHoveredRow(null)}
@@ -123,7 +123,7 @@ const DataTable = ({
                         return (
                           <td
                             key={field.label || field.name}
-                            className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700"
+                            className="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary"
                           >
                             {cellContent}
                           </td>

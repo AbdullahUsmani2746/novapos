@@ -524,30 +524,6 @@ export const VOUCHER_CONFIG = {
     ],
     lineFields: [
       {
-        name: "acno",
-        label: "A/c Name",
-        formName: "acno",
-        type: "select",
-        options: "accounts",
-        apiEndpoint: "/api/accounts/acno?macno=001",
-        createEndpoint: "/api/accounts/acno",
-        nameKey: "acname",
-        valueKey: "acno",
-        modalFields: [
-          { name: "acname", label: "Account Name", type: "text", required: true },
-          {
-            name: "macno",
-            label: "Main Account",
-            type: "select",
-            options: "mainAccounts",
-            apiEndpoint: "/api/accounts/macno",
-            valueKey: "macno",
-            nameKey: "macname",
-            required: true,
-          },
-        ],
-      },
-      {
         name: "itcd",
         label: "Product",
         type: "select",
@@ -678,29 +654,6 @@ export const VOUCHER_CONFIG = {
       
     ],
     lineFields: [
-      {
-        name: "acno",
-        label: "A/c Name",
-        type: "select",
-        options: "accounts",
-        apiEndpoint: "/api/accounts/acno?macno=001",
-        createEndpoint: "/api/accounts/acno",
-        nameKey: "acname",
-        valueKey: "acno",
-        modalFields: [
-          { name: "acname", label: "Account Name", type: "text", required: true },
-          {
-            name: "macno",
-            label: "Main Account",
-            type: "select",
-            options: "mainAccounts",
-            apiEndpoint: "/api/accounts/macno",
-            valueKey: "macno",
-            nameKey: "macname",
-            required: true,
-          },
-        ],
-      },
       {
         name: "itcd",
         label: "Product",

@@ -140,6 +140,9 @@ model ItemCategory {
   ic_name       String        @db.VarChar(250)
   mc_id         Int
   wc_category_id Int?         @unique
+  stock_acno     Int?        @default(4) // New field for stock account number
+  sale_acno      Int?        
+  cogs_acno      Int?        
   sync_status   String?       @default("synced") @db.VarChar(20)
   last_sync     DateTime?     @default(now())
   mainCategory  MainCategory  @relation(fields: [mc_id], references: [id])

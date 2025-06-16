@@ -76,7 +76,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
           <div key={field.name} className="space-y-1">
             <label
               htmlFor={field.name}
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-white"
             >
               {field.label}
               {field.required && <span className="text-red-500 ml-1">*</span>}
@@ -89,7 +89,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
                 name={field.name}
                 value={formData[field.name] || ""}
                 onChange={handleChange}
-                className="border p-2 w-full rounded"
+                className="border p-2 w-full rounded bg-secondary"
                 required={field.required}
               />
             )}
@@ -101,7 +101,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
                 name={field.name}
                 value={formData[field.name] || ""}
                 onChange={handleChange}
-                className="border p-2 w-full rounded"
+                className="border p-2 w-full rounded bg-secondary"
                 required={field.required}
               />
             )}
@@ -113,7 +113,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
                 name={field.name}
                 value={formData[field.name] || ""}
                 onChange={handleChange}
-                className="border p-2 w-full rounded"
+                className="border p-2 w-full rounded bg-secondary"
                 required={field.required}
               />
             )}
@@ -125,7 +125,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
                 name={field.name}
                 value={formData[field.name] || ""}
                 onChange={handleChange}
-                className="border p-2 w-full rounded"
+                className="border p-2 w-full rounded bg-secondary"
                 required={field.required}
               />
             )}
@@ -136,7 +136,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
                 name={field.name}
                 value={formData[field.name] || ""}
                 onChange={handleChange}
-                className="border p-2 w-full rounded"
+                className="border p-2 w-full rounded bg-secondary"
                 required={field.required}
               >
                 <option value="">Select {field.label}</option>
@@ -171,13 +171,13 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className="bg-gray-300 text-gray-800 px-4 py-2 rounded"
+            className="bg-secondary text-primary px-4 py-2 rounded"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded"
+            className="bg-secondary text-primary px-4 py-2 rounded"
           >
             Save
           </button>

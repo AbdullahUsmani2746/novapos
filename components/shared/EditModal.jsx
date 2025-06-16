@@ -45,7 +45,7 @@ const EditModal = ({ title, fields, initialData, onSubmit, onClose }) => {
           <div key={field.name} className="space-y-1">
             <label
               htmlFor={field.name}
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-white"
             >
               {field.label?.charAt(0).toUpperCase() + field.label.slice(1)}
             </label>
@@ -57,7 +57,7 @@ const EditModal = ({ title, fields, initialData, onSubmit, onClose }) => {
                 name={field.name}
                 value={formData[field.name] || ""}
                 onChange={handleChange}
-                className="border p-2 w-full rounded"
+                className="border p-2 w-full rounded bg-secondary"
               />
             )}
 
@@ -68,7 +68,7 @@ const EditModal = ({ title, fields, initialData, onSubmit, onClose }) => {
                 name={field.name}
                 value={formData[field.name] || ""}
                 onChange={handleChange}
-                className="border p-2 w-full rounded"
+                className="border p-2 w-full rounded bg-secondary"
               />
             )}
 
@@ -79,7 +79,7 @@ const EditModal = ({ title, fields, initialData, onSubmit, onClose }) => {
                 name={field.name}
                 value={formData[field.name]?.slice(0, 10) || ""}
                 onChange={handleChange}
-                className="border p-2 w-full rounded"
+                className="border p-2 w-full rounded bg-secondary"
               />
             )}
 
@@ -89,7 +89,7 @@ const EditModal = ({ title, fields, initialData, onSubmit, onClose }) => {
                 name={field.name}
                 value={formData[field.name] || ""}
                 onChange={handleChange}
-                className="border p-2 w-full rounded"
+                className="border p-2 w-full rounded bg-secondary"
               >
                 <option value="">Select {field.label}</option>
                 {field.options?.map((option) => (
@@ -109,13 +109,13 @@ const EditModal = ({ title, fields, initialData, onSubmit, onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className="bg-gray-300 text-gray-800 px-4 py-2 rounded"
+            className="bg-secondary text-primary px-4 py-2 rounded"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded"
+            className="bg-secondary text-primary px-4 py-2 rounded"
           >
             Update
           </button>

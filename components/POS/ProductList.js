@@ -95,6 +95,7 @@ const mockProducts = [
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -107,13 +108,11 @@ const ProductList = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const router = useRouter();
 
-  const categories = [...new Set(products.map((p) => p.itemCategories))];
+
   const statuses = ["All", "active", "low_stock", "out_of_stock"];
 
-  useEffect(() => {
-    setIsLoading(true);
-
-    axios
+  const fetchProducts = () => {
+axios
       .get("/api/pos/products")
       .then((res) => {
         setProducts(res.data);
@@ -124,6 +123,26 @@ const ProductList = () => {
         console.error("Error fetching products:", err);
         setIsLoading(false); // Ensure loading state is reset on error too
       });
+  }
+
+    const fetchCategories = () => {
+axios
+      .get("/api/pos/categories")
+      .then((res) => {
+        setCategories(res.data);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching products:", err);
+        setIsLoading(false); // Ensure loading state is reset on error too
+      });
+  }
+
+  useEffect(() => {
+    setIsLoading(true);
+    fetchProducts();
+    fetchCategories();
+    
   }, []);
 
   // Filter and sort products
@@ -254,7 +273,7 @@ const ProductList = () => {
 
   return (
     <div className="min-h-screen ">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-full mx-auto">
         {/* Header */}
         <motion.div
           initial={{ y: -50, opacity: 0 }}

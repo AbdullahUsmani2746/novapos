@@ -17,6 +17,7 @@ import {
   Bell
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 const ModernPosLayout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -35,43 +36,40 @@ const ModernPosLayout = ({ children }) => {
       label: 'Dashboard',
       href: '/pos',
       icon: LayoutDashboard,
-      color: 'from-blue-500 to-blue-600'
-    },
+      color: 'from-primary to-primary'  },
     {
       id: 'products',
       label: 'Products',
       href: '/pos/products',
       icon: Package,
-      color: 'from-purple-500 to-purple-600'
+      color: 'from-primary to-primary'
     },
     {
       id: 'categories',
       label: 'Categories',
       href: '/pos/categories',
       icon: Grid3X3,
-      color: 'from-green-500 to-green-600'
-    },
+      color: 'from-primary to-primary'    },
     {
       id: 'cart',
       label: 'Cart',
       href: '/pos/cart',
       icon: ShoppingCart,
-      color: 'from-orange-500 to-orange-600'
+      color: 'from-primary to-primary'
     },
     {
       id: 'orders',
       label: 'Orders',
       href: '/pos/orders',
       icon: Receipt,
-      color: 'from-pink-500 to-pink-600'
-    },
+      color: 'from-primary to-primary'  },
 
     {
       id: 'reports',
       label: 'Reports',
       href: '/pos/reports',
       icon: Notebook,
-      color: 'from-indigo-500 to-indigo-600'
+      color: 'from-primary to-primary'
     }
   ];
 
@@ -96,140 +94,146 @@ const ModernPosLayout = ({ children }) => {
       )}
 
       {/* Sidebar */}
-      <aside className={`
-        fixed md:static inset-y-0 left-0 z-50 w-72 md:w-80
-        bg-white/95 backdrop-blur-xl border-r border-slate-200/50
-        shadow-2xl shadow-slate-900/10
-        transform transition-all duration-500 ease-out
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-        ${isLoaded ? 'opacity-100' : 'opacity-0'}
-      `}>
-        {/* Sidebar Header */}
-        <div className="p-6 border-b border-slate-200/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-                  POS System
-                </h1>
-                <p className="text-xs text-slate-500">Point of Sale</p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="md:hidden p-2 hover:bg-slate-100"
-              onClick={toggleSidebar}
-            >
-              <X className="w-4 h-4" />
-            </Button>
+     <aside
+  className={`
+    fixed inset-y-0 left-0 z-50 w-72 md:w-80
+    bg-primary backdrop-blur-xl border-r border-slate-200/50
+    shadow-2xl shadow-slate-900/10
+    transform transition-all duration-500 ease-out
+    flex flex-col
+    ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+    ${isLoaded ? 'opacity-100' : 'opacity-0'}
+  `}
+>
+  {/* Sidebar Header */}
+  <div className=" p-6 border-b border-slate-200/50 shrink-0">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className="rounded-xl shadow-lg">
+          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary-foreground text-sidebar-primary-foreground">
+            <Image
+              src="/logo.webp"
+              alt="Logo"
+              width={64}
+              height={64}
+              className="rounded-sm object-contain"
+            />
           </div>
         </div>
+        <div>
+          <h1 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-white">
+            Silky Slik Flowers
+          </h1>
+          <p className="text-xs text-white">Point of Sale</p>
+        </div>
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="md:hidden p-2 hover:bg-slate-100"
+        onClick={toggleSidebar}
+      >
+        <X className="w-4 h-4" />
+      </Button>
+    </div>
+  </div>
 
-        {/* Navigation */}
-        <nav className="p-4 space-y-2">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 py-2">
-            Navigation
-          </p>
-          {navigationItems.map((item, index) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            
-            return (
+  {/* Scrollable Navigation Area */}
+  <div className="flex-2 overflow-y-auto">
+    <nav className="p-4 space-y-2">
+      <p className="text-xs font-semibold text-white uppercase tracking-wider px-3 py-2">
+        Navigation
+      </p>
+      {navigationItems.map((item, index) => {
+        const Icon = item.icon;
+        const isActive = activeTab === item.id;
+
+        return (
+          <div
+            key={item.id}
+            className={`transform transition-all duration-500 ease-out ${
+              isLoaded ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
+            }`}
+            style={{ transitionDelay: `${0.1 + index * 0.1}s` }}
+          >
+            <Button
+              variant="ghost"
+              className={`group relative w-full justify-start p-4 h-auto transition-all duration-300 ease-out hover:bg-secondary hover:shadow-md hover:scale-[1.02] active:scale-[0.98] touch-manipulation ${
+                isActive
+                  ? 'bg-gradient-to-r from-secondary to-secondary shadow-md border-l-4 border-secondary'
+                  : 'hover:border-l-4 hover:border-transparent'
+              }`}
+              onClick={() => handleNavClick(item.id, item.href)}
+            >
+              {isActive && (
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 to-purple-50 opacity-50 rounded-lg" />
+              )}
+
               <div
-                key={item.id}
-                className={`transform transition-all duration-500 ease-out ${
-                  isLoaded ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
+                className={`relative p-2.5 rounded-xl mr-4 transition-all duration-300 ${
+                  isActive
+                    ? `bg-primary shadow-lg`
+                    : `bg-white group-hover:bg-primary group-hover:bg-gradient-to-r ${item.color}`
                 }`}
-                style={{ transitionDelay: `${0.1 + index * 0.1}s` }}
               >
-                <Button
-                  variant="ghost"
-                  className={`
-                    group relative w-full justify-start p-4 h-auto
-                    transition-all duration-300 ease-out
-                    hover:bg-slate-50 hover:shadow-md hover:scale-[1.02]
-                    active:scale-[0.98] touch-manipulation
-                    ${isActive 
-                      ? 'bg-gradient-to-r from-slate-50 to-white shadow-md border-l-4 border-indigo-500' 
-                      : 'hover:border-l-4 hover:border-transparent'
-                    }
-                  `}
-                  onClick={() => handleNavClick(item.id, item.href)}
-                >
-                  {/* Background Gradient for Active */}
-                  {isActive && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 to-purple-50 opacity-50 rounded-lg" />
-                  )}
-                  
-                  {/* Icon */}
-                  <div className={`
-                    relative p-2.5 rounded-xl mr-4 transition-all duration-300
-                    ${isActive 
-                      ? `bg-gradient-to-r ${item.color} shadow-lg shadow-${item.color.split('-')[1]}-500/25` 
-                      : 'bg-slate-100 group-hover:bg-slate-200'
-                    }
-                  `}>
-                    <Icon className={`
-                      w-5 h-5 transition-all duration-300
-                      ${isActive ? 'text-white' : 'text-slate-600 group-hover:text-slate-700'}
-                    `} />
-                  </div>
-                  
-                  {/* Label */}
-                  <div className="flex-1 text-left">
-                    <span className={`
-                      font-medium transition-colors duration-300
-                      ${isActive ? 'text-slate-800' : 'text-slate-600 group-hover:text-slate-800'}
-                    `}>
-                      {item.label}
-                    </span>
-                  </div>
-                  
-                  {/* Arrow */}
-                  <ChevronRight className={`
-                    w-4 h-4 transition-all duration-300
-                    ${isActive 
-                      ? 'text-indigo-500 translate-x-1' 
-                      : 'text-slate-400 group-hover:text-slate-600 group-hover:translate-x-1'
-                    }
-                  `} />
-                  
-                  {/* Ripple Effect */}
-                  <div className="absolute inset-0 bg-white opacity-0 group-active:opacity-20 transition-opacity duration-150 rounded-lg pointer-events-none" />
-                </Button>
+                <Icon
+                  className={`w-5 h-5 transition-all duration-300 ${
+                    isActive ? 'text-white' : 'text-primary group-hover:text-white'
+                  }`}
+                />
               </div>
-            );
-          })}
-        </nav>
 
-        {/* Bottom Section */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-200/50 bg-white/80 backdrop-blur-sm">
-          <div className="space-y-2">
-            <Button
-              variant="ghost"
-              className="w-full justify-start p-3 hover:bg-slate-50 transition-all duration-300"
-            >
-              <Settings className="w-4 h-4 mr-3 text-slate-500" />
-              <span className="text-slate-600 font-medium">Settings</span>
-            </Button>
-            <Button
-              onClick={()=>router.push('/')}
-              variant="ghost"
-              className="w-full justify-start p-3 hover:bg-red-50 text-red-600 hover:text-red-700 transition-all duration-300"
-            >
-              <LogOut className="w-4 h-4 mr-3" />
-              <span className="font-medium">Sign Out</span>
+              <div className="flex-1 text-left">
+                <span
+                  className={`font-bold transition-colors duration-300 ${
+                    isActive ? 'text-primary ' : 'text-white group-hover:text-primary'
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </div>
+
+              <ChevronRight
+                className={`w-4 h-4 transition-all duration-300 ${
+                  isActive
+                    ? 'text-primary translate-x-1'
+                    : 'text-white group-hover:text-slate-600 group-hover:translate-x-1'
+                }`}
+              />
+
+              <div className="absolute inset-0 bg-white opacity-0 group-active:opacity-20 transition-opacity duration-150 rounded-lg pointer-events-none" />
             </Button>
           </div>
-        </div>
-      </aside>
+        );
+      })}
+    </nav>
+  </div>
+
+  {/* Fixed Bottom Buttons */}
+  <div className=" p-4 border-t border-slate-200/50 bg-primary backdrop-blur-sm shrink-0">
+    <div className="space-y-2">
+      <Button
+        variant="ghost"
+        className="w-full justify-start p-3 hover:bg-secondary group transition-all duration-300"
+      >
+        <Settings className="w-4 h-4 mr-3 text-white group-hover:text-primary" />
+        <span className="text-white font-medium group-hover:text-primary">Settings</span>
+      </Button>
+      <Button
+        onClick={() => router.push('/')}
+        variant="ghost"
+        className="w-full justify-start p-3 hover:bg-red-50 text-white group transition-all duration-300"
+      >
+        <LogOut className="w-4 h-4 mr-3 group-hover:text-primary" />
+        <span className="font-medium group-hover:text-primary">Sign Out</span>
+      </Button>
+    </div>
+  </div>
+</aside>
+
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen md:ml-80">
         {/* Top Bar */}
         <header className={`
           bg-white/80 backdrop-blur-xl border-b border-slate-200/50 
