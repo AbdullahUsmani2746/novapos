@@ -204,7 +204,15 @@ const SearchableSelect = ({
   );
 };
 
-export default function VoucherForm({ type, onClose }) {
+export default function VoucherForm({
+  type,
+  onClose,
+  editMode = false,
+  existingData = null,
+}) {
+  
+  console.log("ESI: ",existingData)
+  console.log("Mode:", editMode)
   const voucherConfig = VOUCHER_CONFIG[type] || {};
   const [masterData, setMasterData] = useState({});
   const [mainLines, setMainLines] = useState([{}]);
@@ -218,7 +226,7 @@ export default function VoucherForm({ type, onClose }) {
     suppliers: [],
     customers: [],
     products: [],
-    itemCategories:[],
+    itemCategories: [],
     godowns: [],
     mainAccounts: [],
   });
@@ -286,9 +294,11 @@ export default function VoucherForm({ type, onClose }) {
 
       // Add mainAccounts endpoint for account creation
       endpoints.push({ key: "mainAccounts", url: "/api/accounts/macno" });
-      endpoints.push({ key: "itemCategories", url: "/api/setup/item_categories" });
+      endpoints.push({
+        key: "itemCategories",
+        url: "/api/setup/item_categories",
+      });
       // endpoints.push({ key: "mainAccounts", url: "/api/accounts/macno" });
-
 
       const results = await Promise.all(
         endpoints.map(async ({ key, url }) => {
@@ -373,6 +383,7 @@ export default function VoucherForm({ type, onClose }) {
 
   useEffect(() => {
     if (
+      !editMode && // Only fetch new VR number if not in edit mode
       voucherConfig.masterFields?.some(
         (f) => f.name === "vr_no" && f.autoGenerate
       )
@@ -383,7 +394,41 @@ export default function VoucherForm({ type, onClose }) {
         setLoading((prev) => ({ ...prev, vrNo: false }));
       });
     }
-  }, [voucherConfig]);
+  }, [voucherConfig, editMode]);
+  
+  // Add state reset useEffect at the top of VoucherForm
+useEffect(() => {
+  // Reset states when component mounts or type changes
+  setMasterData({});
+  setMainLines([{}]);
+  setDeductionLines([{}]);
+  setTotals({});
+  setErrors({ options: null, submit: null, validation: {} });
+  setSelectedRows([]);
+}, [type])
+
+// Update existingData useEffect
+useEffect(() => {
+  if (editMode && existingData) {
+    console.log("Loading existingData:", JSON.stringify(existingData, null, 2)); // Debug
+    // Set master data with fallback
+    setMasterData(existingData.master || {});
+
+    // Set line items with fallback
+    setMainLines(
+      Array.isArray(existingData.lines) && existingData.lines.length > 0
+        ? existingData.lines
+        : [{}]
+    );
+
+    // Set deduction lines with fallback
+    setDeductionLines(
+      Array.isArray(existingData.deductions) && existingData.deductions.length > 0
+        ? existingData.deductions
+        : [{}]
+    );
+  }
+}, [editMode, existingData]);
 
   // Calculate totals
   useEffect(() => {
@@ -654,19 +699,18 @@ export default function VoucherForm({ type, onClose }) {
     }));
     return Object.keys(newErrors).length === 0;
   };
-  const prepareFormData = () => ({
-    master: { ...masterData, tran_code: voucherConfig.tran_code },
-    lines: mainLines
-      .filter((line) => Object.values(line).some((v) => v?.toString().trim()))
-      .map((line) => ({ ...line })),
-    deductions: voucherConfig.hasDeductionBlock
-      ? deductionLines
-          .filter((line) =>
-            Object.values(line).some((v) => v?.toString().trim())
-          )
-          .map((line) => ({ ...line }))
-      : [],
-  });
+// Update prepareFormData to ensure correct deductions key
+const prepareFormData = () => ({
+  master: { ...masterData, tran_code: voucherConfig.tran_code },
+  lines: mainLines
+    .filter((line) => Object.values(line).some((v) => v?.toString().trim()))
+    .map((line) => ({ ...line })),
+  deductions: voucherConfig.hasDeductionBlock
+    ? deductionLines
+        .filter((line) => Object.values(line).some((v) => v?.toString().trim()))
+        .map((line) => ({ ...line }))
+    : [],
+});
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -698,16 +742,24 @@ export default function VoucherForm({ type, onClose }) {
 
     try {
       const formData = prepareFormData();
-      await axios.post(apiMap[type], formData);
-      toast.success("Voucher saved successfully");
+
+      // Choose API method and endpoint based on edit mode
+      if (editMode && existingData.voucherId) {
+        await axios.put(`${apiMap[type]}/${existingData.voucherId}`, formData);
+        toast.success("Voucher updated successfully");
+      } else {
+        await axios.post(apiMap[type], formData);
+        toast.success("Voucher saved successfully");
+      }
+
       onClose();
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.message;
       setErrors((prev) => ({
         ...prev,
-        submit: `Failed to save: ${errorMsg}`,
+        submit: `Failed to ${editMode ? "update" : "save"}: ${errorMsg}`,
       }));
-      toast.error(`Failed to save: ${errorMsg}`);
+      toast.error(`Failed to ${editMode ? "update" : "save"}: ${errorMsg}`);
     } finally {
       setLoading((prev) => ({ ...prev, submit: false }));
     }
@@ -1094,9 +1146,7 @@ export default function VoucherForm({ type, onClose }) {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <span className="text-xs text-primary">
-                    {config.label}:{" "}
-                  </span>
+                  <span className="text-xs text-primary">{config.label}: </span>
                   <span className="text-primary font-bold">
                     {totals[k]?.toFixed(2) || "0.00"}
                   </span>
@@ -1313,7 +1363,7 @@ export default function VoucherForm({ type, onClose }) {
         <Card className="mb-6 shadow-sm">
           <CardHeader className="bg-primary border-b">
             <CardTitle className="text-lg text-white">
-              Voucher Details
+              {editMode ? "Edit Voucher Details" : "Voucher Details"}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">{renderMasterFields()}</CardContent>
@@ -1343,12 +1393,12 @@ export default function VoucherForm({ type, onClose }) {
             {loading.submit ? (
               <>
                 <span className="animate-spin mr-2">⏳</span>
-                Saving...
+                {editMode ? "Updating..." : "Saving..."}
               </>
             ) : (
               <>
                 <Save className="h-4 w-4 mr-1" />
-                Save Voucher
+                {editMode ? "Update Voucher" : "Save Voucher"}
               </>
             )}
           </Button>

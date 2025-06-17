@@ -13,7 +13,12 @@ export async function GET(request) {
 
   const vouchers = await prisma.transactionsMaster.findMany({
     where: { tran_code: tranCode },
-    include: { transactions: true }
+    include: { 
+      transactions: true,
+      acno:true,
+      godownDetails:true,
+
+    }
   });
 
   return NextResponse.json(vouchers);

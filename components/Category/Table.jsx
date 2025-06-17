@@ -1,394 +1,9 @@
-// 'use client'
+"use client";
 
-// import { useEffect, useState, useCallback, useMemo } from 'react'
-// import { motion, AnimatePresence } from 'framer-motion'
-// import { VOUCHER_CONFIG } from './constants'
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableHead,
-//   TableHeader,
-//   TableRow,
-// } from '@/components/ui/table'
-// import { Card } from '@/components/ui/card'
-// import { Skeleton } from '@/components/ui/skeleton'
-// import {
-//   Pagination,
-//   PaginationContent,
-//   PaginationItem,
-//   PaginationLink,
-//   PaginationNext,
-//   PaginationPrevious,
-// } from '@/components/ui/pagination'
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-// import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-// import { ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
-// import axios from 'axios'
-
-// // Separate component for cell content to fix the hooks issue
-// const CellContent = ({ value, field, formatCellContent }) => {
-//   const [content, setContent] = useState('-')
-  
-//   useEffect(() => {
-//     let isMounted = true
-//     formatCellContent(value, field).then(result => {
-//       if (isMounted) setContent(result)
-//     })
-//     return () => { isMounted = false }
-//   }, [value, field, formatCellContent])
-  
-//   return content
-// }
-
-// export default function VoucherTable({ type }) {
-//   const [data, setData] = useState([])
-//   const [loading, setLoading] = useState(true)
-//   const [error, setError] = useState(null)
-//   const [page, setPage] = useState(1)
-//   const [limit, setLimit] = useState(10)
-//   const [totalPages, setTotalPages] = useState(1)
-//   const [refCache, setRefCache] = useState({}) // Cache for reference names
-
-//   const fields = VOUCHER_CONFIG[type]?.tableFields || []
-
-//   // Fetch voucher data with pagination
-//   const fetchData = useCallback(async () => {
-//     setLoading(true)
-//     setError(null)
-//     try {
-//       const response = await axios.get(`/api/voucher/${type}`, {
-//         params: { page, limit },
-//       })
-//       setData(response.data.data || [])
-//       setTotalPages(response.data.totalPages || 1)
-//     } catch (err) {
-//       setError('Failed to load data. Please try again.')
-//       console.error(err)
-//     } finally {
-//       setLoading(false)
-//     }
-//   }, [type, page, limit])
-
-//   // Fetch reference names for fields with refApi
-//   const fetchRefName = useCallback(async (value, refApi, refValueKey, refNameKey) => {
-//     if (!value || !refApi) return value?.toString() || '-'
-//     const cacheKey = `${refApi}-${value}`
-//     if (refCache[cacheKey]) return refCache[cacheKey]
-
-//     try {
-//       const response = await axios.get(`${refApi}${value}`)
-//       const name = response.data.data[0][refNameKey] || value
-//       setRefCache((prev) => ({ ...prev, [cacheKey]: name }))
-//       return name
-//     } catch (err) {
-//       console.error(`Error fetching ref for ${value}:`, err)
-//       return value?.toString() || '-'
-//     }
-//   }, [refCache])
-
-//   useEffect(() => {
-//     let isMounted = true
-//     const fetchVouchers = async () => {
-//       setLoading(true)
-//       setError(null)
-//       try {
-//         const response = await axios.get(`/api/voucher/${type}`, {
-//           params: { page, limit },
-//         })
-//         if (isMounted) {
-//           setData(response.data.data || [])
-//           setTotalPages(response.data.totalPages || 1)
-//         }
-//       } catch (err) {
-//         if (isMounted) {
-//           setError('Failed to load data. Please try again.')
-//           console.error(err)
-//         }
-//       } finally {
-//         if (isMounted) {
-//           setLoading(false)
-//         }
-//       }
-//     }
-
-//     fetchVouchers()
-//     return () => { isMounted = false }
-//   }, [type, page, limit])
-
-//   // Format cell content and handle reference fields
-//   const formatCellContent = useCallback(
-//     async (value, field) => {
-//       if (value === null || value === undefined) return '-'
-//       if (field.refApi) {
-//         return await fetchRefName(value, field.refApi, field.refValueKey, field.refNameKey)
-//       }
-//       switch (field.type) {
-//         case 'date':
-//           return new Date(value).toLocaleDateString()
-//         case 'number':
-//           return Number(value).toFixed(2)
-//         case 'text':
-//         default:
-//           return value.toString()
-//       }
-//     },
-//     [fetchRefName]
-//   )
-
-//   // Animation variants
-//   const tableVariants = {
-//     hidden: { opacity: 0 },
-//     visible: {
-//       opacity: 1,
-//       transition: {
-//         staggerChildren: 0.05,
-//       },
-//     },
-//   }
-
-//   const rowVariants = {
-//     hidden: { opacity: 0, y: 20, scale: 0.95 },
-//     visible: {
-//       opacity: 1,
-//       y: 0,
-//       scale: 1,
-//       transition: {
-//         type: 'spring',
-//         stiffness: 100,
-//         damping: 15,
-//       },
-//     },
-//   }
-
-//   const paginationVariants = {
-//     hidden: { opacity: 0, y: 10 },
-//     visible: {
-//       opacity: 1,
-//       y: 0,
-//       transition: {
-//         duration: 0.3,
-//       },
-//     },
-//   }
-
-//   // Pagination controls
-//   const handlePageChange = (newPage) => {
-//     if (newPage >= 1 && newPage <= totalPages) {
-//       setPage(newPage)
-//     }
-//   }
-
-//   const handleLimitChange = (value) => {
-//     setLimit(Number(value))
-//     setPage(1) // Reset to first page when limit changes
-//   }
-
-//   // Generate page numbers for display
-//   const pageNumbers = useMemo(() => {
-//     const pages = []
-//     const maxPagesToShow = 5
-//     let startPage = Math.max(1, page - Math.floor(maxPagesToShow / 2))
-//     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1)
-
-//     if (endPage - startPage + 1 < maxPagesToShow) {
-//       startPage = Math.max(1, endPage - maxPagesToShow + 1)
-//     }
-
-//     for (let i = startPage; i <= endPage; i++) {
-//       pages.push(i)
-//     }
-//     return pages
-//   }, [page, totalPages])
-
-//   return (
-//     <motion.div
-//       initial={{ opacity: 0 }}
-//       animate={{ opacity: 1 }}
-//       transition={{ duration: 0.5 }}
-//       className="p-4 "
-//     >
-//       {error && (
-//         <motion.div
-//           initial={{ opacity: 0, y: -10 }}
-//           animate={{ opacity: 1, y: 0 }}
-//           transition={{ duration: 0.3 }}
-//         >
-//           <Alert variant="destructive" className="mb-4 rounded-md">
-//             <AlertCircle className="h-4 w-4" />
-//             <AlertTitle>Error</AlertTitle>
-//             <AlertDescription>{error}</AlertDescription>
-//           </Alert>
-//         </motion.div>
-//       )}
-
-//       <Card className="mt-6 overflow-hidden shadow-sm rounded-lg">
-//         <div className="overflow-x-auto">
-//           <Table>
-//             <TableHeader>
-//               <TableRow className="bg-primary hover:bg-primary">
-//                 {fields.map((field) => (
-//                   <TableHead
-//                     key={field.name}
-//                     className="font-semibold text-xs uppercase tracking-wider px-4 py-3 text-white"
-//                   >
-//                     {field.label}
-//                   </TableHead>
-//                 ))}
-//               </TableRow>
-//             </TableHeader>
-
-//             {loading ? (
-//               <TableBody>
-//                 {[...Array(5)].map((_, idx) => (
-//                   <TableRow key={idx}>
-//                     {fields.map((field) => (
-//                       <TableCell key={field.name} className="p-3">
-//                         <Skeleton className="h-4 w-full rounded-md" />
-//                       </TableCell>
-//                     ))}
-//                   </TableRow>
-//                 ))}
-//               </TableBody>
-//             ) : (
-//               <motion.tbody
-//                 initial="hidden"
-//                 animate="visible"
-//                 variants={tableVariants}
-//                 className="divide-y divide-secondary bg-secondary"
-//               >
-//                 {data.length === 0 ? (
-//                   <TableRow>
-//                     <TableCell
-//                       colSpan={fields.length}
-//                       className="text-center py-8 text-white"
-//                     >
-//                       No data available
-//                     </TableCell>
-//                   </TableRow>
-//                 ) : (
-//                   data.map((entry, idx) => (
-//                     <motion.tr
-//                       key={idx}
-//                       variants={rowVariants}
-//                       className="hover:bg-secondary transition-colors cursor-pointer"
-//                       whileHover={{ scale: 1.01 }}
-//                       tabIndex={0}
-//                       onKeyDown={(e) => {
-//                         if (e.key === 'Enter' || e.key === ' ') {
-//                           e.preventDefault()
-//                           // Add row selection logic if needed
-//                         }
-//                       }}
-//                     >
-//                       {fields.map((field) => (
-//                         <TableCell
-//                           key={field.name}
-//                           className="px-4 py-3 text-sm text-white"
-//                         >
-//                           <CellContent 
-//                             value={entry[field.name]} 
-//                             field={field} 
-//                             formatCellContent={formatCellContent} 
-//                           />
-//                         </TableCell>
-//                       ))}
-//                     </motion.tr>
-//                   ))
-//                 )}
-//               </motion.tbody>
-//             )}
-//           </Table>
-//         </div>
-//       </Card>
-
-//       {/* Pagination Controls */}
-//       <AnimatePresence>
-//         {!loading && data.length > 0 && (
-//           <motion.div
-//             variants={paginationVariants}
-//             initial="hidden"
-//             animate="visible"
-//             exit="hidden"
-//             className="flex items-center justify-between mt-4 px-4"
-//           >
-//             <div className="flex items-center gap-2">
-//               <span className="text-sm text-white">Rows per page:</span>
-//               <Select
-//                 value={limit.toString()}
-//                 onValueChange={handleLimitChange}
-//               >
-//                 <SelectTrigger className="w-20 h-8 text-xs rounded-md border-secondary">
-//                   <SelectValue />
-//                 </SelectTrigger>
-//                 <SelectContent>
-//                   {[10, 25, 50].map((value) => (
-//                     <SelectItem
-//                       key={value}
-//                       value={value.toString()}
-//                       className="text-xs"
-//                     >
-//                       {value}
-//                     </SelectItem>
-//                   ))}
-//                 </SelectContent>
-//               </Select>
-//             </div>
-
-//             <Pagination>
-//               <PaginationContent>
-//                 <PaginationItem>
-//                   <motion.button
-//                     whileHover={{ scale: 1.1 }}
-//                     whileTap={{ scale: 0.9 }}
-//                     onClick={() => handlePageChange(page - 1)}
-//                     disabled={page === 1}
-//                     className="flex items-center gap-1 px-3 py-1 text-sm text-white disabled:opacity-50 rounded-md hover:bg-secondary"
-//                   >
-//                     <ChevronLeft className="h-4 w-4" />
-//                     Previous
-//                   </motion.button>
-//                 </PaginationItem>
-
-//                 {pageNumbers.map((num) => (
-//                   <PaginationItem key={num}>
-//                     <PaginationLink
-//                       onClick={() => handlePageChange(num)}
-//                       isActive={num === page}
-//                       className={`text-sm rounded-md ${num === page ? 'bg-primary text-white' : 'hover:bg-secondary'}`}
-//                     >
-//                       {num}
-//                     </PaginationLink>
-//                   </PaginationItem>
-//                 ))}
-
-//                 <PaginationItem>
-//                   <motion.button
-//                     whileHover={{ scale: 1.1 }}
-//                     whileTap={{ scale: 0.9 }}
-//                     onClick={() => handlePageChange(page + 1)}
-//                     disabled={page === totalPages}
-//                     className="bg-primary flex items-center gap-1 px-3 py-1 text-sm text-white disabled:opacity-50 rounded-md hover:bg-secnodary"
-//                   >
-//                     Next
-//                     <ChevronRight className="h-4 w-4" />
-//                   </motion.button>
-//                 </PaginationItem>
-//               </PaginationContent>
-//             </Pagination>
-//           </motion.div>
-//         )}
-//       </AnimatePresence>
-//     </motion.div>
-//   )
-// }
-
-
-'use client'
-
-import { useEffect, useState, useCallback, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { VOUCHER_CONFIG } from './constants'
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import VoucherModal from "./Modal"; // Adjust path as needed;
+import { VOUCHER_CONFIG } from "./constants";
 import {
   Table,
   TableBody,
@@ -396,9 +11,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Card } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+} from "@/components/ui/table";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Pagination,
   PaginationContent,
@@ -406,115 +21,228 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@/components/ui/pagination'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  AlertCircle, 
-  Eye, 
+} from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
+  Eye,
   Calendar,
   DollarSign,
   FileText,
   User,
+  Hash,
   X,
   Download,
-  Filter
-} from 'lucide-react'
-import axios from 'axios'
+  Filter,
+  RefreshCw,
+  Clock,
+  Building,
+  CheckCircle,
+  Edit,
+} from "lucide-react";
+import axios from "axios";
 
 // Mock data for demonstration
 const MOCK_VOUCHER_DATA = [
   {
-    id: 'V001',
-    voucherNumber: 'VCH-2024-001',
-    date: '2024-06-15',
-    amount: 15750.00,
-    description: 'Office supplies purchase for Q2',
-    customerName: 'ABC Corporation Ltd.',
-    status: 'Approved',
-    category: 'Office Expenses',
-    createdBy: 'John Smith',
-    paymentMethod: 'Bank Transfer'
+    id: "V001",
+    voucherNumber: "VCH-2024-001",
+    date: "2024-06-15",
+    amount: 15750.0,
+    description: "Office supplies purchase for Q2",
+    customerName: "ABC Corporation Ltd.",
+    status: "Approved",
+    category: "Office Expenses",
+    createdBy: "John Smith",
+    paymentMethod: "Bank Transfer",
   },
   {
-    id: 'V002',
-    voucherNumber: 'VCH-2024-002',
-    date: '2024-06-14',
-    amount: 8950.50,
-    description: 'Marketing campaign expenses',
-    customerName: 'Digital Solutions Inc.',
-    status: 'Pending',
-    category: 'Marketing',
-    createdBy: 'Sarah Johnson',
-    paymentMethod: 'Credit Card'
+    id: "V002",
+    voucherNumber: "VCH-2024-002",
+    date: "2024-06-14",
+    amount: 8950.5,
+    description: "Marketing campaign expenses",
+    customerName: "Digital Solutions Inc.",
+    status: "Pending",
+    category: "Marketing",
+    createdBy: "Sarah Johnson",
+    paymentMethod: "Credit Card",
   },
   {
-    id: 'V003',
-    voucherNumber: 'VCH-2024-003',
-    date: '2024-06-13',
-    amount: 25000.00,
-    description: 'Equipment maintenance and repairs',
-    customerName: 'Tech Services LLC',
-    status: 'Approved',
-    category: 'Maintenance',
-    createdBy: 'Michael Brown',
-    paymentMethod: 'Check'
+    id: "V003",
+    voucherNumber: "VCH-2024-003",
+    date: "2024-06-13",
+    amount: 25000.0,
+    description: "Equipment maintenance and repairs",
+    customerName: "Tech Services LLC",
+    status: "Approved",
+    category: "Maintenance",
+    createdBy: "Michael Brown",
+    paymentMethod: "Check",
   },
   {
-    id: 'V004',
-    voucherNumber: 'VCH-2024-004',
-    date: '2024-06-12',
+    id: "V004",
+    voucherNumber: "VCH-2024-004",
+    date: "2024-06-12",
     amount: 3200.75,
-    description: 'Travel expenses for client meeting',
-    customerName: 'Global Partners Ltd.',
-    status: 'Rejected',
-    category: 'Travel',
-    createdBy: 'Emily Davis',
-    paymentMethod: 'Cash'
+    description: "Travel expenses for client meeting",
+    customerName: "Global Partners Ltd.",
+    status: "Rejected",
+    category: "Travel",
+    createdBy: "Emily Davis",
+    paymentMethod: "Cash",
   },
   {
-    id: 'V005',
-    voucherNumber: 'VCH-2024-005',
-    date: '2024-06-11',
-    amount: 12500.00,
-    description: 'Software licensing fees',
-    customerName: 'Innovation Hub Inc.',
-    status: 'Approved',
-    category: 'Software',
-    createdBy: 'David Wilson',
-    paymentMethod: 'Bank Transfer'
-  }
-]
-
+    id: "V005",
+    voucherNumber: "VCH-2024-005",
+    date: "2024-06-11",
+    amount: 12500.0,
+    description: "Software licensing fees",
+    customerName: "Innovation Hub Inc.",
+    status: "Approved",
+    category: "Software",
+    createdBy: "David Wilson",
+    paymentMethod: "Bank Transfer",
+  },
+];
 
 // Status badge component
 const StatusBadge = ({ status }) => {
   const getStatusStyle = (status) => {
     switch (status?.toLowerCase()) {
-      case 'approved':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200'
-      case 'pending':
-        return 'bg-amber-100 text-amber-800 border-amber-200'
-      case 'rejected':
-        return 'bg-red-100 text-red-800 border-red-200'
+      case "synced":
+        return "bg-emerald-100 text-emerald-800 border-emerald-200";
+      case "pending":
+        return "bg-amber-100 text-amber-800 border-amber-200";
+      case "failed":
+        return "bg-red-100 text-red-800 border-red-200";
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200'
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
-  }
+  };
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyle(status)}`}>
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyle(
+        status
+      )}`}
+    >
+      {status === "synced" && <CheckCircle className="h-3 w-3 mr-1" />}
+      {status === "pending" && <Clock className="h-3 w-3 mr-1" />}
+      {status === "failed" && <AlertCircle className="h-3 w-3 mr-1" />}
       {status}
     </span>
-  )
-}
+  );
+};
 
-// Data view modal component
+// Transaction item component
+const TransactionItem = ({ transaction, index }) => {
+  return (
+    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-sm font-medium text-gray-900">
+          Transaction #{index + 1}
+        </h4>
+        <span className="text-xs text-gray-500">ID: {transaction.id}</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        {transaction.acno && (
+          <div>
+            <span className="font-medium text-gray-600">Account No:</span>
+            <span className="ml-2 text-gray-900">
+              {transaction.acnoDetails.acname}
+            </span>
+          </div>
+        )}
+
+        {transaction.itcd && (
+          <div>
+            <span className="font-medium text-gray-600">Item Code:</span>
+            <span className="ml-2 text-gray-900">
+              {transaction.itemDetails.item}
+            </span>
+          </div>
+        )}
+
+        {transaction.ccno && (
+          <div>
+            <span className="font-medium text-gray-600">Cost Center:</span>
+            <span className="ml-2 text-gray-900">{transaction.ccno}</span>
+          </div>
+        )}
+
+        {transaction.dr && (
+          <div>
+            <span className="font-medium text-gray-600">Debit:</span>
+            <span className="ml-2 text-gray-900 font-semibold text-green-600">
+              $
+              {Number(transaction.dr).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+              })}
+            </span>
+          </div>
+        )}
+
+        {transaction.cr && (
+          <div>
+            <span className="font-medium text-gray-600">Credit:</span>
+            <span className="ml-2 text-gray-900 font-semibold text-red-600">
+              $
+              {Number(transaction.cr).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+              })}
+            </span>
+          </div>
+        )}
+
+        {(transaction.narration1 || transaction.narration2) && (
+          <div className="col-span-2">
+            <span className="font-medium text-gray-600">Narration:</span>
+            <div className="mt-1 text-gray-900">
+              {transaction.narration1 && <div>{transaction.narration1}</div>}
+              {transaction.narration2 && <div>{transaction.narration2}</div>}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Main DataViewModal component
 const DataViewModal = ({ data, isOpen, onClose }) => {
-  if (!isOpen || !data) return null
+  if (!isOpen || !data) return null;
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const formatDateOnly = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
 
   return (
     <AnimatePresence>
@@ -522,104 +250,224 @@ const DataViewModal = ({ data, isOpen, onClose }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-primary bg-opacity-50 flex items-center justify-center z-50 p-4"
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
         onClick={onClose}
       >
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
-          className="bg-secondary rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+          className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="sticky top-0 bg-secondary border-b border-primary px-6 py-4 flex items-center justify-between rounded-t-xl">
+          {/* Header */}
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-xl">
             <div className="flex items-center space-x-3">
-              <div className="p-2  rounded-lg">
-                <FileText className="h-5 w-5 text-primary" />
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <FileText className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-primary">Voucher Details</h2>
-                <p className="text-sm text-primary">{data.voucherNumber}</p>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Transaction Details
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Voucher #{data.vr_no} | Transaction ID: {data.tran_id}
+                </p>
               </div>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="h-8 w-8 p-0 text-primary hover:bg-primary hover:text-secondary transition-colors rounded-full"
+              className="h-8 w-8 p-0 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors rounded-full"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
 
           <div className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3 p-4 bg-primary rounded-lg">
-                  <Calendar className="h-5 w-5 text-white" />
-                  <div>
-                    <p className="text-sm font-medium text-white">Date</p>
-                    <p className="text-sm text-white">{new Date(data.date).toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}</p>
-                  </div>
+            {/* Main Information Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Date Information */}
+              <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
+                <Calendar className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900">
+                    Transaction Date
+                  </p>
+                  <p className="text-sm text-blue-700">
+                    {formatDateOnly(data.dateD)}
+                  </p>
                 </div>
+              </div>
 
-                <div className="flex items-center space-x-3 p-4 bg-primary rounded-lg">
-                  <DollarSign className="h-5 w-5 text-white" />
+              {/* Check Date */}
+              {data.check_date && (
+                <div className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg">
+                  <Calendar className="h-5 w-5 text-green-600" />
                   <div>
-                    <p className="text-sm font-medium text-white">Amount</p>
-                    <p className="text-lg font-semibold text-white">
-                      ${Number(data.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    <p className="text-sm font-medium text-green-900">
+                      Check Date
+                    </p>
+                    <p className="text-sm text-green-700">
+                      {formatDateOnly(data.check_date)}
                     </p>
                   </div>
                 </div>
+              )}
 
-                <div className="flex items-center space-x-3 p-4 bg-primary rounded-lg">
-                  <User className="h-5 w-5 text-white" />
+              {/* Sync Status */}
+              <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                <RefreshCw className="h-5 w-5 text-gray-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    Sync Status
+                  </p>
+                  <StatusBadge status={data.sync_status} />
+                </div>
+              </div>
+
+              {/* Transaction Code */}
+              <div className="flex items-center space-x-3 p-4 bg-purple-50 rounded-lg">
+                <Hash className="h-5 w-5 text-purple-600" />
+                <div>
+                  <p className="text-sm font-medium text-purple-900">
+                    Transaction Code
+                  </p>
+                  <p className="text-sm text-purple-700">{data.tran_code}</p>
+                </div>
+              </div>
+
+              {/* Payment Code */}
+              {data.pycd && (
+                <div className="flex items-center space-x-3 p-4 bg-orange-50 rounded-lg">
+                  <DollarSign className="h-5 w-5 text-orange-600" />
                   <div>
-                    <p className="text-sm font-medium text-white">Customer</p>
-                    <p className="text-sm text-white">{data.customerName}</p>
+                    <p className="text-sm font-medium text-orange-900">
+                      Payment Code
+                    </p>
+                    <p className="text-sm text-orange-700">
+                      {data.acno.acname}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Check Number */}
+              {data.check_no && (
+                <div className="flex items-center space-x-3 p-4 bg-indigo-50 rounded-lg">
+                  <FileText className="h-5 w-5 text-indigo-600" />
+                  <div>
+                    <p className="text-sm font-medium text-indigo-900">
+                      Check Number
+                    </p>
+                    <p className="text-sm text-indigo-700">{data.check_no}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Additional Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Invoice Information */}
+              {data.invoice_no && (
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-900 mb-2">
+                    Invoice Number
+                  </p>
+                  <p className="text-sm text-gray-700">
+                    {data.invoice_no.trim()}
+                  </p>
+                </div>
+              )}
+
+              {/* Godown */}
+              {data.godown && (
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-900 mb-2">
+                    Godown
+                  </p>
+                  <p className="text-sm text-gray-700">
+                    {data.godownDetails.godown}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Remarks Section */}
+            {data.rmk && (
+              <div className="p-4 bg-yellow-50 rounded-lg">
+                <p className="text-sm font-medium text-yellow-900 mb-2">
+                  Remarks
+                </p>
+                <p className="text-sm text-yellow-800 leading-relaxed">
+                  {data.rmk}
+                </p>
+              </div>
+            )}
+
+            {/* Additional Remarks */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[2, 3, 4, 5].map((num) => {
+                const remarkKey = `rmk${num}`;
+                const remarkValue = data[remarkKey];
+                if (!remarkValue) return null;
+
+                return (
+                  <div key={remarkKey} className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm font-medium text-gray-900 mb-2">
+                      Remark {num}
+                    </p>
+                    <p className="text-sm text-gray-700">{remarkValue}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Sync Information */}
+            {data.last_sync && (
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm font-medium text-blue-900 mb-2">
+                  Last Synchronized
+                </p>
+                <p className="text-sm text-blue-700">
+                  {formatDate(data.last_sync)}
+                </p>
+              </div>
+            )}
+
+            {/* Transactions Section */}
+            {data.transactions && data.transactions.length > 0 && (
+              <div className="space-y-4">
+                <div className="border-t border-gray-200 pt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <FileText className="h-5 w-5 mr-2 text-blue-600" />
+                    Associated Transactions ({data.transactions.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {data.transactions.map((transaction, index) => (
+                      <TransactionItem
+                        key={transaction.id}
+                        transaction={transaction}
+                        index={index}
+                      />
+                    ))}
                   </div>
                 </div>
               </div>
-
-              <div className="space-y-4">
-                <div className="p-4 bg-primary rounded-lg">
-                  <p className="text-sm font-medium text-white mb-2">Status</p>
-                  <StatusBadge status={data.status} />
-                </div>
-
-                <div className="p-4 bg-primary rounded-lg">
-                  <p className="text-sm font-medium text-white mb-2">Category</p>
-                  <p className="text-sm text-white">{data.category}</p>
-                </div>
-
-                <div className="p-4 bg-primary rounded-lg">
-                  <p className="text-sm font-medium text-white mb-2">Payment Method</p>
-                  <p className="text-sm text-white">{data.paymentMethod}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 bg-primary rounded-lg">
-              <p className="text-sm font-medium text-white mb-2">Description</p>
-              <p className="text-sm text-white leading-relaxed">{data.description}</p>
-            </div>
-
-            <div className="p-4 bg-primary rounded-lg">
-              <p className="text-sm font-medium text-white mb-2">Created By</p>
-              <p className="text-sm text-white">{data.createdBy}</p>
-            </div>
+            )}
           </div>
 
-          <div className="sticky bottom-0 bg-secondary border-t border-primary px-6 py-4 flex justify-end space-x-3 rounded-b-xl">
-            <Button variant="outline" onClick={onClose} className="text-primary hover:bg-primary hover:text-secondary">
+          {/* Footer */}
+          <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-end space-x-3 rounded-b-xl">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="text-gray-700 hover:bg-gray-50"
+            >
               Close
             </Button>
-            <Button className="bg-primary hover:bg-secondary hover:text-primary" >
+            <Button className="bg-blue-600 hover:bg-blue-700">
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
@@ -627,55 +475,61 @@ const DataViewModal = ({ data, isOpen, onClose }) => {
         </motion.div>
       </motion.div>
     </AnimatePresence>
-  )
-}
+  );
+};
 
 // Main table component
-export default function VoucherTable({ type = 'voucher',refreshTrigger=0,isLoading=true,category="" }) {
-  const TABLE_FIELDS = VOUCHER_CONFIG[type]?.tableFields || []
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(isLoading)
-  const [error, setError] = useState(null)
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(10)
-  const [totalPages, setTotalPages] = useState(1)
-  const [selectedRow, setSelectedRow] = useState(null)
-  const [viewModalOpen, setViewModalOpen] = useState(false)
-  const [focusedRowIndex, setFocusedRowIndex] = useState(-1)
+export default function VoucherTable({
+  type = "voucher",
+  refreshTrigger = 0,
+  isLoading = true,
+  category = "",
+}) {
+  const TABLE_FIELDS = VOUCHER_CONFIG[type]?.tableFields || [];
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(isLoading);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [selectedRow, setSelectedRow] = useState(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [isEditModal, setIsEditModal] = useState(false);
+  const [focusedRowIndex, setFocusedRowIndex] = useState(-1);
 
-    // Fetch voucher data with pagination
+  // Fetch voucher data with pagination
   const fetchData = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
       const response = await axios.get(`/api/voucher/${type}`, {
         params: { page, limit },
-      })
-      setData(response.data.data || [])
-      setTotalPages(response.data.totalPages || 1)
+      });
+      setData(response.data.data || []);
+      setTotalPages(response.data.totalPages || 1);
     } catch (err) {
-      setError('Failed to load data. Please try again.')
-      console.error(err)
+      setError("Failed to load data. Please try again.");
+      console.error(err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [type, page, limit,refreshTrigger])
+  }, [type, page, limit, refreshTrigger]);
 
   // Simulate API call with mock data
   useEffect(() => {
     // const fetchData = async () => {
     //   setLoading(true)
     //   setError(null)
-      
+
     //   // Simulate API delay
     //   await new Promise(resolve => setTimeout(resolve, 800))
-      
+
     //   try {
     //     // Simulate pagination
     //     const startIndex = (page - 1) * limit
     //     const endIndex = startIndex + limit
     //     const paginatedData = MOCK_VOUCHER_DATA.slice(startIndex, endIndex)
-        
+
     //     setData(paginatedData)
     //     setTotalPages(Math.ceil(MOCK_VOUCHER_DATA.length / limit))
     //   } catch (err) {
@@ -685,79 +539,88 @@ export default function VoucherTable({ type = 'voucher',refreshTrigger=0,isLoadi
     //   }
     // }
 
-    fetchData()
-  }, [page, limit])
+    fetchData();
+  }, [page, limit]);
 
   const formatCellContent = useCallback((value, field) => {
-    if (value === null || value === undefined) return '-'
-    
+    if (value === null || value === undefined) return "-";
+
     switch (field.type) {
-      case 'date':
-        return new Date(value).toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'short', 
-          day: 'numeric' 
-        })
-      case 'currency':
-        return `$${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
-      case 'status':
-        return <StatusBadge status={value} />
+      case "date":
+        return new Date(value).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+      case "currency":
+        return `$${Number(value).toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+        })}`;
+      case "status":
+        return <StatusBadge status={value} />;
       default:
-        return value.toString()
+        return value.toString();
     }
-  }, [])
+  }, []);
 
   const handleRowClick = (rowData, index) => {
-    setSelectedRow(rowData)
-    setViewModalOpen(true)
-    setFocusedRowIndex(index)
-  }
+    setSelectedRow(rowData);
+    setViewModalOpen(true);
+    setFocusedRowIndex(index);
+  };
+
+  const handleModal = (rowData, index) => {
+  setSelectedRow(rowData); // Set fresh selectedRow
+  setFocusedRowIndex(index);
+  setIsEditModal(true);
+  console.log("Selected Row for Edit:", JSON.stringify(rowData, null, 2)); // Debug
+};
 
   const handleKeyDown = (e, rowData, index) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      handleRowClick(rowData, index)
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      const nextIndex = Math.min(index + 1, data.length - 1)
-      const nextRow = document.querySelector(`[data-row-index="${nextIndex}"]`)
-      nextRow?.focus()
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      const prevIndex = Math.max(index - 1, 0)
-      const prevRow = document.querySelector(`[data-row-index="${prevIndex}"]`)
-      prevRow?.focus()
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleRowClick(rowData, index);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const nextIndex = Math.min(index + 1, data.length - 1);
+      const nextRow = document.querySelector(`[data-row-index="${nextIndex}"]`);
+      nextRow?.focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prevIndex = Math.max(index - 1, 0);
+      const prevRow = document.querySelector(`[data-row-index="${prevIndex}"]`);
+      prevRow?.focus();
     }
-  }
+  };
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
-      setPage(newPage)
-      setFocusedRowIndex(-1)
+      setPage(newPage);
+      setFocusedRowIndex(-1);
     }
-  }
+  };
 
   const handleLimitChange = (value) => {
-    setLimit(Number(value))
-    setPage(1)
-    setFocusedRowIndex(-1)
-  }
+    setLimit(Number(value));
+    setPage(1);
+    setFocusedRowIndex(-1);
+  };
 
   const pageNumbers = useMemo(() => {
-    const pages = []
-    const maxPagesToShow = 5
-    let startPage = Math.max(1, page - Math.floor(maxPagesToShow / 2))
-    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1)
+    const pages = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, page - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
 
     if (endPage - startPage + 1 < maxPagesToShow) {
-      startPage = Math.max(1, endPage - maxPagesToShow + 1)
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
     }
 
     for (let i = startPage; i <= endPage; i++) {
-      pages.push(i)
+      pages.push(i);
     }
-    return pages
-  }, [page, totalPages])
+    return pages;
+  }, [page, totalPages]);
 
   return (
     <motion.div
@@ -768,8 +631,13 @@ export default function VoucherTable({ type = 'voucher',refreshTrigger=0,isLoadi
     >
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-primary mb-2">{String(type).charAt(0).toUpperCase() + String(type).slice(1)} Management</h1>
-        <p className="text-primary">Manage and track your {type}s efficiently</p>
+        <h1 className="text-3xl font-bold text-primary mb-2">
+          {String(type).charAt(0).toUpperCase() + String(type).slice(1)}{" "}
+          Management
+        </h1>
+        <p className="text-primary">
+          Manage and track your {type}s efficiently
+        </p>
       </div>
 
       {error && (
@@ -778,10 +646,15 @@ export default function VoucherTable({ type = 'voucher',refreshTrigger=0,isLoadi
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <Alert variant="destructive" className="mb-6 border-primary bg-primary">
+          <Alert
+            variant="destructive"
+            className="mb-6 border-primary bg-primary"
+          >
             <AlertCircle className="h-4 w-4" />
             <AlertTitle className="text-red-800">Error</AlertTitle>
-            <AlertDescription className="text-red-700">{error}</AlertDescription>
+            <AlertDescription className="text-red-700">
+              {error}
+            </AlertDescription>
           </Alert>
         </motion.div>
       )}
@@ -789,12 +662,15 @@ export default function VoucherTable({ type = 'voucher',refreshTrigger=0,isLoadi
       {/* Controls */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
-          <Button variant="outline" className="bg-primary text-white hover:bg-secondary hover:text-primary border-0">
+          <Button
+            variant="outline"
+            className="bg-primary text-white hover:bg-secondary hover:text-primary border-0"
+          >
             <Filter className="h-4 w-4 mr-2" />
             Filter
           </Button>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           <span className="text-sm font-medium text-primary">Show:</span>
           <Select value={limit.toString()} onValueChange={handleLimitChange}>
@@ -859,8 +735,12 @@ export default function VoucherTable({ type = 'voucher',refreshTrigger=0,isLoadi
                       <div className="flex flex-col items-center space-y-3">
                         <FileText className="h-12 w-12 text-primary" />
                         <div>
-                          <p className="text-lg font-medium">No vouchers found</p>
-                          <p className="text-sm">Create your first voucher to get started</p>
+                          <p className="text-lg font-medium">
+                            No vouchers found
+                          </p>
+                          <p className="text-sm">
+                            Create your first voucher to get started
+                          </p>
                         </div>
                       </div>
                     </TableCell>
@@ -892,13 +772,24 @@ export default function VoucherTable({ type = 'voucher',refreshTrigger=0,isLoadi
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-8 w-8 p-0 hover:bg-blue-100 focus:bg-blue-100"
+                          className="h-8 w-8 p-0 hover:bg-primary focus:bg-primary group"
                           onClick={(e) => {
-                            e.stopPropagation()
-                            handleRowClick(entry, idx)
+                            e.stopPropagation();
+                            handleRowClick(entry, idx);
                           }}
                         >
-                          <Eye className="h-4 w-4 text-primary" />
+                          <Eye className="h-4 w-4 text-primary group-hover:text-white" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 hover:bg-primary focus:bg-primary group"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleModal(entry, idx);
+                          }}
+                        >
+                          <Edit className="h-4 w-4 text-primary group-hover:text-white" />
                         </Button>
                       </TableCell>
                     </motion.tr>
@@ -921,7 +812,8 @@ export default function VoucherTable({ type = 'voucher',refreshTrigger=0,isLoadi
             className="flex items-center justify-between mt-8 px-2"
           >
             <div className="text-sm text-primary">
-              Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, MOCK_VOUCHER_DATA.length)} of {MOCK_VOUCHER_DATA.length} entries
+              Showing {(page - 1) * limit + 1} to{" "}
+              {Math.min(page * limit, data.length)} of {data.length} entries
             </div>
 
             <Pagination>
@@ -945,9 +837,9 @@ export default function VoucherTable({ type = 'voucher',refreshTrigger=0,isLoadi
                       onClick={() => handlePageChange(num)}
                       isActive={num === page}
                       className={`h-9 w-9 text-sm border ${
-                        num === page 
-                          ? 'bg-primary text-white border-primary hover:bg-secondary hover:text-primary' 
-                          : 'border-gray-300 hover:bg-primary'
+                        num === page
+                          ? "bg-primary text-white border-primary hover:bg-secondary hover:text-primary"
+                          : "border-gray-300 hover:bg-primary"
                       }`}
                     >
                       {num}
@@ -978,10 +870,29 @@ export default function VoucherTable({ type = 'voucher',refreshTrigger=0,isLoadi
         data={selectedRow}
         isOpen={viewModalOpen}
         onClose={() => {
-          setViewModalOpen(false)
-          setSelectedRow(null)
+          setViewModalOpen(false);
+          setSelectedRow(null);
         }}
       />
+
+      {/* The Modal */}
+      {isEditModal && (
+  <VoucherModal
+    type="purchase"
+    editModes={isEditModal}
+    onCloseEdit={() => {
+      setIsEditModal(false);
+      setSelectedRow(null); // Clear selectedRow to avoid stale data
+      setFocusedRowIndex(-1);
+    }}
+    existingData={{
+      voucherId: selectedRow?.tran_id || selectedRow?.id || "",
+      master: selectedRow ? { ...selectedRow } : {},
+      lines: selectedRow?.transactions?.filter((t) => t.sub_tran_id === 1) || [],
+      deductions: selectedRow?.transactions?.filter((t) => t.sub_tran_id === 2) || [], // Use correct key 'deductions'
+    }}
+  />
+)}
     </motion.div>
-  )
+  );
 }

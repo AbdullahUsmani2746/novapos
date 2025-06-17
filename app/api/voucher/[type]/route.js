@@ -25,6 +25,20 @@ export async function GET(req, { params }) {
       skip,
       take: limit,
       orderBy: { tran_id: "desc" },
+      include:{
+      acno:true,
+      godownDetails:true,
+      transactions: {
+          include: {
+            acnoDetails: true,
+            itemDetails: true,
+            godownDetails: true,
+            costCenter: true,
+            currencyDetails: true
+          }
+        }
+
+      }
     }),
     prisma.transactionsMaster.count({ where: { tran_code } }),
   ]);
