@@ -59,7 +59,7 @@ return (
         {open && (
           <Dialog open={open} onOpenChange={handleClose}>
             <DialogContent
-              className="sm:max-w-full bg-white max-h-[99%] overflow-auto"
+              className="sm:max-w-full bg-white max-h-[99%] overflow-scroll"
               ref={overlayRef}
               onClick={handleOverlayClick}
             >
@@ -68,7 +68,7 @@ return (
                   {editMode ? `Edit ${type} Voucher` : `Create ${type} Voucher`}
                 </DialogTitle>
               </DialogHeader>
-              <div className="pt-4">
+              <div className="pt-4 overflow-auto">
                 <Form
                   type={type}
                   editMode={editMode}

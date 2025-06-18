@@ -576,8 +576,8 @@ export const VOUCHER_CONFIG = {
         name: "camt",
         label: "Amount",
         type: "number",
-        dependencies: ["gross_amount", "st_amount", "additional_tax"],
-        calculate: (v) => v.gross_amount + v.st_amount + (v.additional_tax || 0),
+        dependencies: ["gross_amount"],
+        calculate: (v) => v.gross_amount
       },
     ],
     totals: {

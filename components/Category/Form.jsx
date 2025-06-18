@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast, Toaster } from "sonner";
+import axios from "axios";
 import {
   PlusCircle,
   Trash2,
@@ -17,7 +19,6 @@ import {
   CreditCard,
   Building,
 } from "lucide-react";
-import { toast, Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,7 +40,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import axios from "axios";
 import { VOUCHER_CONFIG } from "./constants";
 
 // Icon mapping for field types
@@ -87,16 +87,10 @@ const ICON_MAP = {
   amount: DollarSign,
 };
 
-const FormInput = ({
-  icon: Icon,
-  error,
-  label,
-  required,
-  className,
-  ...props
-}) => (
+// Reusable FormInput Component
+const FormInput = ({ icon: Icon, error, label, required, className, ...props }) => (
   <div className="space-y-1">
-    <Label className="text-xs text-primary">
+    <Label className="text-xs text-gray-700">
       {label}
       {required && <span className="text-red-500">*</span>}
     </Label>
@@ -105,22 +99,20 @@ const FormInput = ({
         <Icon className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
       )}
       <Input
-        className={`${
-          Icon ? "pl-8 pr-8" : "px-3"
-        } w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary ${
+        className={`w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary ${Icon ? "pl-8" : "px-3"} ${
           error ? "border-red-500 focus:ring-red-500" : ""
         } ${className}`}
         {...props}
       />
       {error && (
-        <AlertCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
+        <AlertCircle className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
       )}
     </div>
     {error && <p className="text-xs text-red-500">{error}</p>}
   </div>
 );
 
-// Searchable Select Component
+// Reusable SearchableSelect Component
 const SearchableSelect = ({
   value,
   onValueChange,
@@ -139,14 +131,12 @@ const SearchableSelect = ({
   );
 
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
-    }
+    if (isOpen && inputRef.current) inputRef.current.focus();
   }, [isOpen]);
 
   return (
     <div className="space-y-1">
-      <Label className="text-xs text-primary">
+      <Label className="text-xs text-gray-700">
         {label}
         {required && <span className="text-red-500">*</span>}
       </Label>
@@ -157,7 +147,7 @@ const SearchableSelect = ({
         onOpenChange={setIsOpen}
       >
         <SelectTrigger
-          className={`h-8 text-xs w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary ${
+          className={`w-full h-9 text-sm rounded-md border-gray-300 focus:ring-primary focus:border-primary ${
             error ? "border-red-500" : ""
           }`}
           aria-label={placeholder}
@@ -165,7 +155,7 @@ const SearchableSelect = ({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          <div className="p-2 sticky top-0 bg-white">
+          <div className="p-2 sticky top-0 bg-white z-10">
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
               <Input
@@ -173,19 +163,19 @@ const SearchableSelect = ({
                 placeholder="Search..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-8 w-full rounded-md text-xs"
+                className="pl-8 w-full h-9 text-sm rounded-md"
                 onKeyDown={(e) => e.stopPropagation()}
               />
             </div>
           </div>
           {filteredOptions.length === 0 ? (
-            <div className="p-2 text-xs text-gray-500">No options found</div>
+            <div className="p-2 text-sm text-gray-500">No options found</div>
           ) : (
             filteredOptions.map((opt) => (
               <SelectItem
                 key={opt.value}
                 value={opt.value}
-                className="text-xs hover:bg-primary focus:bg-primary"
+                className="text-sm hover:bg-primary focus:bg-primary"
               >
                 {opt.label}
               </SelectItem>
@@ -204,15 +194,13 @@ const SearchableSelect = ({
   );
 };
 
+// Main VoucherForm Component
 export default function VoucherForm({
   type,
   onClose,
   editMode = false,
   existingData = null,
 }) {
-  
-  console.log("ESI: ",existingData)
-  console.log("Mode:", editMode)
   const voucherConfig = VOUCHER_CONFIG[type] || {};
   const [masterData, setMasterData] = useState({});
   const [mainLines, setMainLines] = useState([{}]);
@@ -243,7 +231,6 @@ export default function VoucherForm({
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState(null);
   const [modalField, setModalField] = useState({});
-  // Add these refs at the component level
   const prevMainLinesRef = useRef(null);
   const prevDeductionLinesRef = useRef(null);
 
@@ -271,70 +258,48 @@ export default function VoucherForm({
   }, [voucherConfig]);
 
   const fetchOptions = useCallback(async () => {
+    setLoading((prev) => ({ ...prev, options: true }));
     try {
-      setLoading((prev) => ({ ...prev, options: true }));
       const requiredOptionTypes = getRequiredOptionTypes();
-      const initialOptionsData = requiredOptionTypes.reduce(
-        (acc, key) => ({ ...acc, [key]: [] }),
-        { mainAccounts: [] } // Include mainAccounts for account creation
-      );
-
-      const fields = [
-        ...(voucherConfig.masterFields || []),
-        ...(voucherConfig.lineFields || []),
-        ...(voucherConfig.deductionFields || []),
-      ];
-
-      const endpoints = requiredOptionTypes
-        .map((key) => {
-          const field = fields.find((f) => f.options === key);
-          return { key, url: field?.apiEndpoint };
-        })
-        .filter((e) => e.url);
-
-      // Add mainAccounts endpoint for account creation
-      endpoints.push({ key: "mainAccounts", url: "/api/accounts/macno" });
-      endpoints.push({
-        key: "itemCategories",
-        url: "/api/setup/item_categories",
-      });
-      // endpoints.push({ key: "mainAccounts", url: "/api/accounts/macno" });
+      const endpoints = [
+        ...requiredOptionTypes.map((key) => ({
+          key,
+          url: voucherConfig.masterFields?.find((f) => f.options === key)?.apiEndpoint ||
+            voucherConfig.lineFields?.find((f) => f.options === key)?.apiEndpoint ||
+            voucherConfig.deductionFields?.find((f) => f.options === key)?.apiEndpoint,
+        })),
+        { key: "mainAccounts", url: "/api/accounts/macno" },
+        { key: "itemCategories", url: "/api/setup/item_categories" },
+      ].filter((e) => e.url);
 
       const results = await Promise.all(
         endpoints.map(async ({ key, url }) => {
           const response = await axios.get(url);
-          return { key, data: response.data.data };
+          return { key, data: response.data.data || [] };
         })
       );
 
       const newOptionsData = results.reduce(
         (acc, { key, data }) => ({ ...acc, [key]: data }),
-        initialOptionsData
+        {}
       );
       setOptionsData((prev) => ({ ...prev, ...newOptionsData }));
     } catch (error) {
-      setErrors((prev) => ({
-        ...prev,
-        options: `Failed to load options: ${error.message}`,
-      }));
-      toast.error(`Failed to load options: ${error.message}`);
+      const errorMsg = error.message || "Unknown error";
+      setErrors((prev) => ({ ...prev, options: `Failed to load options: ${errorMsg}` }));
+      toast.error(`Failed to load options: ${errorMsg}`);
     } finally {
       setLoading((prev) => ({ ...prev, options: false }));
     }
   }, [getRequiredOptionTypes, voucherConfig]);
 
+  // Initialize form data
   useEffect(() => {
     fetchOptions();
-  }, [fetchOptions]);
-
-  // Initialize master data
-  useEffect(() => {
-    if (!voucherConfig.masterFields) return;
 
     const today = new Date().toISOString().split("T")[0];
     const now = new Date().toTimeString().split(" ")[0];
-
-    const defaultMasterData = voucherConfig.masterFields.reduce(
+    const defaultMasterData = voucherConfig.masterFields?.reduce(
       (acc, field) => {
         const fieldKey = field.formName || field.name;
         return {
@@ -351,123 +316,64 @@ export default function VoucherForm({
               : field.defaultValue || "",
         };
       },
-      {}
-    );
+      { tran_code: voucherConfig.tran_code }
+    ) || {};
 
-    defaultMasterData.tran_code = voucherConfig.tran_code;
-    setMasterData(defaultMasterData);
-  }, [voucherConfig]);
-
-  // Fetch next voucher number
-  const fetchNextVrNo = async (tran_code) => {
-    try {
-      setLoading((prev) => ({ ...prev, vrNo: true }));
-      setErrors((prev) => ({ ...prev, vrNo: null }));
-
-      const response = await axios.get(
-        `/api/voucher/next-vr-no?tran_code=${tran_code}`
-      );
-      return response.data.nextVrNo;
-    } catch (error) {
-      const errorMsg = error.response?.data?.message || error.message;
-      setErrors((prev) => ({
-        ...prev,
-        vrNo: `Failed to get voucher number: ${errorMsg}`,
-      }));
-      toast.error("Error fetching next voucher number");
-      return "";
-    } finally {
-      setLoading((prev) => ({ ...prev, vrNo: false }));
+    if (editMode && existingData) {
+      setMasterData(existingData.master || defaultMasterData);
+      setMainLines(existingData.lines?.length > 0 ? existingData.lines : [{}]);
+      setDeductionLines(existingData.deductions?.length > 0 ? existingData.deductions : [{}]);
+    } else {
+      setMasterData(defaultMasterData);
+      setMainLines([{}]);
+      setDeductionLines([{}]);
     }
-  };
+  }, [voucherConfig, editMode, existingData, fetchOptions]);
 
+  // Fetch next voucher number for create mode
   useEffect(() => {
     if (
-      !editMode && // Only fetch new VR number if not in edit mode
-      voucherConfig.masterFields?.some(
-        (f) => f.name === "vr_no" && f.autoGenerate
-      )
+      !editMode &&
+      voucherConfig.masterFields?.some((f) => f.name === "vr_no" && f.autoGenerate)
     ) {
-      setLoading((prev) => ({ ...prev, vrNo: true }));
-      fetchNextVrNo(voucherConfig.tran_code).then((nextVrNo) => {
-        setMasterData((prev) => ({ ...prev, vr_no: nextVrNo }));
-        setLoading((prev) => ({ ...prev, vrNo: false }));
-      });
+      const fetchVrNo = async () => {
+        setLoading((prev) => ({ ...prev, vrNo: true }));
+        try {
+          const response = await axios.get(
+            `/api/voucher/next-vr-no?tran_code=${voucherConfig.tran_code}`
+          );
+          setMasterData((prev) => ({ ...prev, vr_no: response.data.nextVrNo }));
+        } catch (error) {
+          toast.error(`Failed to fetch voucher number: ${error.message}`);
+        } finally {
+          setLoading((prev) => ({ ...prev, vrNo: false }));
+        }
+      };
+      fetchVrNo();
     }
   }, [voucherConfig, editMode]);
-  
-  // Add state reset useEffect at the top of VoucherForm
-useEffect(() => {
-  // Reset states when component mounts or type changes
-  setMasterData({});
-  setMainLines([{}]);
-  setDeductionLines([{}]);
-  setTotals({});
-  setErrors({ options: null, submit: null, validation: {} });
-  setSelectedRows([]);
-}, [type])
-
-// Update existingData useEffect
-useEffect(() => {
-  if (editMode && existingData) {
-    console.log("Loading existingData:", JSON.stringify(existingData, null, 2)); // Debug
-    // Set master data with fallback
-    setMasterData(existingData.master || {});
-
-    // Set line items with fallback
-    setMainLines(
-      Array.isArray(existingData.lines) && existingData.lines.length > 0
-        ? existingData.lines
-        : [{}]
-    );
-
-    // Set deduction lines with fallback
-    setDeductionLines(
-      Array.isArray(existingData.deductions) && existingData.deductions.length > 0
-        ? existingData.deductions
-        : [{}]
-    );
-  }
-}, [editMode, existingData]);
 
   // Calculate totals
   useEffect(() => {
     if (!voucherConfig.totals) return;
 
-    // Use memo to avoid unnecessary recalculations
     const calculatedTotals = Object.entries(voucherConfig.totals).reduce(
       (acc, [key, config]) => {
-        // Only calculate if this is the first run or if relevant data changed
-        if (
-          !totals[key] ||
-          (key === "deductionTotal" &&
-            JSON.stringify(deductionLines) !== prevDeductionLinesRef.current) ||
-          (key !== "deductionTotal" &&
-            JSON.stringify(mainLines) !== prevMainLinesRef.current)
-        ) {
-          const lines = key === "deductionTotal" ? deductionLines : mainLines;
-          acc[key] = config.calculate(lines, acc) || 0;
-        } else {
-          // Reuse existing value
-          acc[key] = totals[key];
-        }
+        const lines = key === "deductionTotal" ? deductionLines : mainLines;
+        acc[key] = config.calculate(lines, acc) || 0;
         return acc;
       },
       {}
     );
 
-    // Store references for comparison
+    setTotals(calculatedTotals);
     prevMainLinesRef.current = JSON.stringify(mainLines);
     prevDeductionLinesRef.current = JSON.stringify(deductionLines);
-
-    setTotals(calculatedTotals);
   }, [mainLines, deductionLines, voucherConfig]);
 
+  // Event Handlers
   const handleMasterChange = (name, value) => {
-    setMasterData((prev) => ({
-      ...prev,
-      [name]: value === "placeholder" ? "" : value,
-    }));
+    setMasterData((prev) => ({ ...prev, [name]: value === "placeholder" ? "" : value }));
     setErrors((prev) => ({
       ...prev,
       validation: { ...prev.validation, [name]: null },
@@ -477,30 +383,21 @@ useEffect(() => {
   const calculateFieldValue = (line, fieldConfig) => {
     if (!fieldConfig.calculate || !fieldConfig.dependencies)
       return line[fieldConfig.formName || fieldConfig.name] || "";
-
     const dependencies = fieldConfig.dependencies.reduce(
-      (acc, dep) => ({
-        ...acc,
-        [dep]: parseFloat(line[dep]) || 0,
-      }),
+      (acc, dep) => ({ ...acc, [dep]: parseFloat(line[dep]) || 0 }),
       {}
     );
-
     return fieldConfig.calculate(dependencies) || 0;
   };
 
-  const handleLineChange = (index, fieldName, value, isMain = true) => {
+  const handleLineChange = (index, fieldName, value, isMain) => {
     const lines = isMain ? [...mainLines] : [...deductionLines];
-    const fieldConfigs = isMain
-      ? voucherConfig.lineFields
-      : voucherConfig.deductionFields;
-    const fieldConfig = fieldConfigs.find(
-      (f) => (f.formName || f.name) === fieldName
-    );
+    const fieldConfigs = isMain ? voucherConfig.lineFields : voucherConfig.deductionFields;
+    const fieldConfig = fieldConfigs.find((f) => (f.formName || f.name) === fieldName);
 
     if (!fieldConfig) return;
 
-    let processedValue =
+    const processedValue =
       fieldConfig.type === "number"
         ? value === ""
           ? 0
@@ -511,326 +408,223 @@ useEffect(() => {
     fieldConfigs
       .filter((f) => f.dependencies?.includes(fieldName))
       .forEach((depField) => {
-        newLine[depField.formName || depField.name] = calculateFieldValue(
-          newLine,
-          depField
-        );
+        newLine[depField.formName || depField.name] = calculateFieldValue(newLine, depField);
       });
 
     lines[index] = newLine;
     if (isMain) setMainLines(lines);
     else setDeductionLines(lines);
 
-    // Use a more reliable identifier that won't break when rows are reordered
-    // Store errors using a data attribute or other unique identifier instead of index
-    setErrors((prev) => {
-      const newValidation = { ...prev.validation };
-      // Use line's internal ID or create one if needed
-      const lineId = newLine.id || `${isMain ? "main" : "deduction"}-${index}`;
-      delete newValidation[`${lineId}-${fieldName}`];
-      return {
-        ...prev,
-        validation: newValidation,
-      };
-    });
+    setErrors((prev) => ({
+      ...prev,
+      validation: {
+        ...prev.validation,
+        [`${isMain ? "main" : "deduction"}-${index}-${fieldName}`]: null,
+      },
+    }));
   };
 
-  const addLine = (isMain = true) => {
+  const addLine = (isMain) => {
     const newLine = {};
-    const fields = isMain
-      ? voucherConfig.lineFields
-      : voucherConfig.deductionFields;
-
+    const fields = isMain ? voucherConfig.lineFields : voucherConfig.deductionFields;
     fields?.forEach((field) => {
       if (field.calculate && field.dependencies)
         newLine[field.formName || field.name] = 0;
     });
-
-    if (isMain) setMainLines([...mainLines, newLine]);
-    else setDeductionLines([...deductionLines, newLine]);
+    if (isMain) setMainLines((prev) => [...prev, newLine]);
+    else setDeductionLines((prev) => [...prev, newLine]);
   };
 
-  // Update removeLine function (around line 287)
-  const removeLine = (index, isMain = true) => {
-    const lines = isMain ? [...mainLines] : [...deductionLines];
+  const removeLine = (index, isMain) => {
+    const lines = isMain ? mainLines : deductionLines;
     if (lines.length <= 1) return;
 
-    // Get the line being removed to clear its errors
-    const removedLine = lines[index];
-
-    lines.splice(index, 1);
-    if (isMain) setMainLines(lines);
-    else setDeductionLines(lines);
+    const newLines = lines.filter((_, i) => i !== index);
+    if (isMain) setMainLines(newLines);
+    else setDeductionLines(newLines);
 
     setSelectedRows((prev) =>
       prev.filter((k) => k !== `${isMain ? "main" : "deduction"}-${index}`)
     );
-
-    // Clear errors related to the removed line
     setErrors((prev) => {
       const newValidation = { ...prev.validation };
-      // Remove any errors that start with this line's identifier
-      const prefix = `${isMain ? "main" : "deduction"}-${index}`;
       Object.keys(newValidation).forEach((key) => {
-        if (key.startsWith(prefix)) {
+        if (key.startsWith(`${isMain ? "main" : "deduction"}-${index}`))
           delete newValidation[key];
-        }
       });
-      return {
-        ...prev,
-        validation: newValidation,
-      };
+      return { ...prev, validation: newValidation };
     });
   };
 
-  const toggleRowSelection = (index, isMain = true) => {
+  const toggleRowSelection = (index, isMain) => {
     const rowKey = `${isMain ? "main" : "deduction"}-${index}`;
     setSelectedRows((prev) =>
-      prev.includes(rowKey)
-        ? prev.filter((k) => k !== rowKey)
-        : [...prev, rowKey]
+      prev.includes(rowKey) ? prev.filter((k) => k !== rowKey) : [...prev, rowKey]
     );
   };
 
-  const toggleAllRowSelection = (isMain = true) => {
+  const toggleAllRowSelection = (isMain) => {
     const prefix = isMain ? "main" : "deduction";
     const currentLines = isMain ? mainLines : deductionLines;
-    const currentKeys = currentLines.map((_, i) => `${prefix}-${i}`);
-
+    const allSelected = currentLines.every((_, i) =>
+      selectedRows.includes(`${prefix}-${i}`)
+    );
     setSelectedRows((prev) =>
-      currentKeys.every((k) => prev.includes(k))
+      allSelected
         ? prev.filter((k) => !k.startsWith(prefix))
-        : [...prev.filter((k) => !k.startsWith(prefix)), ...currentKeys]
+        : [...prev.filter((k) => !k.startsWith(prefix)), ...currentLines.map((_, i) => `${prefix}-${i}`)]
     );
   };
 
-  const deleteSelectedRows = (isMain = true) => {
+  const deleteSelectedRows = (isMain) => {
     const prefix = isMain ? "main" : "deduction";
     const currentLines = isMain ? mainLines : deductionLines;
     const newLines = currentLines.filter(
       (_, i) => !selectedRows.includes(`${prefix}-${i}`)
-    );
-
-    if (newLines.length === 0) newLines.push({});
+    ) || [{}];
     if (isMain) setMainLines(newLines);
     else setDeductionLines(newLines);
-
     setSelectedRows((prev) => prev.filter((k) => !k.startsWith(prefix)));
   };
 
+  // Validation and Submission
   const validateForm = () => {
     const newErrors = {};
-    const missingFields = (
-      voucherConfig.masterFields?.filter((f) => f.required) || []
-    )
-      .filter((f) => !masterData[f.formName || f.name]?.toString().trim())
-      .map((f) => f.formName || f.name);
 
-    missingFields.forEach((field) => {
-      newErrors[field] = `${
-        voucherConfig.masterFields.find((f) => (f.formName || f.name) === field)
-          .label
-      } is required`;
+    // Master fields validation
+    voucherConfig.masterFields?.forEach((field) => {
+      const fieldName = field.formName || field.name;
+      if (field.required && !masterData[fieldName]?.toString().trim()) {
+        newErrors[fieldName] = `${field.label} is required`;
+      }
     });
 
-    // Check if any line items exist
-    if (
-      !mainLines.some((line) =>
-        Object.values(line).some((v) => v?.toString().trim())
-      )
-    ) {
+    // Main lines validation
+    if (!mainLines.some((line) => Object.values(line).some((v) => v?.toString().trim()))) {
       newErrors.mainLines = "At least one line item is required";
     } else {
-      // Validate required fields in each line item
       mainLines.forEach((line, index) => {
-        const linePrefix = `main-${index}`;
-        (voucherConfig.lineFields?.filter((f) => f.required) || []).forEach(
-          (field) => {
-            const fieldName = field.formName || field.name;
-            if (!line[fieldName]?.toString().trim()) {
-              newErrors[
-                `${linePrefix}-${fieldName}`
-              ] = `${field.label} is required`;
-            }
-          }
-        );
-      });
-
-      // Do the same for deduction lines if they exist
-      if (voucherConfig.hasDeductionBlock) {
-        deductionLines.forEach((line, index) => {
-          // Only validate non-empty deduction lines
-          if (Object.values(line).some((v) => v?.toString().trim())) {
-            const linePrefix = `deduction-${index}`;
-            (
-              voucherConfig.deductionFields?.filter((f) => f.required) || []
-            ).forEach((field) => {
-              const fieldName = field.formName || field.name;
-              if (!line[fieldName]?.toString().trim()) {
-                newErrors[
-                  `${linePrefix}-${fieldName}`
-                ] = `${field.label} is required`;
-              }
-            });
+        voucherConfig.lineFields?.forEach((field) => {
+          const fieldName = field.formName || field.name;
+          if (field.required && !line[fieldName]?.toString().trim()) {
+            newErrors[`main-${index}-${fieldName}`] = `${field.label} is required`;
           }
         });
-      }
+      });
     }
 
+    // Deduction lines validation
+    if (voucherConfig.hasDeductionBlock) {
+      deductionLines.forEach((line, index) => {
+        if (Object.values(line).some((v) => v?.toString().trim())) {
+          voucherConfig.deductionFields?.forEach((field) => {
+            const fieldName = field.formName || field.name;
+            if (field.required && !line[fieldName]?.toString().trim()) {
+              newErrors[`deduction-${index}-${fieldName}`] = `${field.label} is required`;
+            }
+          });
+        }
+      });
+    }
+
+    // Balance check
     if (voucherConfig.balanceCheck) {
-      const formData = {
-        master: masterData,
-        lines: mainLines,
-        deductions: deductionLines,
-        totals,
-      };
+      const formData = { master: masterData, lines: mainLines, deductions: deductionLines, totals };
       if (!voucherConfig.balanceCheck.condition(formData)) {
-        const errorMsg =
+        newErrors.balance =
           typeof voucherConfig.balanceCheck.errorMessage === "function"
             ? voucherConfig.balanceCheck.errorMessage(formData)
             : voucherConfig.balanceCheck.errorMessage;
-        newErrors.balance = errorMsg;
       }
     }
 
-    setErrors((prev) => ({
-      ...prev,
-      validation: newErrors,
-    }));
+    setErrors((prev) => ({ ...prev, validation: newErrors }));
     return Object.keys(newErrors).length === 0;
   };
-// Update prepareFormData to ensure correct deductions key
-const prepareFormData = () => ({
-  master: { ...masterData, tran_code: voucherConfig.tran_code },
-  lines: mainLines
-    .filter((line) => Object.values(line).some((v) => v?.toString().trim()))
-    .map((line) => ({ ...line })),
-  deductions: voucherConfig.hasDeductionBlock
-    ? deductionLines
-        .filter((line) => Object.values(line).some((v) => v?.toString().trim()))
-        .map((line) => ({ ...line }))
-    : [],
-});
+
+  const prepareFormData = () => ({
+    master: { ...masterData, tran_code: voucherConfig.tran_code },
+    lines: mainLines.filter((line) =>
+      Object.values(line).some((v) => v?.toString().trim())
+    ),
+    deductions: voucherConfig.hasDeductionBlock
+      ? deductionLines.filter((line) =>
+          Object.values(line).some((v) => v?.toString().trim())
+        )
+      : [],
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Check if any API operations are pending
     if (loading.options || loading.vrNo) {
       toast.error("Please wait for all operations to complete");
       return;
     }
 
     if (!validateForm()) {
-      toast.error("Please fix validation errors");
-
-      // Scroll to the first error if any
-      const firstErrorField = Object.keys(errors.validation)[0];
-      if (firstErrorField) {
-        const element = document.querySelector(`[name="${firstErrorField}"]`);
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth", block: "center" });
-          element.focus();
-        }
+      toast.error("Please correct the highlighted errors");
+      const firstErrorKey = Object.keys(errors.validation)[0];
+      if (firstErrorKey) {
+        const element = document.querySelector(`[name="${firstErrorKey}"]`);
+        element?.scrollIntoView({ behavior: "smooth", block: "center" });
+        element?.focus();
       }
-
       return;
     }
 
     setLoading((prev) => ({ ...prev, submit: true }));
-    setErrors((prev) => ({ ...prev, submit: null }));
-
     try {
       const formData = prepareFormData();
+      const url = editMode && existingData?.voucherId
+        ? `${apiMap[type]}/${existingData.voucherId}`
+        : apiMap[type];
+      const method = editMode ? axios.put : axios.post;
 
-      // Choose API method and endpoint based on edit mode
-      if (editMode && existingData.voucherId) {
-        await axios.put(`${apiMap[type]}/${existingData.voucherId}`, formData);
-        toast.success("Voucher updated successfully");
-      } else {
-        await axios.post(apiMap[type], formData);
-        toast.success("Voucher saved successfully");
-      }
-
+      await method(url, formData);
+      toast.success(`Voucher ${editMode ? "updated" : "saved"} successfully`);
       onClose();
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.message;
-      setErrors((prev) => ({
-        ...prev,
-        submit: `Failed to ${editMode ? "update" : "save"}: ${errorMsg}`,
-      }));
-      toast.error(`Failed to ${editMode ? "update" : "save"}: ${errorMsg}`);
+      toast.error(`Failed to ${editMode ? "update" : "save"} voucher: ${errorMsg}`);
+      setErrors((prev) => ({ ...prev, submit: errorMsg }));
     } finally {
       setLoading((prev) => ({ ...prev, submit: false }));
     }
   };
 
+  // Utility Functions
   const getSelectOptions = (optionsType, valueKey = "id", nameKey = "name") => {
-    const options = optionsData[optionsType] || [];
-    return options.map((opt) => ({
+    return (optionsData[optionsType] || []).map((opt) => ({
       value: opt[valueKey]?.toString() || "",
       label: opt[nameKey] || opt.title || opt[valueKey]?.toString() || "",
     }));
   };
 
-  const renderSelectField = (
-    field,
-    value,
-    onChange,
-    optionsType,
-    isMaster = true,
-    index = 0,
-    isMain = true
-  ) => {
-    const options = getSelectOptions(
-      optionsType,
-      field.valueKey,
-      field.nameKey
-    );
-    const fieldName = field.formName || field.name;
-
-    return (
-      <SearchableSelect
-        value={value}
-        onValueChange={(v) => {
-          if (v === "add_new") {
-            setModalType(optionsType);
-            setModalField(field);
-            setModalOpen(true);
-          } else {
-            onChange(fieldName, v);
-          }
-        }}
-        options={options}
-        placeholder={`Select ${field.label}`}
-        label={field.label}
-        required={field.required}
-        error={
-          isMaster
-            ? errors.validation[fieldName]
-            : errors.validation[
-                `${isMain ? "main" : "deduction"}-${index}-${fieldName}`
-              ]
-        }
-      />
-    );
-  };
-
+  // Render Functions
   const renderInputField = (line, fieldConfig, index, isMain) => {
     const fieldName = fieldConfig.formName || fieldConfig.name;
     const value = calculateFieldValue(line, fieldConfig);
-    const Icon =
-      ICON_MAP[fieldConfig.name] || ICON_MAP[fieldConfig.type] || FileText;
+    const Icon = ICON_MAP[fieldConfig.name] || ICON_MAP[fieldConfig.type] || FileText;
 
     if (fieldConfig.type === "select") {
-      return renderSelectField(
-        fieldConfig,
-        line[fieldName],
-        (name, v) => handleLineChange(index, name, v, isMain),
-        fieldConfig.options,
-        false,
-        index,
-        isMain
+      return (
+        <SearchableSelect
+          value={line[fieldName] || ""}
+          onValue LoveChange={(v) => {
+            if (v === "add_new") {
+              setModalType(fieldConfig.options);
+              setModalField({ ...fieldConfig, lineIndex: index, container: isMain ? "main" : "deduction" });
+              setModalOpen(true);
+            } else {
+              handleLineChange(index, fieldName, v, isMain);
+            }
+          }}
+          options={getSelectOptions(fieldConfig.options, fieldConfig.valueKey, fieldConfig.nameKey)}
+          placeholder={`Select ${fieldConfig.label}`}
+          label={fieldConfig.label}
+          required={fieldConfig.required}
+          error={errors.validation[`${isMain ? "main" : "deduction"}-${index}-${fieldName}`]}
+        />
       );
     }
 
@@ -844,144 +638,103 @@ const prepareFormData = () => ({
         : "text";
     const isReadOnly = fieldConfig.calculate && fieldConfig.dependencies;
 
-    if (fieldConfig.type === "textarea") {
-      return (
-        <div className="space-y-1">
-          <Label className="text-xs text-primary">{fieldConfig.label}</Label>
-          <Textarea
-            value={value || ""}
-            onChange={(e) =>
-              handleLineChange(index, fieldName, e.target.value, isMain)
-            }
-            readOnly={isReadOnly}
-            disabled={loading.submit || isReadOnly}
-            className="h-16 text-xs w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary"
-          />
-          {errors.validation[
-            `${isMain ? "main" : "deduction"}-${index}-${fieldName}`
-          ] && (
-            <p className="text-xs text-red-500">
-              {
-                errors.validation[
-                  `${isMain ? "main" : "deduction"}-${index}-${fieldName}`
-                ]
-              }
-            </p>
-          )}
-        </div>
-      );
-    }
-
-    return (
+    return fieldConfig.type === "textarea" ? (
+      <Textarea
+        value={value || ""}
+        onChange={(e) => handleLineChange(index, fieldName, e.target.value, isMain)}
+        readOnly={isReadOnly}
+        disabled={loading.submit || isReadOnly}
+        className="h-16 text-sm w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary"
+      />
+    ) : (
       <FormInput
         icon={Icon}
         label={fieldConfig.label}
         type={inputType}
-        value={
-          fieldConfig.type === "number" && typeof value === "number"
-            ? value
-            : value || ""
-        }
-        onChange={(e) =>
-          handleLineChange(index, fieldName, e.target.value, isMain)
-        }
+        value={value || ""}
+        onChange={(e) => handleLineChange(index, fieldName, e.target.value, isMain)}
         readOnly={isReadOnly}
         disabled={loading.submit || isReadOnly}
-        className="h-8 text-xs w-full px-8" // Add px-8 for proper icon padding
-        error={
-          errors.validation[
-            `${isMain ? "main" : "deduction"}-${index}-${fieldName}`
-          ]
-        }
+        className="h-9 text-sm w-full"
+        error={errors.validation[`${isMain ? "main" : "deduction"}-${index}-${fieldName}`]}
       />
     );
   };
 
   const renderMasterFields = () => (
     <motion.div
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-secondary rounded-lg"
+      className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4 p-6 bg-gray-50 rounded-lg l"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {voucherConfig.masterFields
-        ?.filter((f) => f.name !== "tran_code")
-        .map((field) => {
-          const fieldName = field.formName || field.name;
-          const Icon = ICON_MAP[field.name] || ICON_MAP[field.type] || FileText;
+      {voucherConfig.masterFields?.filter((f) => f.name !== "tran_code").map((field) => {
+        const fieldName = field.formName || field.name;
+        const Icon = ICON_MAP[field.name] || ICON_MAP[field.type] || FileText;
 
-          return (
-            <motion.div
-              key={fieldName}
-              className="flex flex-col space-y-1 min-w-[160px] flex-1"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.2 }}
-            >
-              {field.type === "select" ? (
-                renderSelectField(
-                  field,
-                  masterData[fieldName],
-                  handleMasterChange,
-                  field.options,
-                  true
-                )
-              ) : field.type === "textarea" ? (
-                <div className="space-y-1">
-                  <Label className="text-xs text-primary">
-                    {field.label}
-                    {field.required && <span className="text-red-500">*</span>}
-                  </Label>
-                  <Textarea
-                    value={masterData[fieldName] || ""}
-                    onChange={(e) =>
-                      handleMasterChange(fieldName, e.target.value)
-                    }
-                    disabled={loading.submit}
-                    className="h-16 text-sm rounded-md border-gray-300 focus:ring-primary focus:border-primary"
-                  />
-                  {errors.validation[fieldName] && (
-                    <p className="text-xs text-red-500">
-                      {errors.validation[fieldName]}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <FormInput
-                  icon={Icon}
-                  label={field.label}
-                  type={field.type}
-                  value={
-                    field.name === "vr_no" && field.autoGenerate
-                      ? masterData[fieldName] || ""
-                      : masterData[fieldName] || ""
+        return (
+          <div key={fieldName} className="flex flex-col space-y-1 min-w-[200px]">
+            {field.type === "select" ? (
+              <SearchableSelect
+                value={masterData[fieldName] || ""}
+                onValueChange={(v) => {
+                  if (v === "add_new") {
+                    setModalType(field.options);
+                    setModalField({ ...field, container: "master" });
+                    setModalOpen(true);
+                  } else {
+                    handleMasterChange(fieldName, v);
                   }
-                  onChange={(e) =>
-                    handleMasterChange(fieldName, e.target.value)
-                  }
-                  readOnly={field.name === "vr_no" && field.autoGenerate}
-                  disabled={
-                    loading.submit ||
-                    (field.name === "vr_no" &&
-                      field.autoGenerate &&
-                      loading.vrNo)
-                  }
-                  required={field.required}
-                  error={errors.validation[fieldName]}
+                }}
+                options={getSelectOptions(field.options, field.valueKey, field.nameKey)}
+                placeholder={`Select ${field.label}`}
+                label={field.label}
+                required={field.required}
+                error={errors.validation[fieldName]}
+              />
+            ) : field.type === "textarea" ? (
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-700">
+                  {field.label}
+                  {field.required && <span className="text-red-500">*</span>}
+                </Label>
+                <Textarea
+                  value={masterData[fieldName] || ""}
+                  onChange={(e) => handleMasterChange(fieldName, e.target.value)}
+                  disabled={loading.submit}
+                  className="h-16 text-sm w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary"
                 />
-              )}
-            </motion.div>
-          );
-        })}
+                {errors.validation[fieldName] && (
+                  <p className="text-xs text-red-500">{errors.validation[fieldName]}</p>
+                )}
+              </div>
+            ) : (
+              <FormInput
+                icon={Icon}
+                label={field.label}
+                type={field.type}
+                value={masterData[fieldName] || ""}
+                onChange={(e) => handleMasterChange(fieldName, e.target.value)}
+                readOnly={field.name === "vr_no" && field.autoGenerate}
+                disabled={
+                  loading.submit ||
+                  (field.name === "vr_no" && field.autoGenerate && loading.vrNo)
+                }
+                required={field.required}
+                error={errors.validation[fieldName]}
+                className="h-9 text-sm w-full"
+              />
+            )}
+          </div>
+        );
+      })}
     </motion.div>
   );
 
-  const renderTable = (isMain = true) => {
-    const fields =
-      (isMain
-        ? voucherConfig.lineFields
-        : voucherConfig.deductionFields
-      )?.filter((f) => !["tran_code", "ac_no", "ccno"].includes(f.name)) || [];
+  const renderTable = (isMain) => {
+    const fields = (isMain ? voucherConfig.lineFields : voucherConfig.deductionFields)?.filter(
+      (f) => !["tran_code", "ac_no", "ccno"].includes(f.name)
+    ) || [];
     if (!fields.length) return null;
 
     const lines = isMain ? mainLines : deductionLines;
@@ -1000,12 +753,12 @@ const prepareFormData = () => ({
 
     return (
       <motion.div
-        className="mt-6 border rounded-lg bg-white shadow-sm"
+        className="mt-6 border rounded-lg bg-white shadow-sm overflow-hidden"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="bg-gradient-to-r from-primary to-primary p-3 flex justify-between items-center text-white rounded-t-lg">
+        <div className="bg-primary p-3 flex justify-between items-center text-white">
           <div className="flex items-center gap-2">
             <Badge className="bg-white text-primary">{lines.length}</Badge>
             <span className="text-sm font-medium">{title}</span>
@@ -1014,47 +767,31 @@ const prepareFormData = () => ({
             <Button
               variant="outline"
               size="sm"
-              onClick={(e) => {
-                e.preventDefault(); // Prevent form submission
-                e.stopPropagation(); // Stop event bubbling
-                deleteSelectedRows(isMain);
-              }}
-              disabled={
-                !selectedRows.some((k) => k.startsWith(prefix)) ||
-                loading.submit
-              }
-              className="bg-white text-primary hover:bg-secondary hover:text-primary"
+              onClick={() => deleteSelectedRows(isMain)}
+              disabled={!selectedRows.some((k) => k.startsWith(prefix)) || loading.submit}
+              className="bg-white text-primary hover:bg-primary"
             >
               <Trash2 className="h-4 w-4 mr-1" /> Delete
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={(e) => {
-                e.preventDefault(); // Prevent form submission
-                e.stopPropagation(); // Stop event bubbling
-                addLine(isMain);
-              }}
+              onClick={() => addLine(isMain)}
               disabled={loading.submit}
-              className="bg-white text-primary hover:bg-secondary hover:text-primary"
+              className="bg-white text-primary hover:bg-primary"
             >
               <PlusCircle className="h-4 w-4 mr-1" /> Add
             </Button>
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-auto">
             <thead>
-              <tr className="bg-gray-100 text-xs border-b text-primary">
+              <tr className="bg-gray-100 text-xs border-b text-gray-700">
                 <th className="p-2 w-10">
                   <input
                     type="checkbox"
-                    checked={
-                      lines.length > 0 &&
-                      lines.every((_, i) =>
-                        selectedRows.includes(`${prefix}-${i}`)
-                      )
-                    }
+                    checked={lines.length > 0 && lines.every((_, i) => selectedRows.includes(`${prefix}-${i}`))}
                     onChange={() => toggleAllRowSelection(isMain)}
                     disabled={loading.submit}
                     className="cursor-pointer"
@@ -1079,45 +816,30 @@ const prepareFormData = () => ({
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
                     className={`border-b hover:bg-gray-50 ${
-                      selectedRows.includes(`${prefix}-${idx}`)
-                        ? "bg-primary"
-                        : ""
+                      selectedRows.includes(`${prefix}-${idx}`) ? "bg-primary" : ""
                     }`}
-                    onClick={() => toggleRowSelection(idx, isMain)}
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        toggleRowSelection(idx, isMain);
-                      }
-                    }}
                   >
-                    <td className="p-1 text-center">
+                    <td className="p-2 text-center">
                       <input
                         type="checkbox"
                         checked={selectedRows.includes(`${prefix}-${idx}`)}
                         onChange={() => toggleRowSelection(idx, isMain)}
                         disabled={loading.submit}
                         className="cursor-pointer"
+                        onClick={(e) => e.stopPropagation()}
                       />
                     </td>
-                    <td className="p-1 text-center text-sm">{idx + 1}</td>
+                    <td className="p-2 text-center text-sm">{idx + 1}</td>
                     {fields.map((f) => (
-                      <td key={f.name} className="p-2 min-w-[150px]">
-                        {" "}
-                        {/* Increased padding and min-width */}
+                      <td key={f.name} className="p-2 min-w-[180px]">
                         {renderInputField(line, f, idx, isMain)}
                       </td>
                     ))}
-                    <td className="p-1 text-center">
+                    <td className="p-2 text-center">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={(e) => {
-                          e.preventDefault(); // Prevent form submission
-                          e.stopPropagation(); // Stop event bubbling
-                          removeLine(idx, isMain);
-                        }}
+                        onClick={() => removeLine(idx, isMain)}
                         disabled={loading.submit || lines.length <= 1}
                         className="text-red-500 hover:text-red-700"
                       >
@@ -1133,24 +855,12 @@ const prepareFormData = () => ({
         {voucherConfig.totals && (
           <div className="bg-gray-50 p-3 flex justify-end gap-6 border-t">
             {Object.entries(voucherConfig.totals)
-              .filter(
-                ([k]) =>
-                  (isMain && k !== "deductionTotal") ||
-                  (!isMain && ["deductionTotal", "netTotal"].includes(k))
-              )
+              .filter(([k]) => (isMain && k !== "deductionTotal") || (!isMain && k === "deductionTotal"))
               .map(([k, config]) => (
-                <motion.div
-                  key={k}
-                  className="text-right"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <span className="text-xs text-primary">{config.label}: </span>
-                  <span className="text-primary font-bold">
-                    {totals[k]?.toFixed(2) || "0.00"}
-                  </span>
-                </motion.div>
+                <div key={k} className="text-right">
+                  <span className="text-xs text-gray-700">{config.label}: </span>
+                  <span className="text-primary font-bold">{totals[k]?.toFixed(2) || "0.00"}</span>
+                </div>
               ))}
           </div>
         )}
@@ -1163,21 +873,20 @@ const prepareFormData = () => ({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [modalErrors, setModalErrors] = useState({});
 
-    // Initialize entity data based on modalFields
     useEffect(() => {
-      const initialData = fieldConfig.modalFields.reduce(
+      const initialData = fieldConfig.modalFields?.reduce(
         (acc, field) => ({
           ...acc,
           [field.name]: field.type === "number" ? 0 : field.defaultValue || "",
         }),
         {}
-      );
+      ) || {};
       setEntityData(initialData);
-    }, [fieldConfig.modalFields]);
+    }, [fieldConfig]);
 
     const validateModal = () => {
       const newErrors = {};
-      fieldConfig.modalFields.forEach((field) => {
+      fieldConfig.modalFields?.forEach((field) => {
         if (field.required && !entityData[field.name]?.toString().trim()) {
           newErrors[field.name] = `${field.label} is required`;
         }
@@ -1188,21 +897,18 @@ const prepareFormData = () => ({
 
     const handleSave = async () => {
       if (!validateModal()) {
-        toast.error("Please fix validation errors");
+        toast.error("Please fix validation errors in the form");
         return;
       }
 
+      setIsSubmitting(true);
       try {
-        setIsSubmitting(true);
-        const response = await axios.post(
-          fieldConfig.createEndpoint,
-          entityData
-        );
+        const response = await axios.post(fieldConfig.createEndpoint, entityData);
         onSave(response.data);
         toast.success(`${fieldConfig.label} added successfully`);
         onClose();
       } catch (error) {
-        toast.error(`Error adding ${fieldConfig.label}: ${error.message}`);
+        toast.error(`Failed to add ${fieldConfig.label}: ${error.message}`);
       } finally {
         setIsSubmitting(false);
       }
@@ -1214,28 +920,16 @@ const prepareFormData = () => ({
           <DialogHeader>
             <DialogTitle>Add New {fieldConfig.label}</DialogTitle>
           </DialogHeader>
-          <motion.div
-            className="space-y-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.2 }}
-          >
-            {fieldConfig.modalFields.map((field) => {
-              const Icon =
-                ICON_MAP[field.name] || ICON_MAP[field.type] || FileText;
+          <div className="space-y-4">
+            {fieldConfig.modalFields?.map((field) => {
+              const Icon = ICON_MAP[field.name] || ICON_MAP[field.type] || FileText;
               return (
                 <div key={field.name} className="space-y-1">
                   {field.type === "select" ? (
                     <SearchableSelect
-                      value={entityData[field.name]}
-                      onValueChange={(v) =>
-                        setEntityData({ ...entityData, [field.name]: v })
-                      }
-                      options={getSelectOptions(
-                        field.options,
-                        field.valueKey,
-                        field.nameKey
-                      )}
+                      value={entityData[field.name] || ""}
+                      onValueChange={(v) => setEntityData({ ...entityData, [field.name]: v })}
+                      options={getSelectOptions(field.options, field.valueKey, field.nameKey)}
                       placeholder={`Select ${field.label}`}
                       label={field.label}
                       required={field.required}
@@ -1243,27 +937,20 @@ const prepareFormData = () => ({
                     />
                   ) : field.type === "textarea" ? (
                     <div className="space-y-1">
-                      <Label className="text-xs text-primary">
+                      <Label className="text-xs text-gray-700">
                         {field.label}
-                        {field.required && (
-                          <span className="text-red-500">*</span>
-                        )}
+                        {field.required && <span className="text-red-500">*</span>}
                       </Label>
                       <Textarea
                         value={entityData[field.name] || ""}
                         onChange={(e) =>
-                          setEntityData({
-                            ...entityData,
-                            [field.name]: e.target.value,
-                          })
+                          setEntityData({ ...entityData, [field.name]: e.target.value })
                         }
-                        className="h-16 text-xs w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary"
                         disabled={isSubmitting}
+                        className="h-16 text-sm w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary"
                       />
                       {modalErrors[field.name] && (
-                        <p className="text-xs text-red-500">
-                          {modalErrors[field.name]}
-                        </p>
+                        <p className="text-xs text-red-500">{modalErrors[field.name]}</p>
                       )}
                     </div>
                   ) : (
@@ -1273,29 +960,32 @@ const prepareFormData = () => ({
                       type={field.type}
                       value={entityData[field.name] || ""}
                       onChange={(e) =>
-                        setEntityData({
-                          ...entityData,
-                          [field.name]: e.target.value,
-                        })
+                        setEntityData({ ...entityData, [field.name]: e.target.value })
                       }
                       required={field.required}
                       disabled={isSubmitting}
                       error={modalErrors[field.name]}
+                      className="h-9 text-sm w-full"
                     />
                   )}
                 </div>
               );
             })}
-          </motion.div>
-          <DialogFooter className="flex flex-col sm:flex-row gap-4">
+          </div>
+          <DialogFooter className="mt-4 flex flex-col sm:flex-row gap-3">
             <Button
               onClick={handleSave}
-              className="bg-primary hover:bg-secondary hover:text-primary"
               disabled={isSubmitting}
+              className="bg-primary text-white hover:bg-primary"
             >
               {isSubmitting ? "Saving..." : "Save"}
             </Button>
-            <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="border-gray-300 text-gray-700 hover:bg-gray-100"
+            >
               Cancel
             </Button>
           </DialogFooter>
@@ -1304,91 +994,78 @@ const prepareFormData = () => ({
     );
   };
 
+  // Render Logic
   if (!voucherConfig || !Object.keys(voucherConfig).length) {
     return (
-      <div className="min-w-[320px] max-w-full bg-gray-100 min-h-screen p-4">
-        <Alert variant="destructive">
+      <div className="min-w-[320px] max-w-full bg-gray-100 min-h-screen p-4 flex flex-col items-center justify-center">
+        <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>Invalid voucher type: "{type}"</AlertDescription>
         </Alert>
-        <div className="mt-4 flex justify-center">
-          <Button onClick={onClose}>Close</Button>
-        </div>
+        <Button onClick={onClose} className="bg-primary text-white hover:bg-primary">
+          Close
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="min-w-[320px] max-w-full min-h-screen p-1 ">
+    <div className="min-w-[320px] max-w-full min-h-screen">
       <Toaster richColors />
-      {loading.options && (
-        <motion.div
-          className="flex justify-center mb-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
+      {(loading.options || loading.vrNo) && (
+        <div className="flex justify-center mb-4">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full"
           />
-        </motion.div>
+        </div>
       )}
       {Object.values(errors.validation).some(Boolean) && (
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Validation Error</AlertTitle>
+          <AlertTitle>Validation Errors</AlertTitle>
           <AlertDescription>
             {Object.values(errors.validation).filter(Boolean).join("; ")}
           </AlertDescription>
         </Alert>
       )}
-      {errors.options && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{errors.options}</AlertDescription>
-        </Alert>
-      )}
       {errors.submit && (
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>Submission Error</AlertTitle>
           <AlertDescription>{errors.submit}</AlertDescription>
         </Alert>
       )}
       <form onSubmit={handleSubmit}>
-        <Card className="mb-6 shadow-sm">
-          <CardHeader className="bg-primary border-b">
-            <CardTitle className="text-lg text-white">
+        <Card className="mb-6 shadow-md">
+          <CardHeader className="bg-primary text-white">
+            <CardTitle className="text-lg">
               {editMode ? "Edit Voucher Details" : "Voucher Details"}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0">{renderMasterFields()}</CardContent>
-        </Card>
-        {renderTable(true)}
+          <CardContent className="p-0 overflow-auto">
+            {renderMasterFields()}
+                    {renderTable(true)}
         {voucherConfig.hasDeductionBlock && renderTable(false)}
-        <motion.div
-          className="mt-6 flex justify-end gap-3"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
+            </CardContent>
+        </Card>
+
+        <div className="mt-6 flex justify-end gap-3">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={loading.submit}
-            className="rounded-md text-primary bg-secondary hover:bg-primary "
+            className="border-gray-300 text-gray-700 hover:bg-gray-100"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={loading.submit || loading.options || loading.vrNo}
-            className="rounded-md bg-primary hover:bg-secondary text-white hover:text-primary"
+            className="bg-primary text-white hover:bg-primary"
           >
             {loading.submit ? (
               <>
@@ -1402,56 +1079,28 @@ const prepareFormData = () => ({
               </>
             )}
           </Button>
-        </motion.div>
+        </div>
       </form>
       {modalOpen && (
         <AddEntityModal
           onClose={() => setModalOpen(false)}
           onSave={(newEntity) => {
-            // Add the new entity to options data
             setOptionsData((prev) => ({
               ...prev,
               [modalType]: [...prev[modalType], newEntity],
             }));
-
-            // Update the field value
             const fieldName = modalField.formName || modalField.name;
             const newValue = newEntity[modalField.valueKey];
-
-            // Update in the appropriate location (master or line item)
             if (modalField.container === "master") {
               handleMasterChange(fieldName, newValue);
-
-              // Also update any dependent fields
-              voucherConfig.masterFields
-                ?.filter((f) => f.dependencies?.includes(fieldName))
-                .forEach((depField) => {
-                  const depName = depField.formName || depField.name;
-                  if (depField.calculate) {
-                    const dependencies = depField.dependencies.reduce(
-                      (acc, dep) => ({
-                        ...acc,
-                        [dep]:
-                          dep === fieldName ? newValue : masterData[dep] || 0,
-                      }),
-                      {}
-                    );
-                    handleMasterChange(
-                      depName,
-                      depField.calculate(dependencies) || 0
-                    );
-                  }
-                });
             } else if (modalField.lineIndex !== undefined) {
-              const isMain = modalField.container === "main";
               handleLineChange(
                 modalField.lineIndex,
                 fieldName,
                 newValue,
-                isMain
+                modalField.container === "main"
               );
             }
-
             setModalOpen(false);
           }}
           entityType={modalType}
