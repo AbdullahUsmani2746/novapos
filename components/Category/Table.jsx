@@ -49,6 +49,7 @@ import {
   Building,
   CheckCircle,
   Edit,
+  Delete,
 } from "lucide-react";
 import axios from "axios";
 
@@ -182,24 +183,24 @@ const TransactionItem = ({ transaction, index }) => {
           </div>
         )}
 
-        {transaction.dr && (
+        {transaction.damt && (
           <div>
             <span className="font-medium text-gray-600">Debit:</span>
             <span className="ml-2 text-gray-900 font-semibold text-green-600">
               $
-              {Number(transaction.dr).toLocaleString("en-US", {
+              {Number(transaction.damt).toLocaleString("en-US", {
                 minimumFractionDigits: 2,
               })}
             </span>
           </div>
         )}
 
-        {transaction.cr && (
+        {transaction.camt && (
           <div>
             <span className="font-medium text-gray-600">Credit:</span>
             <span className="ml-2 text-gray-900 font-semibold text-red-600">
               $
-              {Number(transaction.cr).toLocaleString("en-US", {
+              {Number(transaction.camt).toLocaleString("en-US", {
                 minimumFractionDigits: 2,
               })}
             </span>
@@ -569,6 +570,26 @@ export default function VoucherTable({
     setFocusedRowIndex(index);
   };
 
+ const handleDeleteClick = async (rowData) => {
+  const confirmDelete = window.confirm("Are you sure you want to delete this voucher?");
+  if (!confirmDelete) return;
+
+  try {
+    const res = await axios.delete(`/api/voucher/${type}`, {
+      data: { tran_id: rowData.tran_id },
+    });
+
+    alert("Deleted successfully");
+
+    // Optionally update local state/UI
+    setData(prev => prev.filter(row => row.tran_id !== rowData.tran_id));
+
+  } catch (error) {
+    console.error("Delete failed:", error);
+    alert("Failed to delete voucher");
+  }
+};
+
   const handleModal = (rowData, index) => {
   setSelectedRow(rowData); // Set fresh selectedRow
   setFocusedRowIndex(index);
@@ -791,6 +812,17 @@ export default function VoucherTable({
                         >
                           <Edit className="h-4 w-4 text-primary group-hover:text-white" />
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 hover:bg-primary focus:bg-primary group"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClick(entry, idx);
+                          }}
+                        >
+                          <Delete className="h-4 w-4 text-primary group-hover:text-white" />
+                        </Button>
                       </TableCell>
                     </motion.tr>
                   ))
@@ -886,11 +918,28 @@ export default function VoucherTable({
       setFocusedRowIndex(-1);
     }}
     existingData={{
-      voucherId: selectedRow?.tran_id || selectedRow?.id || "",
-      master: selectedRow ? { ...selectedRow } : {},
-      lines: selectedRow?.transactions?.filter((t) => t.sub_tran_id === 1) || [],
-      deductions: selectedRow?.transactions?.filter((t) => t.sub_tran_id === 2) || [], // Use correct key 'deductions'
-    }}
+  voucherId: selectedRow?.tran_id || selectedRow?.id || "",
+
+  master: selectedRow
+    ? {
+        ...Object.fromEntries(
+          Object.entries(selectedRow).filter(
+            ([key]) => !["acno", "transactions", "godownDetails"].includes(key)
+          )
+        ),
+      }
+    : {},
+
+  lines:
+    selectedRow?.transactions
+      ?.filter((t) => t.sub_tran_id === 1)
+      .map(({ itemDetails, acnoDetails,godownDetails,currencyDetails,costCenter,...rest }) => rest) || [],
+
+  deductions:
+    selectedRow?.transactions
+      ?.filter((t) => t.sub_tran_id === 2)
+      .map(({ itemDetails, acnoDetails,godownDetails,currencyDetails,costCenter,...rest}) => rest) || [],
+}}
   />
 )}
     </motion.div>

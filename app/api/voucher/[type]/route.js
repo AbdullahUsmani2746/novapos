@@ -25,20 +25,19 @@ export async function GET(req, { params }) {
       skip,
       take: limit,
       orderBy: { tran_id: "desc" },
-      include:{
-      acno:true,
-      godownDetails:true,
-      transactions: {
+      include: {
+        acno: true,
+        godownDetails: true,
+        transactions: {
           include: {
             acnoDetails: true,
             itemDetails: true,
             godownDetails: true,
             costCenter: true,
-            currencyDetails: true
-          }
-        }
-
-      }
+            currencyDetails: true,
+          },
+        },
+      },
     }),
     prisma.transactionsMaster.count({ where: { tran_code } }),
   ]);
@@ -267,42 +266,200 @@ export async function POST(req, { params }) {
 
 // PUT method
 export async function PUT(req) {
-  const { id, master, lines, deductions } = await req.json();
+  try {
+    const { master, lines, deductions } = await req.json();
 
-  await prisma.transactionsMaster.update({
-    where: { tran_id: id },
-    data: master,
-  });
+    const tran_code = master?.tran_code;
+    const tran_id = master?.tran_id;
 
-  await prisma.transactions.deleteMany({ where: { tran_id: id } });
+    if (!tran_code || !tran_id) {
+      console.error("Missing tran_code or tran_id:", { tran_code, tran_id });
+      return NextResponse.json(
+        { message: "Missing tran_code or tran_id" },
+        { status: 400 }
+      );
+    }
 
-  await prisma.transactions.createMany({
-    data: lines.map((l) => ({
-      ...l,
-      tran_id: id,
-      sub_tran_id: 1,
-    })),
-  });
+    const parseOptionalInt = (v) =>
+      v === null || v === undefined || v === ""
+        ? null
+        : isNaN(+v)
+        ? null
+        : parseInt(v);
 
-  if (deductions?.length) {
-    await prisma.transactions.createMany({
-      data: deductions.map((d) => ({
-        ...d,
-        tran_id: id,
-        sub_tran_id: 2,
-      })),
+    // Format date/times
+    console.log("Parsing dates...");
+    if ([1, 2, 4, 6].includes(tran_code)) {
+      const dateObj = new Date(`${master.dateD}T${master.time}`);
+      const checkDateObj = new Date(`${master.check_date}T${master.time}`);
+
+      master.dateD = dateObj;
+      master.time = dateObj;
+      master.check_date = checkDateObj;
+      if ([4, 6].includes(tran_code)) {
+        master.godown = parseOptionalInt(master.godown);
+      }
+    } else if (tran_code === 3) {
+      master.dateD = new Date(master.dateD);
+    }
+
+    console.log("Updating master:", master);
+    await prisma.transactionsMaster.update({
+      where: { tran_id },
+      data: {
+        ...master,
+        godown: parseOptionalInt(master.godown),
+        vr_no: parseOptionalInt(master.vr_no),
+      },
     });
-  }
 
-  return NextResponse.json({ message: "Voucher updated" });
+    // Update lines
+    console.log(`Updating ${lines?.length} lines...`);
+    for (const line of lines) {
+      const {
+        id, // extract and exclude from update data
+        tran_id,
+        acno,
+        ...rest
+      } = line;
+
+      const updatedLine = {
+        ...rest,
+        currency: [1, 2].includes(tran_code)
+          ? parseOptionalInt(line.currency)
+          : null,
+        ccno: [1, 2, 3].includes(tran_code)
+          ? parseOptionalInt(line.ccno)
+          : null,
+        itcd: [4, 6].includes(tran_code) ? parseOptionalInt(line.itcd) : null,
+        acno: tran_code === 4 ? "0004" : line.acno,
+      };
+
+      console.log("Updating line:", updatedLine);
+
+      try {
+        await prisma.transactions.update({
+          where: { id: line.id },
+          data: updatedLine,
+        });
+      } catch (err) {
+        console.error(`Failed to update line id ${line.id}`, err.message);
+      }
+    }
+
+    // Update deductions
+    if (deductions?.length > 0) {
+      console.log(`Updating ${deductions.length} deductions...`);
+      for (const ded of deductions) {
+        const updatedDed = {
+          ...ded,
+          tran_id,
+          sub_tran_id: 2,
+          ccno: parseOptionalInt(ded.ccno),
+          currency: parseOptionalInt(ded.currency),
+        };
+
+        console.log("Updating deduction:", updatedDed);
+
+        try {
+          await prisma.transactions.update({
+            where: { id: ded.id },
+            data: updatedDed,
+          });
+        } catch (err) {
+          console.error(`Failed to update deduction id ${ded.id}`, err.message);
+        }
+      }
+    }
+
+    // Auto Entry update logic
+    if ([1, 2, 4, 6].includes(tran_code)) {
+      let totalDamt = 0;
+      let totalCamt = 0;
+
+      for (const line of lines) {
+        totalDamt += parseFloat(line.damt || 0);
+        totalCamt += parseFloat(line.camt || 0);
+      }
+
+      for (const ded of deductions || []) {
+        if (tran_code === 1) totalCamt += parseFloat(ded.camt || 0);
+        if (tran_code === 2) totalDamt += parseFloat(ded.damt || 0);
+      }
+
+      const damt =
+        tran_code === 1
+          ? totalDamt - totalCamt
+          : tran_code === 4
+          ? totalCamt
+          : 0;
+      const camt =
+        tran_code === 2
+          ? totalCamt - totalDamt
+          : tran_code === 6
+          ? totalDamt
+          : 0;
+
+      console.log("Looking for auto entry...");
+      const autoEntry = await prisma.transactions.findFirst({
+        where: { tran_id, sub_tran_id: 3 },
+      });
+
+      if (autoEntry) {
+        const autoUpdate = {
+          damt,
+          camt,
+          narration1: "Auto Entry",
+          acno: master.acno || null,
+        };
+        console.log("Updating auto entry:", autoUpdate);
+
+        try {
+          await prisma.transactions.update({
+            where: { id: autoEntry.id },
+            data: autoUpdate,
+          });
+        } catch (err) {
+          console.error("Failed to update auto entry:", err.message);
+        }
+      } else {
+        console.warn("No auto entry found for tran_id:", tran_id);
+      }
+    }
+
+    return NextResponse.json({ message: "Voucher updated successfully" });
+  } catch (error) {
+    console.error("General error in PUT /voucher:", error);
+    return NextResponse.json(
+      { message: "Server error", error: error.message || "Unknown error" },
+      { status: 500 }
+    );
+  }
 }
 
 // DELETE method
 export async function DELETE(req) {
-  const { tran_id } = await req.json();
+  try {
+    const { tran_id } = await req.json();
 
-  await prisma.transactions.deleteMany({ where: { tran_id } });
-  await prisma.transactionsMaster.delete({ where: { tran_id } });
+    if (!tran_id) {
+      return NextResponse.json(
+        { message: "tran_id is required" },
+        { status: 400 }
+      );
+    }
 
-  return NextResponse.json({ message: "Voucher deleted" });
+    await prisma.transactions.deleteMany({ where: { tran_id } });
+    await prisma.transactionsMaster.delete({ where: { tran_id } });
+
+    return NextResponse.json({
+      message: "Voucher and related transactions deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete error:", error);
+    return NextResponse.json(
+      { message: "Server error", error: error.message },
+      { status: 500 }
+    );
+  }
 }

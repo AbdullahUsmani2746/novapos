@@ -88,7 +88,14 @@ const ICON_MAP = {
 };
 
 // Reusable FormInput Component
-const FormInput = ({ icon: Icon, error, label, required, className, ...props }) => (
+const FormInput = ({
+  icon: Icon,
+  error,
+  label,
+  required,
+  className,
+  ...props
+}) => (
   <div className="space-y-1">
     <Label className="text-xs text-gray-700">
       {label}
@@ -99,9 +106,9 @@ const FormInput = ({ icon: Icon, error, label, required, className, ...props }) 
         <Icon className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
       )}
       <Input
-        className={`w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary ${Icon ? "pl-8" : "px-3"} ${
-          error ? "border-red-500 focus:ring-red-500" : ""
-        } ${className}`}
+        className={`w-full rounded-md border-gray-300 focus:ring-primary0 focus:border-primary0 ${
+          Icon ? "pl-8" : "px-3"
+        } ${error ? "border-red-500 focus:ring-red-500" : ""} ${className}`}
         {...props}
       />
       {error && (
@@ -141,13 +148,12 @@ const SearchableSelect = ({
         {required && <span className="text-red-500">*</span>}
       </Label>
       <Select
-        value={value?.toString() || ""}
-        onValueChange={onValueChange}
+        value={String(value || "")} // Ensure string        onValueChange={onValueChange}
         open={isOpen}
         onOpenChange={setIsOpen}
       >
         <SelectTrigger
-          className={`w-full h-9 text-sm rounded-md border-gray-300 focus:ring-primary focus:border-primary ${
+          className={`w-full h-9 text-sm rounded-md border-gray-300 focus:ring-primary0 focus:border-primary0 ${
             error ? "border-red-500" : ""
           }`}
           aria-label={placeholder}
@@ -264,9 +270,13 @@ export default function VoucherForm({
       const endpoints = [
         ...requiredOptionTypes.map((key) => ({
           key,
-          url: voucherConfig.masterFields?.find((f) => f.options === key)?.apiEndpoint ||
-            voucherConfig.lineFields?.find((f) => f.options === key)?.apiEndpoint ||
-            voucherConfig.deductionFields?.find((f) => f.options === key)?.apiEndpoint,
+          url:
+            voucherConfig.masterFields?.find((f) => f.options === key)
+              ?.apiEndpoint ||
+            voucherConfig.lineFields?.find((f) => f.options === key)
+              ?.apiEndpoint ||
+            voucherConfig.deductionFields?.find((f) => f.options === key)
+              ?.apiEndpoint,
         })),
         { key: "mainAccounts", url: "/api/accounts/macno" },
         { key: "itemCategories", url: "/api/setup/item_categories" },
@@ -275,6 +285,7 @@ export default function VoucherForm({
       const results = await Promise.all(
         endpoints.map(async ({ key, url }) => {
           const response = await axios.get(url);
+          console.log(`Fetched ${key} from ${url}:`, response.data.data); // Log API response
           return { key, data: response.data.data || [] };
         })
       );
@@ -286,12 +297,37 @@ export default function VoucherForm({
       setOptionsData((prev) => ({ ...prev, ...newOptionsData }));
     } catch (error) {
       const errorMsg = error.message || "Unknown error";
-      setErrors((prev) => ({ ...prev, options: `Failed to load options: ${errorMsg}` }));
+      setErrors((prev) => ({
+        ...prev,
+        options: `Failed to load options: ${errorMsg}`,
+      }));
       toast.error(`Failed to load options: ${errorMsg}`);
     } finally {
       setLoading((prev) => ({ ...prev, options: false }));
     }
   }, [getRequiredOptionTypes, voucherConfig]);
+
+  const formatDateToYYYYMMDD = (isoDate) => {
+    if (!isoDate) return "";
+    const date = new Date(isoDate);
+    if (isNaN(date.getTime())) return "";
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const year = date.getUTCFullYear();
+    console.log(`${month}-${day}-${year}`)
+    return `${year}-${month}-${day}`;
+  };
+
+  // Utility function to format ISO time to HH:mm:ss
+  const formatTimeToHHMMSS = (isoDate) => {
+    if (!isoDate) return "";
+    const date = new Date(isoDate);
+    if (isNaN(date.getTime())) return "";
+    const hours = String(date.getUTCHours()).padStart(2, "0");
+    const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+    const seconds = String(date.getUTCSeconds()).padStart(2, "0");
+    return `${hours}:${minutes}:${seconds}`;
+  };
 
   // Initialize form data
   useEffect(() => {
@@ -299,30 +335,65 @@ export default function VoucherForm({
 
     const today = new Date().toISOString().split("T")[0];
     const now = new Date().toTimeString().split(" ")[0];
-    const defaultMasterData = voucherConfig.masterFields?.reduce(
-      (acc, field) => {
-        const fieldKey = field.formName || field.name;
-        return {
-          ...acc,
-          [fieldKey]:
-            field.type === "date" && field.name === "dateD"
-              ? today
-              : field.type === "time"
-              ? now
-              : field.type === "select"
-              ? ""
-              : field.type === "number"
-              ? 0
-              : field.defaultValue || "",
-        };
-      },
-      { tran_code: voucherConfig.tran_code }
-    ) || {};
+    const defaultMasterData =
+      voucherConfig.masterFields?.reduce(
+        (acc, field) => {
+          const fieldKey = field.formName || field.name;
+          return {
+            ...acc,
+            [fieldKey]:
+              field.type === "date" && field.name === "dateD"
+                ? today
+                : field.type === "time"
+                ? now
+                : field.type === "select"
+                ? ""
+                : field.type === "number"
+                ? 0
+                : field.defaultValue || "",
+          };
+        },
+        { tran_code: voucherConfig.tran_code }
+      ) || {};
 
     if (editMode && existingData) {
-      setMasterData(existingData.master || defaultMasterData);
-      setMainLines(existingData.lines?.length > 0 ? existingData.lines : [{}]);
-      setDeductionLines(existingData.deductions?.length > 0 ? existingData.deductions : [{}]);
+      const mappedMaster = {
+        ...existingData.master,
+        pycd: String(existingData.master.pycd || ""), // Ensure string
+        godown: String(existingData.master.godown || ""), // Convert number to string
+        dateD:
+          formatDateToYYYYMMDD(existingData.master.dateD) ||
+          formatDateToYYYYMMDD(new Date()),
+        time: formatTimeToHHMMSS(existingData.master.time) || now,
+        vr_no: String(existingData.master.vr_no || ""),
+        check_no: String(existingData.master.check_no || ""),
+        check_date: formatDateToYYYYMMDD(existingData.master.check_date) || "",
+        rmk: String(existingData.master.rmk || ""),
+        invoice_no: String(existingData.master.invoice_no || "").trim(), // Trim whitespace
+        rmk2: String(existingData.master.rmk2 || ""),
+        tran_code:
+          Number(existingData.master.tran_code) || voucherConfig.tran_code,
+      };
+
+      const mappedLines = existingData.lines?.map((line) => ({
+        ...line,
+        itcd: String(line.itcd || ""), // Convert number to string
+        no_of_pack: Number(line.no_of_pack) || 0,
+        qty_per_pack: Number(line.qty_per_pack) || 0,
+        qty: Number(line.qty) || 0,
+        rate: Number(line.rate) || 0,
+        gross_amount: Number(line.gross_amount) || 0,
+        st_rate: Number(line.st_rate) || 0,
+        st_amount: Number(line.st_amount) || 0,
+        additional_tax: Number(line.additional_tax) || 0,
+        camt: Number(line.camt) || 0,
+      })) || [{}];
+
+      setMasterData(mappedMaster);
+      setMainLines(mappedLines.length > 0 ? mappedLines : [{}]);
+      setDeductionLines(
+        existingData.deductions?.length > 0 ? existingData.deductions : [{}]
+      );
     } else {
       setMasterData(defaultMasterData);
       setMainLines([{}]);
@@ -334,7 +405,9 @@ export default function VoucherForm({
   useEffect(() => {
     if (
       !editMode &&
-      voucherConfig.masterFields?.some((f) => f.name === "vr_no" && f.autoGenerate)
+      voucherConfig.masterFields?.some(
+        (f) => f.name === "vr_no" && f.autoGenerate
+      )
     ) {
       const fetchVrNo = async () => {
         setLoading((prev) => ({ ...prev, vrNo: true }));
@@ -373,7 +446,10 @@ export default function VoucherForm({
 
   // Event Handlers
   const handleMasterChange = (name, value) => {
-    setMasterData((prev) => ({ ...prev, [name]: value === "placeholder" ? "" : value }));
+    setMasterData((prev) => ({
+      ...prev,
+      [name]: value === "placeholder" ? "" : value,
+    }));
     setErrors((prev) => ({
       ...prev,
       validation: { ...prev.validation, [name]: null },
@@ -392,8 +468,12 @@ export default function VoucherForm({
 
   const handleLineChange = (index, fieldName, value, isMain) => {
     const lines = isMain ? [...mainLines] : [...deductionLines];
-    const fieldConfigs = isMain ? voucherConfig.lineFields : voucherConfig.deductionFields;
-    const fieldConfig = fieldConfigs.find((f) => (f.formName || f.name) === fieldName);
+    const fieldConfigs = isMain
+      ? voucherConfig.lineFields
+      : voucherConfig.deductionFields;
+    const fieldConfig = fieldConfigs.find(
+      (f) => (f.formName || f.name) === fieldName
+    );
 
     if (!fieldConfig) return;
 
@@ -408,7 +488,10 @@ export default function VoucherForm({
     fieldConfigs
       .filter((f) => f.dependencies?.includes(fieldName))
       .forEach((depField) => {
-        newLine[depField.formName || depField.name] = calculateFieldValue(newLine, depField);
+        newLine[depField.formName || depField.name] = calculateFieldValue(
+          newLine,
+          depField
+        );
       });
 
     lines[index] = newLine;
@@ -426,7 +509,9 @@ export default function VoucherForm({
 
   const addLine = (isMain) => {
     const newLine = {};
-    const fields = isMain ? voucherConfig.lineFields : voucherConfig.deductionFields;
+    const fields = isMain
+      ? voucherConfig.lineFields
+      : voucherConfig.deductionFields;
     fields?.forEach((field) => {
       if (field.calculate && field.dependencies)
         newLine[field.formName || field.name] = 0;
@@ -459,7 +544,9 @@ export default function VoucherForm({
   const toggleRowSelection = (index, isMain) => {
     const rowKey = `${isMain ? "main" : "deduction"}-${index}`;
     setSelectedRows((prev) =>
-      prev.includes(rowKey) ? prev.filter((k) => k !== rowKey) : [...prev, rowKey]
+      prev.includes(rowKey)
+        ? prev.filter((k) => k !== rowKey)
+        : [...prev, rowKey]
     );
   };
 
@@ -472,7 +559,10 @@ export default function VoucherForm({
     setSelectedRows((prev) =>
       allSelected
         ? prev.filter((k) => !k.startsWith(prefix))
-        : [...prev.filter((k) => !k.startsWith(prefix)), ...currentLines.map((_, i) => `${prefix}-${i}`)]
+        : [
+            ...prev.filter((k) => !k.startsWith(prefix)),
+            ...currentLines.map((_, i) => `${prefix}-${i}`),
+          ]
     );
   };
 
@@ -500,14 +590,20 @@ export default function VoucherForm({
     });
 
     // Main lines validation
-    if (!mainLines.some((line) => Object.values(line).some((v) => v?.toString().trim()))) {
+    if (
+      !mainLines.some((line) =>
+        Object.values(line).some((v) => v?.toString().trim())
+      )
+    ) {
       newErrors.mainLines = "At least one line item is required";
     } else {
       mainLines.forEach((line, index) => {
         voucherConfig.lineFields?.forEach((field) => {
           const fieldName = field.formName || field.name;
           if (field.required && !line[fieldName]?.toString().trim()) {
-            newErrors[`main-${index}-${fieldName}`] = `${field.label} is required`;
+            newErrors[
+              `main-${index}-${fieldName}`
+            ] = `${field.label} is required`;
           }
         });
       });
@@ -520,7 +616,9 @@ export default function VoucherForm({
           voucherConfig.deductionFields?.forEach((field) => {
             const fieldName = field.formName || field.name;
             if (field.required && !line[fieldName]?.toString().trim()) {
-              newErrors[`deduction-${index}-${fieldName}`] = `${field.label} is required`;
+              newErrors[
+                `deduction-${index}-${fieldName}`
+              ] = `${field.label} is required`;
             }
           });
         }
@@ -529,7 +627,12 @@ export default function VoucherForm({
 
     // Balance check
     if (voucherConfig.balanceCheck) {
-      const formData = { master: masterData, lines: mainLines, deductions: deductionLines, totals };
+      const formData = {
+        master: masterData,
+        lines: mainLines,
+        deductions: deductionLines,
+        totals,
+      };
       if (!voucherConfig.balanceCheck.condition(formData)) {
         newErrors.balance =
           typeof voucherConfig.balanceCheck.errorMessage === "function"
@@ -575,9 +678,10 @@ export default function VoucherForm({
     setLoading((prev) => ({ ...prev, submit: true }));
     try {
       const formData = prepareFormData();
-      const url = editMode && existingData?.voucherId
-        ? `${apiMap[type]}/${existingData.voucherId}`
-        : apiMap[type];
+      const url =
+        editMode && existingData?.voucherId
+          ? `${apiMap[type]}`
+          : apiMap[type];
       const method = editMode ? axios.put : axios.post;
 
       await method(url, formData);
@@ -585,7 +689,9 @@ export default function VoucherForm({
       onClose();
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.message;
-      toast.error(`Failed to ${editMode ? "update" : "save"} voucher: ${errorMsg}`);
+      toast.error(
+        `Failed to ${editMode ? "update" : "save"} voucher: ${errorMsg}`
+      );
       setErrors((prev) => ({ ...prev, submit: errorMsg }));
     } finally {
       setLoading((prev) => ({ ...prev, submit: false }));
@@ -604,26 +710,47 @@ export default function VoucherForm({
   const renderInputField = (line, fieldConfig, index, isMain) => {
     const fieldName = fieldConfig.formName || fieldConfig.name;
     const value = calculateFieldValue(line, fieldConfig);
-    const Icon = ICON_MAP[fieldConfig.name] || ICON_MAP[fieldConfig.type] || FileText;
+    const Icon =
+      ICON_MAP[fieldConfig.name] || ICON_MAP[fieldConfig.type] || FileText;
 
     if (fieldConfig.type === "select") {
+      console.log(
+        `Line select ${fieldName} (index ${index}): value=${line[fieldName]}, options=`,
+        getSelectOptions(
+          fieldConfig.options,
+          fieldConfig.valueKey,
+          fieldConfig.nameKey
+        )
+      );
       return (
         <SearchableSelect
-          value={line[fieldName] || ""}
-          onValue LoveChange={(v) => {
+          value={String(line[fieldName] || "")}
+          onValueChange={(v) => {
             if (v === "add_new") {
               setModalType(fieldConfig.options);
-              setModalField({ ...fieldConfig, lineIndex: index, container: isMain ? "main" : "deduction" });
+              setModalField({
+                ...fieldConfig,
+                lineIndex: index,
+                container: isMain ? "main" : "deduction",
+              });
               setModalOpen(true);
             } else {
               handleLineChange(index, fieldName, v, isMain);
             }
           }}
-          options={getSelectOptions(fieldConfig.options, fieldConfig.valueKey, fieldConfig.nameKey)}
+          options={getSelectOptions(
+            fieldConfig.options,
+            fieldConfig.valueKey,
+            fieldConfig.nameKey
+          )}
           placeholder={`Select ${fieldConfig.label}`}
           label={fieldConfig.label}
           required={fieldConfig.required}
-          error={errors.validation[`${isMain ? "main" : "deduction"}-${index}-${fieldName}`]}
+          error={
+            errors.validation[
+              `${isMain ? "main" : "deduction"}-${index}-${fieldName}`
+            ]
+          }
         />
       );
     }
@@ -641,10 +768,12 @@ export default function VoucherForm({
     return fieldConfig.type === "textarea" ? (
       <Textarea
         value={value || ""}
-        onChange={(e) => handleLineChange(index, fieldName, e.target.value, isMain)}
+        onChange={(e) =>
+          handleLineChange(index, fieldName, e.target.value, isMain)
+        }
         readOnly={isReadOnly}
         disabled={loading.submit || isReadOnly}
-        className="h-16 text-sm w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary"
+        className="h-16 text-sm w-full rounded-md border-gray-300 focus:ring-primary0 focus:border-primary0"
       />
     ) : (
       <FormInput
@@ -652,89 +781,121 @@ export default function VoucherForm({
         label={fieldConfig.label}
         type={inputType}
         value={value || ""}
-        onChange={(e) => handleLineChange(index, fieldName, e.target.value, isMain)}
+        onChange={(e) =>
+          handleLineChange(index, fieldName, e.target.value, isMain)
+        }
         readOnly={isReadOnly}
         disabled={loading.submit || isReadOnly}
         className="h-9 text-sm w-full"
-        error={errors.validation[`${isMain ? "main" : "deduction"}-${index}-${fieldName}`]}
+        error={
+          errors.validation[
+            `${isMain ? "main" : "deduction"}-${index}-${fieldName}`
+          ]
+        }
       />
     );
   };
 
   const renderMasterFields = () => (
     <motion.div
-      className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4 p-6 bg-gray-50 rounded-lg l"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-6 bg-gray-50 rounded-lg"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {voucherConfig.masterFields?.filter((f) => f.name !== "tran_code").map((field) => {
-        const fieldName = field.formName || field.name;
-        const Icon = ICON_MAP[field.name] || ICON_MAP[field.type] || FileText;
+      {voucherConfig.masterFields
+        ?.filter((f) => f.name !== "tran_code")
+        .map((field) => {
+          const fieldName = field.formName || field.name;
+          const Icon = ICON_MAP[field.name] || ICON_MAP[field.type] || FileText;
 
-        return (
-          <div key={fieldName} className="flex flex-col space-y-1 min-w-[200px]">
-            {field.type === "select" ? (
-              <SearchableSelect
-                value={masterData[fieldName] || ""}
-                onValueChange={(v) => {
-                  if (v === "add_new") {
-                    setModalType(field.options);
-                    setModalField({ ...field, container: "master" });
-                    setModalOpen(true);
-                  } else {
-                    handleMasterChange(fieldName, v);
-                  }
-                }}
-                options={getSelectOptions(field.options, field.valueKey, field.nameKey)}
-                placeholder={`Select ${field.label}`}
-                label={field.label}
-                required={field.required}
-                error={errors.validation[fieldName]}
-              />
-            ) : field.type === "textarea" ? (
-              <div className="space-y-1">
-                <Label className="text-xs text-gray-700">
-                  {field.label}
-                  {field.required && <span className="text-red-500">*</span>}
-                </Label>
-                <Textarea
-                  value={masterData[fieldName] || ""}
-                  onChange={(e) => handleMasterChange(fieldName, e.target.value)}
-                  disabled={loading.submit}
-                  className="h-16 text-sm w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary"
+          if (field.type === "select") {
+            console.log(
+              `Master select ${fieldName}: value=${masterData[fieldName]}, options=`,
+              getSelectOptions(field.options, field.valueKey, field.nameKey)
+            );
+          }
+
+          return (
+            <div
+              key={fieldName}
+              className="flex flex-col space-y-1 min-w-[200px]"
+            >
+              {field.type === "select" ? (
+                <SearchableSelect
+                  value={String(masterData[fieldName] || "")}
+                  onValueChange={(v) => {
+                    if (v === "add_new") {
+                      setModalType(field.options);
+                      setModalField({ ...field, container: "master" });
+                      setModalOpen(true);
+                    } else {
+                      handleMasterChange(fieldName, v);
+                    }
+                  }}
+                  options={getSelectOptions(
+                    field.options,
+                    field.valueKey,
+                    field.nameKey
+                  )}
+                  placeholder={`Select ${field.label}`}
+                  label={field.label}
+                  required={field.required}
+                  error={errors.validation[fieldName]}
                 />
-                {errors.validation[fieldName] && (
-                  <p className="text-xs text-red-500">{errors.validation[fieldName]}</p>
-                )}
-              </div>
-            ) : (
-              <FormInput
-                icon={Icon}
-                label={field.label}
-                type={field.type}
-                value={masterData[fieldName] || ""}
-                onChange={(e) => handleMasterChange(fieldName, e.target.value)}
-                readOnly={field.name === "vr_no" && field.autoGenerate}
-                disabled={
-                  loading.submit ||
-                  (field.name === "vr_no" && field.autoGenerate && loading.vrNo)
-                }
-                required={field.required}
-                error={errors.validation[fieldName]}
-                className="h-9 text-sm w-full"
-              />
-            )}
-          </div>
-        );
-      })}
+              ) : field.type === "textarea" ? (
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-700">
+                    {field.label}
+                    {field.required && <span className="text-red-500">*</span>}
+                  </Label>
+                  <Textarea
+                    value={masterData[fieldName] || ""}
+                    onChange={(e) =>
+                      handleMasterChange(fieldName, e.target.value)
+                    }
+                    disabled={loading.submit}
+                    className="h-16 text-sm w-full rounded-md border-gray-300 focus:ring-primary0 focus:border-primary0"
+                  />
+                  {errors.validation[fieldName] && (
+                    <p className="text-xs text-red-500">
+                      {errors.validation[fieldName]}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <FormInput
+                  icon={Icon}
+                  label={field.label}
+                  type={field.type}
+                  value={masterData[fieldName] || ""}
+                  onChange={(e) =>
+                    handleMasterChange(fieldName, e.target.value)
+                  }
+                  readOnly={field.name === "vr_no" && field.autoGenerate}
+                  disabled={
+                    loading.submit ||
+                    (field.name === "vr_no" &&
+                      field.autoGenerate &&
+                      loading.vrNo)
+                  }
+                  required={field.required}
+                  error={errors.validation[fieldName]}
+                  className="h-9 text-sm w-full"
+                />
+              )}
+            </div>
+          );
+        })}
     </motion.div>
   );
 
   const renderTable = (isMain) => {
-    const fields = (isMain ? voucherConfig.lineFields : voucherConfig.deductionFields)?.filter(
-      (f) => !["tran_code", "ac_no", "ccno"].includes(f.name)
-    ) || [];
+    const fields =
+      (isMain
+        ? voucherConfig.lineFields
+        : voucherConfig.deductionFields
+      )?.filter((f) => !["tran_code", "ac_no", "ccno"].includes(f.name)) || [];
     if (!fields.length) return null;
 
     const lines = isMain ? mainLines : deductionLines;
@@ -768,7 +929,10 @@ export default function VoucherForm({
               variant="outline"
               size="sm"
               onClick={() => deleteSelectedRows(isMain)}
-              disabled={!selectedRows.some((k) => k.startsWith(prefix)) || loading.submit}
+              disabled={
+                !selectedRows.some((k) => k.startsWith(prefix)) ||
+                loading.submit
+              }
               className="bg-white text-primary hover:bg-primary"
             >
               <Trash2 className="h-4 w-4 mr-1" /> Delete
@@ -791,7 +955,12 @@ export default function VoucherForm({
                 <th className="p-2 w-10">
                   <input
                     type="checkbox"
-                    checked={lines.length > 0 && lines.every((_, i) => selectedRows.includes(`${prefix}-${i}`))}
+                    checked={
+                      lines.length > 0 &&
+                      lines.every((_, i) =>
+                        selectedRows.includes(`${prefix}-${i}`)
+                      )
+                    }
                     onChange={() => toggleAllRowSelection(isMain)}
                     disabled={loading.submit}
                     className="cursor-pointer"
@@ -816,7 +985,9 @@ export default function VoucherForm({
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
                     className={`border-b hover:bg-gray-50 ${
-                      selectedRows.includes(`${prefix}-${idx}`) ? "bg-primary" : ""
+                      selectedRows.includes(`${prefix}-${idx}`)
+                        ? "bg-primary"
+                        : ""
                     }`}
                   >
                     <td className="p-2 text-center">
@@ -855,11 +1026,19 @@ export default function VoucherForm({
         {voucherConfig.totals && (
           <div className="bg-gray-50 p-3 flex justify-end gap-6 border-t">
             {Object.entries(voucherConfig.totals)
-              .filter(([k]) => (isMain && k !== "deductionTotal") || (!isMain && k === "deductionTotal"))
+              .filter(
+                ([k]) =>
+                  (isMain && k !== "deductionTotal") ||
+                  (!isMain && k === "deductionTotal")
+              )
               .map(([k, config]) => (
                 <div key={k} className="text-right">
-                  <span className="text-xs text-gray-700">{config.label}: </span>
-                  <span className="text-primary font-bold">{totals[k]?.toFixed(2) || "0.00"}</span>
+                  <span className="text-xs text-gray-700">
+                    {config.label}:{" "}
+                  </span>
+                  <span className="text-primary font-bold">
+                    {totals[k]?.toFixed(2) || "0.00"}
+                  </span>
                 </div>
               ))}
           </div>
@@ -874,13 +1053,15 @@ export default function VoucherForm({
     const [modalErrors, setModalErrors] = useState({});
 
     useEffect(() => {
-      const initialData = fieldConfig.modalFields?.reduce(
-        (acc, field) => ({
-          ...acc,
-          [field.name]: field.type === "number" ? 0 : field.defaultValue || "",
-        }),
-        {}
-      ) || {};
+      const initialData =
+        fieldConfig.modalFields?.reduce(
+          (acc, field) => ({
+            ...acc,
+            [field.name]:
+              field.type === "number" ? 0 : field.defaultValue || "",
+          }),
+          {}
+        ) || {};
       setEntityData(initialData);
     }, [fieldConfig]);
 
@@ -903,7 +1084,10 @@ export default function VoucherForm({
 
       setIsSubmitting(true);
       try {
-        const response = await axios.post(fieldConfig.createEndpoint, entityData);
+        const response = await axios.post(
+          fieldConfig.createEndpoint,
+          entityData
+        );
         onSave(response.data);
         toast.success(`${fieldConfig.label} added successfully`);
         onClose();
@@ -922,14 +1106,21 @@ export default function VoucherForm({
           </DialogHeader>
           <div className="space-y-4">
             {fieldConfig.modalFields?.map((field) => {
-              const Icon = ICON_MAP[field.name] || ICON_MAP[field.type] || FileText;
+              const Icon =
+                ICON_MAP[field.name] || ICON_MAP[field.type] || FileText;
               return (
                 <div key={field.name} className="space-y-1">
                   {field.type === "select" ? (
                     <SearchableSelect
                       value={entityData[field.name] || ""}
-                      onValueChange={(v) => setEntityData({ ...entityData, [field.name]: v })}
-                      options={getSelectOptions(field.options, field.valueKey, field.nameKey)}
+                      onValueChange={(v) =>
+                        setEntityData({ ...entityData, [field.name]: v })
+                      }
+                      options={getSelectOptions(
+                        field.options,
+                        field.valueKey,
+                        field.nameKey
+                      )}
                       placeholder={`Select ${field.label}`}
                       label={field.label}
                       required={field.required}
@@ -939,18 +1130,25 @@ export default function VoucherForm({
                     <div className="space-y-1">
                       <Label className="text-xs text-gray-700">
                         {field.label}
-                        {field.required && <span className="text-red-500">*</span>}
+                        {field.required && (
+                          <span className="text-red-500">*</span>
+                        )}
                       </Label>
                       <Textarea
                         value={entityData[field.name] || ""}
                         onChange={(e) =>
-                          setEntityData({ ...entityData, [field.name]: e.target.value })
+                          setEntityData({
+                            ...entityData,
+                            [field.name]: e.target.value,
+                          })
                         }
                         disabled={isSubmitting}
-                        className="h-16 text-sm w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary"
+                        className="h-16 text-sm w-full rounded-md border-gray-300 focus:ring-primary0 focus:border-primary0"
                       />
                       {modalErrors[field.name] && (
-                        <p className="text-xs text-red-500">{modalErrors[field.name]}</p>
+                        <p className="text-xs text-red-500">
+                          {modalErrors[field.name]}
+                        </p>
                       )}
                     </div>
                   ) : (
@@ -960,7 +1158,10 @@ export default function VoucherForm({
                       type={field.type}
                       value={entityData[field.name] || ""}
                       onChange={(e) =>
-                        setEntityData({ ...entityData, [field.name]: e.target.value })
+                        setEntityData({
+                          ...entityData,
+                          [field.name]: e.target.value,
+                        })
                       }
                       required={field.required}
                       disabled={isSubmitting}
@@ -1003,7 +1204,10 @@ export default function VoucherForm({
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>Invalid voucher type: "{type}"</AlertDescription>
         </Alert>
-        <Button onClick={onClose} className="bg-primary text-white hover:bg-primary">
+        <Button
+          onClick={onClose}
+          className="bg-primary text-white hover:bg-primary"
+        >
           Close
         </Button>
       </div>
@@ -1011,7 +1215,7 @@ export default function VoucherForm({
   }
 
   return (
-    <div className="min-w-[320px] max-w-full min-h-screen">
+    <div className="min-w-[320px] max-w-full min-h-screen p-4 bg-gray-100">
       <Toaster richColors />
       {(loading.options || loading.vrNo) && (
         <div className="flex justify-center mb-4">
@@ -1045,13 +1249,10 @@ export default function VoucherForm({
               {editMode ? "Edit Voucher Details" : "Voucher Details"}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0 overflow-auto">
-            {renderMasterFields()}
-                    {renderTable(true)}
-        {voucherConfig.hasDeductionBlock && renderTable(false)}
-            </CardContent>
+          <CardContent className="p-0">{renderMasterFields()}</CardContent>
         </Card>
-
+        {renderTable(true)}
+        {voucherConfig.hasDeductionBlock && renderTable(false)}
         <div className="mt-6 flex justify-end gap-3">
           <Button
             type="button"

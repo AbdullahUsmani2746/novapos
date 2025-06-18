@@ -576,8 +576,12 @@ export const VOUCHER_CONFIG = {
         name: "camt",
         label: "Amount",
         type: "number",
-        dependencies: ["gross_amount"],
-        calculate: (v) => v.gross_amount
+       dependencies: ["qty", "rate"], // Updated dependencies
+        calculate: (v) => {
+          const gross_amount = v.qty * v.rate; // Calculate gross_amount
+          const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
+          return gross_amount + st_amount + (v.additional_tax || 0); // Include additional_tax
+        }
       },
     ],
     totals: {

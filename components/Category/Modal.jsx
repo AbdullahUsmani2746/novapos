@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 
 export default function VoucherModal({ type, editModes = false, onCloseEdit, existingData={}}) {
+  console.log("Exisitng Data: ",existingData)
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(editModes);
   const overlayRef = useRef(null);
