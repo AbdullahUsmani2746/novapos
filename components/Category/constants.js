@@ -608,9 +608,8 @@ export const VOUCHER_CONFIG = {
     },
     tableFields: [
       { name: "dateD", label: "Date", type: "date" },
-      { name: "tran_id", label: "Transaction No", type: "text" },
       { name: "vr_no", label: "Voucher No", type: "text" },
-      { name: "pycd", label: "Vendor", type: "text" },
+      { name: "pycd", label: "Vendor", type: "text", options:true, value1:"acno", value2:"acname" },
       { name: "rmk", label: "Narration", type: "text" },
     ],
   },
