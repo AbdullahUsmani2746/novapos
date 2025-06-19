@@ -1,3 +1,4 @@
+import axios from "axios";
 export const VOUCHER_CONFIG = {
   payment: {
     tran_code: 2,
@@ -17,7 +18,12 @@ export const VOUCHER_CONFIG = {
         valueKey: "acno",
         required: true,
         modalFields: [
-          { name: "acname", label: "Account Name", type: "text", required: true },
+          {
+            name: "acname",
+            label: "Account Name",
+            type: "text",
+            required: true,
+          },
           {
             name: "acno",
             label: "Main Account",
@@ -30,7 +36,13 @@ export const VOUCHER_CONFIG = {
           },
         ],
       },
-      { name: "vr_no", label: "Vr No", type: "text", required: true, autoGenerate: true },
+      {
+        name: "vr_no",
+        label: "Vr No",
+        type: "text",
+        required: true,
+        autoGenerate: true,
+      },
       { name: "check_no", label: "Check No", type: "text" },
       { name: "check_date", label: "Check Date", type: "date" },
       { name: "rmk", label: "Narration", type: "textarea" },
@@ -52,7 +64,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "acname",
         valueKey: "acno",
         modalFields: [
-          { name: "acname", label: "Account Name", type: "text", required: true },
+          {
+            name: "acname",
+            label: "Account Name",
+            type: "text",
+            required: true,
+          },
           {
             name: "macno",
             label: "Main Account",
@@ -76,7 +93,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "ccname",
         valueKey: "ccno",
         modalFields: [
-          { name: "ccname", label: "Cost Center Name", type: "text", required: true },
+          {
+            name: "ccname",
+            label: "Cost Center Name",
+            type: "text",
+            required: true,
+          },
         ],
       },
       { name: "invoice_no", label: "Invoice No", type: "text" },
@@ -95,7 +117,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "currency",
         valueKey: "id",
         modalFields: [
-          { name: "currency", label: "Currency Name", type: "text", required: true },
+          {
+            name: "currency",
+            label: "Currency Name",
+            type: "text",
+            required: true,
+          },
         ],
       },
       { name: "fc_amount", label: "FC Amt", type: "number" },
@@ -120,7 +147,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "acname",
         valueKey: "acno",
         modalFields: [
-          { name: "acname", label: "Account Name", type: "text", required: true },
+          {
+            name: "acname",
+            label: "Account Name",
+            type: "text",
+            required: true,
+          },
           {
             name: "macno",
             label: "Main Account",
@@ -144,7 +176,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "ccname",
         valueKey: "ccno",
         modalFields: [
-          { name: "ccname", label: "Cost Center Name", type: "text", required: true },
+          {
+            name: "ccname",
+            label: "Cost Center Name",
+            type: "text",
+            required: true,
+          },
         ],
       },
       { name: "invoice_no", label: "Invoice No", type: "text" },
@@ -163,7 +200,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "currency",
         valueKey: "id",
         modalFields: [
-          { name: "currency", label: "Currency Name", type: "text", required: true },
+          {
+            name: "currency",
+            label: "Currency Name",
+            type: "text",
+            required: true,
+          },
         ],
       },
       { name: "fc_amount", label: "FC Amt", type: "number" },
@@ -193,13 +235,22 @@ export const VOUCHER_CONFIG = {
     balanceCheck: {
       condition: (formData) => formData.totals.netTotal >= 0,
       errorMessage: (formData) =>
-        `Net Payment (${formData.totals.netTotal.toFixed(2)}) cannot be negative.`,
+        `Net Payment (${formData.totals.netTotal.toFixed(
+          2
+        )}) cannot be negative.`,
     },
     tableFields: [
       { name: "dateD", label: "Date", type: "date" },
       { name: "tran_id", label: "Transaction No", type: "text" },
       { name: "vr_no", label: "Voucher No", type: "text" },
-      { name: "pycd", label: "Paid From", type: "text", refApi: "/api/accounts/acno?acno=", refValueKey: "acno",refNameKey: "acname",  },
+      {
+        name: "pycd",
+        label: "Paid From",
+        type: "text",
+        refApi: "/api/accounts/acno?acno=",
+        refValueKey: "acno",
+        refNameKey: "acname",
+      },
       { name: "rmk", label: "Narration", type: "text" },
     ],
   },
@@ -221,7 +272,12 @@ export const VOUCHER_CONFIG = {
         valueKey: "acno",
         required: true,
         modalFields: [
-          { name: "acname", label: "Account Name", type: "text", required: true },
+          {
+            name: "acname",
+            label: "Account Name",
+            type: "text",
+            required: true,
+          },
           {
             name: "macno",
             label: "Main Account",
@@ -234,7 +290,13 @@ export const VOUCHER_CONFIG = {
           },
         ],
       },
-      { name: "vr_no", label: "Vr No", type: "text", required: true, autoGenerate: true },
+      {
+        name: "vr_no",
+        label: "Vr No",
+        type: "text",
+        required: true,
+        autoGenerate: true,
+      },
       { name: "check_no", label: "Check No", type: "text" },
       { name: "check_date", label: "Check Date", type: "date" },
       { name: "rmk", label: "Narration", type: "textarea" },
@@ -255,7 +317,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "acname",
         valueKey: "acno",
         modalFields: [
-          { name: "acname", label: "Account Name", type: "text", required: true },
+          {
+            name: "acname",
+            label: "Account Name",
+            type: "text",
+            required: true,
+          },
           {
             name: "macno",
             label: "Main Account",
@@ -279,7 +346,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "ccname",
         valueKey: "ccno",
         modalFields: [
-          { name: "ccname", label: "Cost Center Name", type: "text", required: true },
+          {
+            name: "ccname",
+            label: "Cost Center Name",
+            type: "text",
+            required: true,
+          },
         ],
       },
       { name: "invoice_no", label: "Invoice No", type: "text" },
@@ -298,7 +370,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "currency",
         valueKey: "id",
         modalFields: [
-          { name: "currency", label: "Currency Name", type: "text", required: true },
+          {
+            name: "currency",
+            label: "Currency Name",
+            type: "text",
+            required: true,
+          },
         ],
       },
       { name: "fc_amount", label: "FC Amt", type: "number" },
@@ -323,7 +400,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "acname",
         valueKey: "acno",
         modalFields: [
-          { name: "acname", label: "Account Name", type: "text", required: true },
+          {
+            name: "acname",
+            label: "Account Name",
+            type: "text",
+            required: true,
+          },
           {
             name: "macno",
             label: "Main Account",
@@ -347,7 +429,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "ccname",
         valueKey: "ccno",
         modalFields: [
-          { name: "ccname", label: "Cost Center Name", type: "text", required: true },
+          {
+            name: "ccname",
+            label: "Cost Center Name",
+            type: "text",
+            required: true,
+          },
         ],
       },
       { name: "invoice_no", label: "Invoice No", type: "text" },
@@ -366,7 +453,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "currency",
         valueKey: "id",
         modalFields: [
-          { name: "currency", label: "Currency Name", type: "text", required: true },
+          {
+            name: "currency",
+            label: "Currency Name",
+            type: "text",
+            required: true,
+          },
         ],
       },
       { name: "fc_amount", label: "FC Amt", type: "number" },
@@ -396,7 +488,9 @@ export const VOUCHER_CONFIG = {
     balanceCheck: {
       condition: (formData) => formData.totals.netTotal >= 0,
       errorMessage: (formData) =>
-        `Net Receipt (${formData.totals.netTotal.toFixed(2)}) cannot be negative.`,
+        `Net Receipt (${formData.totals.netTotal.toFixed(
+          2
+        )}) cannot be negative.`,
     },
     tableFields: [
       { name: "dateD", label: "Date", type: "date" },
@@ -411,7 +505,13 @@ export const VOUCHER_CONFIG = {
     hasDeductionBlock: false,
     masterFields: [
       { name: "dateD", label: "Date", type: "date", required: true },
-      { name: "vr_no", label: "Vr No", type: "text", required: true, autoGenerate: true },
+      {
+        name: "vr_no",
+        label: "Vr No",
+        type: "text",
+        required: true,
+        autoGenerate: true,
+      },
       { name: "rmk1", label: "Narration", type: "textarea" },
     ],
     lineFields: [
@@ -426,7 +526,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "acname",
         valueKey: "acno",
         modalFields: [
-          { name: "acname", label: "Account Name", type: "text", required: true },
+          {
+            name: "acname",
+            label: "Account Name",
+            type: "text",
+            required: true,
+          },
           {
             name: "macno",
             label: "Main Account",
@@ -450,7 +555,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "ccname",
         valueKey: "ccno",
         modalFields: [
-          { name: "ccname", label: "Cost Center Name", type: "text", required: true },
+          {
+            name: "ccname",
+            label: "Cost Center Name",
+            type: "text",
+            required: true,
+          },
         ],
       },
       { name: "invoice_no", label: "Invoice No", type: "text" },
@@ -469,9 +579,14 @@ export const VOUCHER_CONFIG = {
       },
     },
     balanceCheck: {
-      condition: (formData) => formData.totals.debitTotal === formData.totals.creditTotal,
+      condition: (formData) =>
+        formData.totals.debitTotal === formData.totals.creditTotal,
       errorMessage: (formData) =>
-        `Total Debit (${formData.totals.debitTotal.toFixed(2)}) must equal Total Credit (${formData.totals.creditTotal.toFixed(2)}).`,
+        `Total Debit (${formData.totals.debitTotal.toFixed(
+          2
+        )}) must equal Total Credit (${formData.totals.creditTotal.toFixed(
+          2
+        )}).`,
     },
     tableFields: [
       { name: "dateD", label: "Date", type: "date" },
@@ -486,7 +601,13 @@ export const VOUCHER_CONFIG = {
     masterFields: [
       { name: "dateD", label: "Date", type: "date", required: true },
       { name: "time", label: "Time", type: "time", required: true },
-      { name: "vr_no", label: "Vr No", type: "text", required: true, autoGenerate: true },
+      {
+        name: "vr_no",
+        label: "Vr No",
+        type: "text",
+        required: true,
+        autoGenerate: true,
+      },
 
       {
         name: "pycd",
@@ -497,6 +618,7 @@ export const VOUCHER_CONFIG = {
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
+        required: true,
         modalFields: [
           { name: "name", label: "Vendor Name", type: "text", required: true },
         ],
@@ -504,7 +626,30 @@ export const VOUCHER_CONFIG = {
       { name: "check_no", label: "ST Inv No", type: "text" },
       { name: "check_date", label: "ST Inv Date", type: "Date" },
       { name: "rmk", label: "Narration", type: "textarea" },
-      { name: "invoice_no", label: "Com Inv No", type: "text" },
+      {
+        name: "invoice_no",
+        label: "Com Inv No",
+        type: "text",
+        required: true,
+        validate: async (value, masterData) => {
+          if (!value || !masterData.pycd) return null;
+          try {
+            const response = await axios.get(
+              `/api/voucher/check-invoice?tran_code=4&pycd=${
+                masterData.pycd
+              }&invoice_no=${encodeURIComponent(value)}`
+            );
+            if (response.data.exists) {
+              const nextInvoiceNo =
+                response.data.nextInvoiceNo || parseInt(value) + 1;
+              return `Invoice number ${value} already exists for this vendor. Try ${nextInvoiceNo} or another number.`;
+            }
+            return null;
+          } catch (error) {
+            return `Error checking invoice number: ${error.message}`;
+          }
+        },
+      },
       {
         name: "godown",
         label: "Godown",
@@ -514,12 +659,17 @@ export const VOUCHER_CONFIG = {
         createEndpoint: "/api/setup/godowns",
         nameKey: "godown",
         valueKey: "id",
+        required: true,
         modalFields: [
-          { name: "godown", label: "Godown Name", type: "text", required: true },
+          {
+            name: "godown",
+            label: "Godown Name",
+            type: "text",
+            required: true,
+          },
         ],
       },
       { name: "rmk2", label: "Delivery No", type: "text" },
-      
     ],
     lineFields: [
       {
@@ -531,6 +681,7 @@ export const VOUCHER_CONFIG = {
         createEndpoint: "/api/setup/items",
         nameKey: "item",
         valueKey: "itcd",
+        required: true,
         modalFields: [
           { name: "item", label: "Product Name", type: "text", required: true },
           {
@@ -543,15 +694,25 @@ export const VOUCHER_CONFIG = {
             nameKey: "ic_name",
             required: true,
           },
-
         ],
       },
-      { name: "no_of_pack", label: "No of Packs", type: "number" },
-      { name: "qty_per_pack", label: "Qty Per Pack", type: "number" },
+      {
+        name: "no_of_pack",
+        label: "No of Packs",
+        type: "number",
+        required: true,
+      },
+      {
+        name: "qty_per_pack",
+        label: "Qty Per Pack",
+        type: "number",
+        required: true,
+      },
       {
         name: "qty",
         label: "Qty",
         type: "number",
+        required: true,
         dependencies: ["no_of_pack", "qty_per_pack"],
         calculate: (v) => v.no_of_pack * v.qty_per_pack,
       },
@@ -560,6 +721,7 @@ export const VOUCHER_CONFIG = {
         name: "gross_amount",
         label: "Gross Amount",
         type: "number",
+        required: true,
         dependencies: ["qty", "rate"],
         calculate: (v) => v.qty * v.rate,
       },
@@ -575,13 +737,14 @@ export const VOUCHER_CONFIG = {
       {
         name: "camt",
         label: "Amount",
+        required: true,
         type: "number",
-       dependencies: ["qty", "rate"], // Updated dependencies
+        dependencies: ["qty", "rate"], // Updated dependencies
         calculate: (v) => {
           const gross_amount = v.qty * v.rate; // Calculate gross_amount
           const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
           return gross_amount + st_amount + (v.additional_tax || 0); // Include additional_tax
-        }
+        },
       },
     ],
     totals: {
@@ -591,15 +754,18 @@ export const VOUCHER_CONFIG = {
       },
       grossTotal: {
         label: "Total Gross Amount",
-        calculate: (lines) => lines.reduce((sum, l) => sum + (l.gross_amount || 0), 0),
+        calculate: (lines) =>
+          lines.reduce((sum, l) => sum + (l.gross_amount || 0), 0),
       },
       taxTotal: {
         label: "Total ST Amount",
-        calculate: (lines) => lines.reduce((sum, l) => sum + (l.st_amount || 0), 0),
+        calculate: (lines) =>
+          lines.reduce((sum, l) => sum + (l.st_amount || 0), 0),
       },
       additionalTaxTotal: {
         label: "Total Additional Tax",
-        calculate: (lines) => lines.reduce((sum, l) => sum + (l.additional_tax || 0), 0),
+        calculate: (lines) =>
+          lines.reduce((sum, l) => sum + (l.additional_tax || 0), 0),
       },
       netTotal: {
         label: "Total Amount",
@@ -610,10 +776,16 @@ export const VOUCHER_CONFIG = {
       { name: "dateD", label: "Date", type: "date" },
       { name: "vr_no", label: "Voucher No", type: "text" },
       { name: "invoice_no", label: "Invoice No", type: "text" },
-      { name: "pycd", label: "Vendor", type: "text", options:true, value1:"acno", value2:"acname" },
+      {
+        name: "pycd",
+        label: "Vendor",
+        type: "text",
+        options: true,
+        value1: "acno",
+        value2: "acname",
+      },
       { name: "rmk", label: "Narration", type: "text" },
-      { name: "total", label: "Total Amount", type: "number", isTotal: true }
-
+      { name: "total", label: "Total Amount", type: "number", isTotal: true },
     ],
   },
   sale: {
@@ -622,7 +794,13 @@ export const VOUCHER_CONFIG = {
     masterFields: [
       { name: "dateD", label: "Date", type: "date", required: true },
       { name: "time", label: "Time", type: "time", required: true },
-      { name: "vr_no", label: "Vr No", type: "text", required: true, autoGenerate: true },
+      {
+        name: "vr_no",
+        label: "Vr No",
+        type: "text",
+        required: true,
+        autoGenerate: true,
+      },
 
       {
         name: "pycd",
@@ -634,7 +812,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "acname",
         valueKey: "acno",
         modalFields: [
-          { name: "name", label: "Customer Name", type: "text", required: true },
+          {
+            name: "name",
+            label: "Customer Name",
+            type: "text",
+            required: true,
+          },
         ],
       },
       { name: "check_no", label: "ST Inv No", type: "text" },
@@ -652,11 +835,15 @@ export const VOUCHER_CONFIG = {
         nameKey: "godown",
         valueKey: "id",
         modalFields: [
-          { name: "godown", label: "Godown Name", type: "text", required: true },
+          {
+            name: "godown",
+            label: "Godown Name",
+            type: "text",
+            required: true,
+          },
         ],
       },
       { name: "rmk2", label: "Delivery No", type: "text" },
-      
     ],
     lineFields: [
       {
@@ -669,7 +856,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "acname",
         valueKey: "acno",
         modalFields: [
-          { name: "acname", label: "Account Name", type: "text", required: true },
+          {
+            name: "acname",
+            label: "Account Name",
+            type: "text",
+            required: true,
+          },
           {
             name: "macno",
             label: "Main Account",
@@ -736,7 +928,8 @@ export const VOUCHER_CONFIG = {
         label: "Amount",
         type: "number",
         dependencies: ["gross_amount", "st_amount", "additional_tax"],
-        calculate: (v) => v.gross_amount + v.st_amount + (v.additional_tax || 0),
+        calculate: (v) =>
+          v.gross_amount + v.st_amount + (v.additional_tax || 0),
       },
     ],
     totals: {
@@ -746,15 +939,18 @@ export const VOUCHER_CONFIG = {
       },
       grossTotal: {
         label: "Total Gross Amount",
-        calculate: (lines) => lines.reduce((sum, l) => sum + (l.gross_amount || 0), 0),
+        calculate: (lines) =>
+          lines.reduce((sum, l) => sum + (l.gross_amount || 0), 0),
       },
       taxTotal: {
         label: "Total ST Amount",
-        calculate: (lines) => lines.reduce((sum, l) => sum + (l.st_amount || 0), 0),
+        calculate: (lines) =>
+          lines.reduce((sum, l) => sum + (l.st_amount || 0), 0),
       },
       additionalTaxTotal: {
         label: "Total Additional Tax",
-        calculate: (lines) => lines.reduce((sum, l) => sum + (l.additional_tax || 0), 0),
+        calculate: (lines) =>
+          lines.reduce((sum, l) => sum + (l.additional_tax || 0), 0),
       },
       netTotal: {
         label: "Total Amount",
@@ -775,7 +971,13 @@ export const VOUCHER_CONFIG = {
     masterFields: [
       { name: "dateD", label: "Date", type: "date", required: true },
       { name: "time", label: "Time", type: "time", required: true },
-      { name: "vr_no", label: "Vr No", type: "text", required: true, autoGenerate: true },
+      {
+        name: "vr_no",
+        label: "Vr No",
+        type: "text",
+        required: true,
+        autoGenerate: true,
+      },
 
       {
         name: "pycd",
@@ -805,11 +1007,15 @@ export const VOUCHER_CONFIG = {
         nameKey: "godown",
         valueKey: "id",
         modalFields: [
-          { name: "godown", label: "Godown Name", type: "text", required: true },
+          {
+            name: "godown",
+            label: "Godown Name",
+            type: "text",
+            required: true,
+          },
         ],
       },
       { name: "rmk2", label: "Delivery No", type: "text" },
-      
     ],
     lineFields: [
       {
@@ -823,7 +1029,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "acname",
         valueKey: "acno",
         modalFields: [
-          { name: "acname", label: "Account Name", type: "text", required: true },
+          {
+            name: "acname",
+            label: "Account Name",
+            type: "text",
+            required: true,
+          },
           {
             name: "macno",
             label: "Main Account",
@@ -857,7 +1068,6 @@ export const VOUCHER_CONFIG = {
             nameKey: "ic_name",
             required: true,
           },
-
         ],
       },
       { name: "no_of_pack", label: "No of Packs", type: "number" },
@@ -891,7 +1101,8 @@ export const VOUCHER_CONFIG = {
         label: "Amount",
         type: "number",
         dependencies: ["gross_amount", "st_amount", "additional_tax"],
-        calculate: (v) => v.gross_amount + v.st_amount + (v.additional_tax || 0),
+        calculate: (v) =>
+          v.gross_amount + v.st_amount + (v.additional_tax || 0),
       },
     ],
     totals: {
@@ -901,15 +1112,18 @@ export const VOUCHER_CONFIG = {
       },
       grossTotal: {
         label: "Total Gross Amount",
-        calculate: (lines) => lines.reduce((sum, l) => sum + (l.gross_amount || 0), 0),
+        calculate: (lines) =>
+          lines.reduce((sum, l) => sum + (l.gross_amount || 0), 0),
       },
       taxTotal: {
         label: "Total ST Amount",
-        calculate: (lines) => lines.reduce((sum, l) => sum + (l.st_amount || 0), 0),
+        calculate: (lines) =>
+          lines.reduce((sum, l) => sum + (l.st_amount || 0), 0),
       },
       additionalTaxTotal: {
         label: "Total Additional Tax",
-        calculate: (lines) => lines.reduce((sum, l) => sum + (l.additional_tax || 0), 0),
+        calculate: (lines) =>
+          lines.reduce((sum, l) => sum + (l.additional_tax || 0), 0),
       },
       netTotal: {
         label: "Total Amount",
@@ -930,7 +1144,13 @@ export const VOUCHER_CONFIG = {
     masterFields: [
       { name: "dateD", label: "Date", type: "date", required: true },
       { name: "time", label: "Time", type: "time", required: true },
-      { name: "vr_no", label: "Vr No", type: "text", required: true, autoGenerate: true },
+      {
+        name: "vr_no",
+        label: "Vr No",
+        type: "text",
+        required: true,
+        autoGenerate: true,
+      },
 
       {
         name: "pycd",
@@ -960,11 +1180,15 @@ export const VOUCHER_CONFIG = {
         nameKey: "godown",
         valueKey: "id",
         modalFields: [
-          { name: "godown", label: "Godown Name", type: "text", required: true },
+          {
+            name: "godown",
+            label: "Godown Name",
+            type: "text",
+            required: true,
+          },
         ],
       },
       { name: "rmk2", label: "Delivery No", type: "text" },
-      
     ],
     lineFields: [
       {
@@ -978,7 +1202,12 @@ export const VOUCHER_CONFIG = {
         nameKey: "acname",
         valueKey: "acno",
         modalFields: [
-          { name: "acname", label: "Account Name", type: "text", required: true },
+          {
+            name: "acname",
+            label: "Account Name",
+            type: "text",
+            required: true,
+          },
           {
             name: "macno",
             label: "Main Account",
@@ -1012,7 +1241,6 @@ export const VOUCHER_CONFIG = {
             nameKey: "ic_name",
             required: true,
           },
-
         ],
       },
       { name: "no_of_pack", label: "No of Packs", type: "number" },
@@ -1046,7 +1274,8 @@ export const VOUCHER_CONFIG = {
         label: "Amount",
         type: "number",
         dependencies: ["gross_amount", "st_amount", "additional_tax"],
-        calculate: (v) => v.gross_amount + v.st_amount + (v.additional_tax || 0),
+        calculate: (v) =>
+          v.gross_amount + v.st_amount + (v.additional_tax || 0),
       },
     ],
     totals: {
@@ -1056,15 +1285,18 @@ export const VOUCHER_CONFIG = {
       },
       grossTotal: {
         label: "Total Gross Amount",
-        calculate: (lines) => lines.reduce((sum, l) => sum + (l.gross_amount || 0), 0),
+        calculate: (lines) =>
+          lines.reduce((sum, l) => sum + (l.gross_amount || 0), 0),
       },
       taxTotal: {
         label: "Total ST Amount",
-        calculate: (lines) => lines.reduce((sum, l) => sum + (l.st_amount || 0), 0),
+        calculate: (lines) =>
+          lines.reduce((sum, l) => sum + (l.st_amount || 0), 0),
       },
       additionalTaxTotal: {
         label: "Total Additional Tax",
-        calculate: (lines) => lines.reduce((sum, l) => sum + (l.additional_tax || 0), 0),
+        calculate: (lines) =>
+          lines.reduce((sum, l) => sum + (l.additional_tax || 0), 0),
       },
       netTotal: {
         label: "Total Amount",
@@ -1079,4 +1311,4 @@ export const VOUCHER_CONFIG = {
       { name: "rmk", label: "Narration", type: "text" },
     ],
   },
-}      
+};

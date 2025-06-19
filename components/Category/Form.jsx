@@ -451,16 +451,45 @@ export default function VoucherForm({
   }, [mainLines, deductionLines, voucherConfig]);
 
   // Event Handlers
-  const handleMasterChange = (name, value) => {
-    setMasterData((prev) => ({
-      ...prev,
-      [name]: value === "placeholder" ? "" : value,
-    }));
+  const handleMasterChange = async (name, value) => {
+  setMasterData((prev) => ({
+    ...prev,
+    [name]: value === "placeholder" ? "" : value,
+  }));
+
+  // Validate field if it has a validate function
+  const fieldConfig = voucherConfig.masterFields.find(
+    (f) => (f.formName || f.name) === name
+  );
+  if (fieldConfig?.validate) {
+    setLoading((prev) => ({ ...prev, validation: true }));
+    try {
+      const validationError = await fieldConfig.validate(value, {
+        ...masterData,
+        [name]: value, // Ensure the latest value is included
+      });
+      setErrors((prev) => ({
+        ...prev,
+        validation: { ...prev.validation, [name]: validationError },
+      }));
+    } catch (error) {
+      setErrors((prev) => ({
+        ...prev,
+        validation: {
+          ...prev.validation,
+          [name]: `Validation error: ${error.message}`,
+        },
+      }));
+    } finally {
+      setLoading((prev) => ({ ...prev, validation: false }));
+    }
+  } else {
     setErrors((prev) => ({
       ...prev,
       validation: { ...prev.validation, [name]: null },
     }));
-  };
+  }
+}
 
   const calculateFieldValue = (line, fieldConfig) => {
     if (!fieldConfig.calculate || !fieldConfig.dependencies)
@@ -583,73 +612,89 @@ export default function VoucherForm({
     setSelectedRows((prev) => prev.filter((k) => !k.startsWith(prefix)));
   };
 
-  // Validation and Submission
-  const validateForm = () => {
-    const newErrors = {};
 
-    // Master fields validation
-    voucherConfig.masterFields?.forEach((field) => {
-      const fieldName = field.formName || field.name;
-      if (field.required && !masterData[fieldName]?.toString().trim()) {
-        newErrors[fieldName] = `${field.label} is required`;
+// Validation and Submission
+const validateForm = async () => {
+  const newErrors = {};
+
+  // Master fields validation
+  for (const field of voucherConfig.masterFields || []) {
+    const fieldName = field.formName || field.name;
+    if (field.required && !masterData[fieldName]?.toString().trim()) {
+      newErrors[fieldName] = `${field.label} is required`;
+    }
+    // Run async validation if exists
+    if (field.validate && masterData[fieldName]) {
+      setLoading((prev) => ({ ...prev, validation: true }));
+      try {
+        const validationError = await field.validate(
+          masterData[fieldName],
+          masterData
+        );
+        if (validationError) {
+          newErrors[fieldName] = validationError;
+        }
+      } catch (error) {
+        newErrors[fieldName] = `Validation error: ${error.message}`;
+      } finally {
+        setLoading((prev) => ({ ...prev, validation: false }));
       }
-    });
+    }
+  }
 
-    // Main lines validation
-    if (
-      !mainLines.some((line) =>
-        Object.values(line).some((v) => v?.toString().trim())
-      )
-    ) {
-      newErrors.mainLines = "At least one line item is required";
-    } else {
-      mainLines.forEach((line, index) => {
-        voucherConfig.lineFields?.forEach((field) => {
+  // Main lines validation
+  if (
+    !mainLines.some((line) =>
+      Object.values(line).some((v) => v?.toString().trim())
+    )
+  ) {
+    newErrors.mainLines = "At least one line item is required";
+  } else {
+    mainLines.forEach((line, index) => {
+      voucherConfig.lineFields?.forEach((field) => {
+        const fieldName = field.formName || field.name;
+        if (field.required && !line[fieldName]?.toString().trim()) {
+          newErrors[`main-${index}-${fieldName}`] = `${field.label} is required`;
+        }
+      });
+    });
+  }
+
+  // Deduction lines validation
+  if (voucherConfig.hasDeductionBlock) {
+    deductionLines.forEach((line, index) => {
+      if (Object.values(line).some((v) => v?.toString().trim())) {
+        voucherConfig.deductionFields?.forEach((field) => {
           const fieldName = field.formName || field.name;
           if (field.required && !line[fieldName]?.toString().trim()) {
             newErrors[
-              `main-${index}-${fieldName}`
+              `deduction-${index}-${fieldName}`
             ] = `${field.label} is required`;
           }
         });
-      });
-    }
-
-    // Deduction lines validation
-    if (voucherConfig.hasDeductionBlock) {
-      deductionLines.forEach((line, index) => {
-        if (Object.values(line).some((v) => v?.toString().trim())) {
-          voucherConfig.deductionFields?.forEach((field) => {
-            const fieldName = field.formName || field.name;
-            if (field.required && !line[fieldName]?.toString().trim()) {
-              newErrors[
-                `deduction-${index}-${fieldName}`
-              ] = `${field.label} is required`;
-            }
-          });
-        }
-      });
-    }
-
-    // Balance check
-    if (voucherConfig.balanceCheck) {
-      const formData = {
-        master: masterData,
-        lines: mainLines,
-        deductions: deductionLines,
-        totals,
-      };
-      if (!voucherConfig.balanceCheck.condition(formData)) {
-        newErrors.balance =
-          typeof voucherConfig.balanceCheck.errorMessage === "function"
-            ? voucherConfig.balanceCheck.errorMessage(formData)
-            : voucherConfig.balanceCheck.errorMessage;
       }
-    }
+    });
+  }
 
-    setErrors((prev) => ({ ...prev, validation: newErrors }));
-    return Object.keys(newErrors).length === 0;
-  };
+  // Balance check
+  if (voucherConfig.balanceCheck) {
+    const formData = {
+      master: masterData,
+      lines: mainLines,
+      deductions: deductionLines,
+      totals,
+    };
+    if (!voucherConfig.balanceCheck.condition(formData)) {
+      newErrors.balance =
+        typeof voucherConfig.balanceCheck.errorMessage === "function"
+          ? voucherConfig.balanceCheck.errorMessage(formData)
+          : voucherConfig.balanceCheck.errorMessage;
+    }
+  }
+
+  setErrors((prev) => ({ ...prev, validation: newErrors }));
+  return Object.keys(newErrors).length === 0;
+};
 
   const prepareFormData = () => ({
     master: { ...masterData, tran_code: voucherConfig.tran_code },

@@ -119,7 +119,9 @@ export async function POST(req, { params }) {
       tran_code === 6 ||
       tran_code === 4
     ) {
-      masterCheckDateTime = new Date(`${master.check_date}T${master.time}`);
+      if (master.check_date !== "") {
+        masterCheckDateTime = new Date(`${master.check_date}T${master.time}`);
+      }
       masterDateTime = new Date(`${master.dateD}T${master.time}`);
 
       console.log("masterDateTime:", masterDateTime);
@@ -185,6 +187,31 @@ export async function POST(req, { params }) {
     });
 
     console.log("linesss:", linesss);
+
+    // ✅ Update item stock for purchase (tran_code === 4) or sale (tran_code === 6)
+if (tran_code === 4 || tran_code === 6) {
+  for (const line of lines) {
+    const itemId = parseOptionalInt(line.itcd);
+    const qty = parseFloat(line.qty || 0);
+
+    if (itemId && qty > 0) {
+      const updateQty = tran_code === 4 ? qty : -qty;
+
+      await prisma.item.update({
+        where: { itcd: itemId },
+        data: {
+          stock: {
+            increment: updateQty, // increase or decrease based on tran_code
+          },
+        },
+      });
+
+      console.log(
+        `Stock updated for item ${itemId}: ${tran_code === 4 ? "+" : "-"}${qty}`
+      );
+    }
+  }
+}
 
     if (deductions?.length > 0) {
       const ded = await prisma.transactions.createMany({
