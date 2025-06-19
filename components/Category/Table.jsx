@@ -783,14 +783,19 @@ export default function VoucherTable({
                       whileTap={{ scale: 0.99 }}
                     >
                       {TABLE_FIELDS.map((field) => (
-                        <TableCell
-                          key={field.name}
-                          className="px-6 py-4 text-primary font-medium"
-                        >
-                          {field.options
-                            ? `${entry[field.value1][field.value2]}`
-                            : formatCellContent(entry[field.name], field)}
-                        </TableCell>
+                        <TableCell key={field.name} className="px-6 py-4 text-primary font-medium">
+  {field.options ? (
+    entry[field.value1]?.[field.value2] || "-"
+  ) : field.isTotal ? (
+    // Extract total from transactions where sub_tran_id === 3
+    entry.transactions
+      ?.filter((tran) => tran.sub_tran_id === 3)
+      ?.reduce((sum, tran) => sum + (tran.damt || 0), 0)
+      ?.toLocaleString()
+  ) : (
+    formatCellContent(entry[field.name], field)
+  )}
+</TableCell>
                       ))}
                       <TableCell className="px-6 py-4 text-center">
                         <Button

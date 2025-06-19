@@ -609,8 +609,11 @@ export const VOUCHER_CONFIG = {
     tableFields: [
       { name: "dateD", label: "Date", type: "date" },
       { name: "vr_no", label: "Voucher No", type: "text" },
+      { name: "invoice_no", label: "Invoice No", type: "text" },
       { name: "pycd", label: "Vendor", type: "text", options:true, value1:"acno", value2:"acname" },
       { name: "rmk", label: "Narration", type: "text" },
+      { name: "total", label: "Total Amount", type: "number", isTotal: true }
+
     ],
   },
   sale: {
