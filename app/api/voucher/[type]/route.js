@@ -117,7 +117,9 @@ export async function POST(req, { params }) {
       tran_code === 2 ||
       tran_code === 1 ||
       tran_code === 6 ||
-      tran_code === 4
+      tran_code === 4 ||
+      tran_code === 9 ||
+      tran_code === 10
     ) {
       if (master.check_date !== "") {
         masterCheckDateTime = new Date(`${master.check_date}T${master.time}`);
@@ -129,7 +131,7 @@ export async function POST(req, { params }) {
       master.time = masterDateTime; // Format time as HH:MM:SS
       master.check_date = masterCheckDateTime; // Format check_date as YYYY-MM-DD HH:MM:SS
 
-      if (tran_code === 4 || tran_code === 6) {
+      if (tran_code === 4 || tran_code === 6 || tran_code === 9 ||tran_code === 10) {
         master.godown = parseOptionalInt(master.godown);
       } // Format check_date as YYYY-MM-DD HH:MM:SS
     } else if (tran_code === 3) {
@@ -171,9 +173,11 @@ export async function POST(req, { params }) {
           }
         }
         // Handle item code for tran_code 4 or 6
-        if ([4, 6].includes(tran_code)) {
-          if (tran_code === 4) {
+        if ([4, 6, 9, 10].includes(tran_code)) {
+          if ([4, 9].includes(tran_code)) {
             base.acno = "0004";
+          } else if ([6, 10].includes(tran_code)) {
+            base.acno = "0014";
           }
 
           const itemValue = parseOptionalInt(line.itcd);
@@ -189,29 +193,35 @@ export async function POST(req, { params }) {
     console.log("linesss:", linesss);
 
     // ✅ Update item stock for purchase (tran_code === 4) or sale (tran_code === 6)
-if (tran_code === 4 || tran_code === 6) {
-  for (const line of lines) {
-    const itemId = parseOptionalInt(line.itcd);
-    const qty = parseFloat(line.qty || 0);
+    if ([4, 6, 9, 10].includes(tran_code)) {
+      for (const line of lines) {
+        const itemId = parseOptionalInt(line.itcd);
+        const qty = parseFloat(line.qty || 0);
 
-    if (itemId && qty > 0) {
-      const updateQty = tran_code === 4 ? qty : -qty;
+        if (itemId && qty > 0) {
+          // Logic:
+          // - tran_code 4 (Purchase) ➜ increase stock
+          // - tran_code 10 (Sale Return) ➜ increase stock
+          // - tran_code 6 (Sale) ➜ decrease stock
+          // - tran_code 9 (Purchase Return) ➜ decrease stock
+          const isIncrement = [4, 10].includes(tran_code);
+          const updateQty = isIncrement ? qty : -qty;
 
-      await prisma.item.update({
-        where: { itcd: itemId },
-        data: {
-          stock: {
-            increment: updateQty, // increase or decrease based on tran_code
-          },
-        },
-      });
+          await prisma.item.update({
+            where: { itcd: itemId },
+            data: {
+              stock: {
+                increment: updateQty,
+              },
+            },
+          });
 
-      console.log(
-        `Stock updated for item ${itemId}: ${tran_code === 4 ? "+" : "-"}${qty}`
-      );
+          console.log(
+            `Stock updated for item ${itemId}: ${isIncrement ? "+" : "-"}${qty}`
+          );
+        }
+      }
     }
-  }
-}
 
     if (deductions?.length > 0) {
       const ded = await prisma.transactions.createMany({
@@ -227,7 +237,7 @@ if (tran_code === 4 || tran_code === 6) {
       console.log("ded:", ded);
     }
 
-    if ([1, 2, 4, 6].includes(tran_code)) {
+    if ([1, 2, 4, 6,9,10].includes(tran_code)) {
       let totalDamt = 0;
       let totalCamt = 0;
 
@@ -255,9 +265,9 @@ if (tran_code === 4 || tran_code === 6) {
         damt = totalDamt - totalCamt;
       } else if (tran_code === 2) {
         camt = totalCamt - totalDamt;
-      } else if (tran_code === 4) {
+      } else if (tran_code === 4 || tran_code === 9) {
         damt = totalCamt; // mirror camt as damt
-      } else if (tran_code === 6) {
+      } else if (tran_code === 6 || tran_code === 10) {
         camt = totalDamt; // mirror damt as camt
       }
 

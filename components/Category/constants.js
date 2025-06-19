@@ -847,34 +847,6 @@ export const VOUCHER_CONFIG = {
     ],
     lineFields: [
       {
-        name: "acno",
-        label: "A/c Name",
-        type: "select",
-        options: "accounts",
-        apiEndpoint: "/api/accounts/acno?macno=001",
-        createEndpoint: "/api/accounts/acno",
-        nameKey: "acname",
-        valueKey: "acno",
-        modalFields: [
-          {
-            name: "acname",
-            label: "Account Name",
-            type: "text",
-            required: true,
-          },
-          {
-            name: "macno",
-            label: "Main Account",
-            type: "select",
-            options: "mainAccounts",
-            apiEndpoint: "/api/accounts/macno",
-            valueKey: "macno",
-            nameKey: "macname",
-            required: true,
-          },
-        ],
-      },
-      {
         name: "itcd",
         label: "Product",
         type: "select",
@@ -924,12 +896,16 @@ export const VOUCHER_CONFIG = {
       },
       { name: "additional_tax", label: "Additional Tax", type: "number" },
       {
-        name: "damt",
+       name: "damt",
         label: "Amount",
+        required: true,
         type: "number",
-        dependencies: ["gross_amount", "st_amount", "additional_tax"],
-        calculate: (v) =>
-          v.gross_amount + v.st_amount + (v.additional_tax || 0),
+        dependencies: ["qty", "rate"], // Updated dependencies
+        calculate: (v) => {
+          const gross_amount = v.qty * v.rate; // Calculate gross_amount
+          const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
+          return gross_amount + st_amount + (v.additional_tax || 0); // Include additional_tax
+        },
       },
     ],
     totals: {
@@ -958,11 +934,19 @@ export const VOUCHER_CONFIG = {
       },
     },
     tableFields: [
-      { name: "dateD", label: "Date", type: "date" },
-      { name: "tran_id", label: "Transaction No", type: "text" },
+            { name: "dateD", label: "Date", type: "date" },
       { name: "vr_no", label: "Voucher No", type: "text" },
-      { name: "pycd", label: "Customer", type: "text" },
+      { name: "invoice_no", label: "Invoice No", type: "text" },
+      {
+        name: "pycd",
+        label: "Customer",
+        type: "text",
+        options: true,
+        value1: "acno",
+        value2: "acname",
+      },
       { name: "rmk", label: "Narration", type: "text" },
+      { name: "total", label: "Total Amount", type: "number", isTotal: true },
     ],
   },
   purchaseReturn: {
@@ -984,7 +968,7 @@ export const VOUCHER_CONFIG = {
         label: "Vendor",
         type: "select",
         options: "accounts",
-        apiEndpoint: "/api/accounts/acno?macno=001",
+        apiEndpoint: "/api/accounts/acno?macno=006",
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
@@ -1019,35 +1003,6 @@ export const VOUCHER_CONFIG = {
     ],
     lineFields: [
       {
-        name: "acno",
-        label: "A/c Name",
-        formName: "acno",
-        type: "select",
-        options: "accounts",
-        apiEndpoint: "/api/accounts/acno?macno=001",
-        createEndpoint: "/api/accounts/acno",
-        nameKey: "acname",
-        valueKey: "acno",
-        modalFields: [
-          {
-            name: "acname",
-            label: "Account Name",
-            type: "text",
-            required: true,
-          },
-          {
-            name: "macno",
-            label: "Main Account",
-            type: "select",
-            options: "mainAccounts",
-            apiEndpoint: "/api/accounts/macno",
-            valueKey: "macno",
-            nameKey: "macname",
-            required: true,
-          },
-        ],
-      },
-      {
         name: "itcd",
         label: "Product",
         type: "select",
@@ -1097,12 +1052,16 @@ export const VOUCHER_CONFIG = {
       },
       { name: "additional_tax", label: "Additional Tax", type: "number" },
       {
-        name: "camt",
+       name: "camt",
         label: "Amount",
+        required: true,
         type: "number",
-        dependencies: ["gross_amount", "st_amount", "additional_tax"],
-        calculate: (v) =>
-          v.gross_amount + v.st_amount + (v.additional_tax || 0),
+        dependencies: ["qty", "rate"], // Updated dependencies
+        calculate: (v) => {
+          const gross_amount = v.qty * v.rate; // Calculate gross_amount
+          const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
+          return gross_amount + st_amount + (v.additional_tax || 0); // Include additional_tax
+        },
       },
     ],
     totals: {
@@ -1131,11 +1090,19 @@ export const VOUCHER_CONFIG = {
       },
     },
     tableFields: [
-      { name: "dateD", label: "Date", type: "date" },
-      { name: "tran_id", label: "Transaction No", type: "text" },
+           { name: "dateD", label: "Date", type: "date" },
       { name: "vr_no", label: "Voucher No", type: "text" },
-      { name: "pycd", label: "Vendor", type: "text" },
+      { name: "invoice_no", label: "Invoice No", type: "text" },
+      {
+        name: "pycd",
+        label: "Vendor",
+        type: "text",
+        options: true,
+        value1: "acno",
+        value2: "acname",
+      },
       { name: "rmk", label: "Narration", type: "text" },
+      { name: "total", label: "Total Amount", type: "number", isTotal: true },
     ],
   },
   saleReturn: {
@@ -1192,35 +1159,6 @@ export const VOUCHER_CONFIG = {
     ],
     lineFields: [
       {
-        name: "acno",
-        label: "A/c Name",
-        formName: "acno",
-        type: "select",
-        options: "accounts",
-        apiEndpoint: "/api/accounts/acno?macno=001",
-        createEndpoint: "/api/accounts/acno",
-        nameKey: "acname",
-        valueKey: "acno",
-        modalFields: [
-          {
-            name: "acname",
-            label: "Account Name",
-            type: "text",
-            required: true,
-          },
-          {
-            name: "macno",
-            label: "Main Account",
-            type: "select",
-            options: "mainAccounts",
-            apiEndpoint: "/api/accounts/macno",
-            valueKey: "macno",
-            nameKey: "macname",
-            required: true,
-          },
-        ],
-      },
-      {
         name: "itcd",
         label: "Product",
         type: "select",
@@ -1270,12 +1208,16 @@ export const VOUCHER_CONFIG = {
       },
       { name: "additional_tax", label: "Additional Tax", type: "number" },
       {
-        name: "damt",
+       name: "damt",
         label: "Amount",
+        required: true,
         type: "number",
-        dependencies: ["gross_amount", "st_amount", "additional_tax"],
-        calculate: (v) =>
-          v.gross_amount + v.st_amount + (v.additional_tax || 0),
+        dependencies: ["qty", "rate"], // Updated dependencies
+        calculate: (v) => {
+          const gross_amount = v.qty * v.rate; // Calculate gross_amount
+          const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
+          return gross_amount + st_amount + (v.additional_tax || 0); // Include additional_tax
+        },
       },
     ],
     totals: {
@@ -1304,11 +1246,19 @@ export const VOUCHER_CONFIG = {
       },
     },
     tableFields: [
-      { name: "dateD", label: "Date", type: "date" },
-      { name: "tran_id", label: "Transaction No", type: "text" },
+           { name: "dateD", label: "Date", type: "date" },
       { name: "vr_no", label: "Voucher No", type: "text" },
-      { name: "pycd", label: "Vendor", type: "text" },
+      { name: "invoice_no", label: "Invoice No", type: "text" },
+      {
+        name: "pycd",
+        label: "Customer",
+        type: "text",
+        options: true,
+        value1: "acno",
+        value2: "acname",
+      },
       { name: "rmk", label: "Narration", type: "text" },
+      { name: "total", label: "Total Amount", type: "number", isTotal: true },
     ],
   },
 };

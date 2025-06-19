@@ -54,68 +54,6 @@ import {
 import axios from "axios";
 
 // Mock data for demonstration
-const MOCK_VOUCHER_DATA = [
-  {
-    id: "V001",
-    voucherNumber: "VCH-2024-001",
-    date: "2024-06-15",
-    amount: 15750.0,
-    description: "Office supplies purchase for Q2",
-    customerName: "ABC Corporation Ltd.",
-    status: "Approved",
-    category: "Office Expenses",
-    createdBy: "John Smith",
-    paymentMethod: "Bank Transfer",
-  },
-  {
-    id: "V002",
-    voucherNumber: "VCH-2024-002",
-    date: "2024-06-14",
-    amount: 8950.5,
-    description: "Marketing campaign expenses",
-    customerName: "Digital Solutions Inc.",
-    status: "Pending",
-    category: "Marketing",
-    createdBy: "Sarah Johnson",
-    paymentMethod: "Credit Card",
-  },
-  {
-    id: "V003",
-    voucherNumber: "VCH-2024-003",
-    date: "2024-06-13",
-    amount: 25000.0,
-    description: "Equipment maintenance and repairs",
-    customerName: "Tech Services LLC",
-    status: "Approved",
-    category: "Maintenance",
-    createdBy: "Michael Brown",
-    paymentMethod: "Check",
-  },
-  {
-    id: "V004",
-    voucherNumber: "VCH-2024-004",
-    date: "2024-06-12",
-    amount: 3200.75,
-    description: "Travel expenses for client meeting",
-    customerName: "Global Partners Ltd.",
-    status: "Rejected",
-    category: "Travel",
-    createdBy: "Emily Davis",
-    paymentMethod: "Cash",
-  },
-  {
-    id: "V005",
-    voucherNumber: "VCH-2024-005",
-    date: "2024-06-11",
-    amount: 12500.0,
-    description: "Software licensing fees",
-    customerName: "Innovation Hub Inc.",
-    status: "Approved",
-    category: "Software",
-    createdBy: "David Wilson",
-    paymentMethod: "Bank Transfer",
-  },
-];
 
 // Status badge component
 const StatusBadge = ({ status }) => {
@@ -795,7 +733,7 @@ export default function VoucherTable({
                                 ?.filter((tran) => tran.sub_tran_id === 3)
                                 ?.reduce(
                                   (sum, tran) =>
-                                    sum + (tran.damt || tran.camt || 0),
+                                    sum + ((tran.damt > 0 && tran.damt) || (tran.camt > 0 && tran.camt )|| 0),
                                   0
                                 )
                                 ?.toLocaleString()

@@ -252,6 +252,8 @@ export default function VoucherForm({
     journal: "/api/voucher/journal",
     purchase: "/api/voucher/purchase",
     sale: "/api/voucher/sale",
+    purchaseReturn: "/api/voucher/purchaseReturn",
+    saleReturn: "/api/voucher/saleReturn",
   };
 
   // Fetch options for select fields

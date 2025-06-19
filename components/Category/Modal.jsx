@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export default function VoucherModal({ type, editModes = false, onCloseEdit, existingData={}}) {
+export default function VoucherModal({ type, category, editModes = false, onCloseEdit, existingData={}}) {
   console.log("Exisitng Data: ",existingData)
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(editModes);
@@ -52,7 +52,7 @@ return (
           className="bg-primary hover:bg-primary/90 text-white flex items-center gap-2 font-medium"
         >
           <PlusIcon className="h-4 w-4" />
-          Create {type} Voucher
+          Create {type}
         </Button>
       )}
 
@@ -66,7 +66,7 @@ return (
             >
               <DialogHeader className="border-b pb-4">
                 <DialogTitle className="text-xl font-semibold">
-                  {editMode ? `Edit ${type} Voucher` : `Create ${type} Voucher`}
+                  {editMode ? `Edit ${type} ${category}` : `Create ${type} ${category}`}
                 </DialogTitle>
               </DialogHeader>
               <div className="pt-4 overflow-auto">

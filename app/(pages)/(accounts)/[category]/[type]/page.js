@@ -50,6 +50,23 @@ const CONFIG = {
       icon: Sparkles,
       gradient: 'from-primary to-primary'
     }
+  },
+
+  return: {
+    purchaseReturn: {
+      label: 'Purchase Return Invoice',
+      stats: ['total'],
+      apiPath: 'purchase',
+      icon: TrendingUp,
+      gradient: 'from-primary to-primary'
+    },
+    saleReturn: {
+      label: 'Sales Return Invoice',
+      stats: ['total'],
+      apiPath: 'sale',
+      icon: Sparkles,
+      gradient: 'from-primary to-primary'
+    }
   }
 }
 

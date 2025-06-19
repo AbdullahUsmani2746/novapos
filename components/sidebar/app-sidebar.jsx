@@ -97,11 +97,11 @@ const data = {
       items: [
         {
           title: "Purchase Reuturn",
-          url: "/invoice/purchase",
+          url: "/return/purchaseReturn",
         },
         {
           title: "Sale Reuturn",
-          url: "/invoice/sale",
+          url: "/return/saleReturn",
         },
         
       ],
