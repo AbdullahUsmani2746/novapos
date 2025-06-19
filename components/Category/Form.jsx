@@ -148,7 +148,13 @@ const SearchableSelect = ({
         {required && <span className="text-red-500">*</span>}
       </Label>
       <Select
-        value={String(value || "")} // Ensure string        onValueChange={onValueChange}
+        value={value ? String(value) : ""} // Ensure value is a string or empty
+        onValueChange={(v) => {
+          // Only call onValueChange if the value is different to prevent unnecessary updates
+          if (v !== value) {
+            onValueChange(v);
+          }
+        }}
         open={isOpen}
         onOpenChange={setIsOpen}
       >
@@ -180,8 +186,8 @@ const SearchableSelect = ({
             filteredOptions.map((opt) => (
               <SelectItem
                 key={opt.value}
-                value={opt.value}
-                className="text-sm hover:bg-primary focus:bg-primary"
+                value={String(opt.value)} // Ensure option value is a string
+                className="text-sm hover:bg-secondary focus:bg-primary"
               >
                 {opt.label}
               </SelectItem>
