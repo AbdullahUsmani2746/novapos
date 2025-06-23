@@ -114,6 +114,13 @@ const data = {
       isActive: true,
      
     },
+    {
+      title: "Reports",
+      url: "/reports",
+      icon: SquareTerminal,
+      isActive: true,
+     
+    },
 
     {
       title: "Setups",
