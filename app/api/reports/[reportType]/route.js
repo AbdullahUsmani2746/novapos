@@ -385,7 +385,8 @@ async function getStockActivityReport(filters) {
         where: filters.item ? { itcd: parseInt(filters.item) } : undefined,
         include: {
           itemDetails: true,
-          godownDetails: true
+          godownDetails: true,
+          acnoDetails:true,
         }
       }
     },
@@ -394,7 +395,7 @@ async function getStockActivityReport(filters) {
     }
   });
 
-  console.log("Transaction ty: ",transactions);
+  console.log("Transaction ty: ",transactions.transactions);
 
   // Flatten the data to show each line item as a separate row
   const activityData = [];
@@ -409,8 +410,8 @@ async function getStockActivityReport(filters) {
         qty: line.qty,
         rate: line.rate,
         amount: t.tran_code === 4 || t.tran_code === 9 ? line.camt : line.damt,
-        godownDetails: line.godownDetails,
-        pycd: t.pycd,
+        godownDetails: t.godownDetails,
+        pycd: line.acnoDetails,
         narration: line.narration1 || t.rmk
       });
     });
@@ -535,6 +536,8 @@ async function getTradingMarginReport(filters) {
       itemData.sale_amount += line.damt || 0;
     });
   });
+
+  console.log("YESSSSSSSSSSSSSSSSSS")
 
   // Convert to array and calculate margins
   const marginData = Array.from(itemMap.values()).map(item => {

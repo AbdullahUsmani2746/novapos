@@ -1,4 +1,3 @@
-// components/reports/ReportViewer.jsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -10,7 +9,6 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { format } from 'date-fns';
 
-// shadcn/ui components
 import {
   Card,
   CardHeader,
@@ -86,7 +84,6 @@ const ReportViewer = ({ reportType }) => {
 
     setConfig(reportConfig);
 
-    // Initialize filters from URL params
     const initialFilters = {};
     reportConfig.filters.forEach(filter => {
       const value = searchParams.get(filter.name);
@@ -106,7 +103,6 @@ const ReportViewer = ({ reportType }) => {
     });
     setFilters(initialFilters);
 
-    // Set date range if exists
     if (initialFilters.dateFrom || initialFilters.dateTo) {
       setDate({
         from: initialFilters.dateFrom ? new Date(initialFilters.dateFrom) : null,
@@ -114,7 +110,6 @@ const ReportViewer = ({ reportType }) => {
       });
     }
 
-    // Load any needed filter options
     loadFilterOptions(reportConfig.filters, initialFilters);
   }, [reportType, searchParams]);
 
@@ -132,7 +127,6 @@ const ReportViewer = ({ reportType }) => {
         try {
           let endpoint = filter.apiEndpoint;
           
-          // Handle dependent filters
           if (filter.dependsOn) {
             const dependentValue = currentFilters[filter.dependsOn];
             if (!dependentValue) continue;
@@ -158,7 +152,6 @@ const ReportViewer = ({ reportType }) => {
     setLoading(true);
     
     try {
-      // Build query string from filters
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== null && value !== undefined && value !== '') {
@@ -184,7 +177,6 @@ const ReportViewer = ({ reportType }) => {
     const newFilters = { ...filters, [name]: value };
     setFilters(newFilters);
 
-    // Update URL without page reload
     const params = new URLSearchParams();
     Object.entries(newFilters).forEach(([key, val]) => {
       if (val !== null && val !== undefined && val !== '') {
@@ -444,7 +436,6 @@ const ReportViewer = ({ reportType }) => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
@@ -459,7 +450,6 @@ const ReportViewer = ({ reportType }) => {
           </div>
         </div>
 
-        {/* Filters */}
         <Card className="shadow-lg border-gray-200 overflow-hidden">
           <CardHeader className="bg-white border-b border-gray-200">
             <div className="flex items-center justify-between">
@@ -560,7 +550,6 @@ const ReportViewer = ({ reportType }) => {
           </CardFooter>
         </Card>
 
-        {/* Summary Cards */}
         {summary && Object.keys(summary).length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {config.summaryFields.map((field) => (
@@ -571,7 +560,6 @@ const ReportViewer = ({ reportType }) => {
           </div>
         )}
 
-        {/* Data Table */}
         <Card className="shadow-lg border-gray-200 overflow-hidden">
           <CardHeader className="bg-white border-b border-gray-200">
             <div className="flex items-center justify-between">
@@ -672,7 +660,6 @@ const ReportViewer = ({ reportType }) => {
           </CardContent>
         </Card>
 
-        {/* Detail Modal */}
         {showDetails && detailRow && (
           <Card className="shadow-2xl border-gray-200 fixed inset-4 z-50 overflow-auto bg-white">
             <CardHeader className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">

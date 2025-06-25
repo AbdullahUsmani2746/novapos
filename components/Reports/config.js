@@ -435,7 +435,7 @@ export const REPORT_CONFIG = {
       { field: "rate", headerName: "Rate", width: 120, type: "currency" },
       { field: "amount", headerName: "Amount", width: 150, type: "currency" },
       { field: "godown", headerName: "Godown", width: 150, valueGetter: (params) => params.row.godownDetails?.godown || '' },
-      { field: "party", headerName: "Party", width: 200, valueGetter: (params) => params.row.acno?.acname || '' },
+      { field: "party", headerName: "Party", width: 200, valueGetter: (params) => params.row.pycd?.acname || '' },
       { field: "narration", headerName: "Narration", width: 200 }
     ],
     summaryFields: [
