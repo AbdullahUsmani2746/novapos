@@ -811,6 +811,7 @@ export const VOUCHER_CONFIG = {
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
+        required:true,
         modalFields: [
           {
             name: "name",
@@ -823,8 +824,26 @@ export const VOUCHER_CONFIG = {
       { name: "check_no", label: "ST Inv No", type: "text" },
       { name: "check_date", label: "ST Inv Date", type: "Date" },
       { name: "rmk", label: "Narration", type: "textarea" },
-      { name: "rmk3", label: "Prd Cat", type: "text" },
-      { name: "invoice_no", label: "Com Inv No", type: "text" },
+      { name: "invoice_no", label: "Com Inv No", type: "text",
+        validate: async (value, masterData) => {
+          if (!value || !masterData.pycd) return null;
+          try {
+            const response = await axios.get(
+              `/api/voucher/check-invoice?tran_code=6&pycd=${
+                masterData.pycd
+              }&invoice_no=${encodeURIComponent(value)}`
+            );
+            if (response.data.exists) {
+              const nextInvoiceNo =
+                response.data.nextInvoiceNo || parseInt(value) + 1;
+              return `Invoice number ${value} already exists for this vendor. Try ${nextInvoiceNo} or another number.`;
+            }
+            return null;
+          } catch (error) {
+            return `Error checking invoice number: ${error.message}`;
+          }
+        },
+       },
       {
         name: "godown",
         label: "Godown",
@@ -972,6 +991,7 @@ export const VOUCHER_CONFIG = {
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
+        required:true,
         modalFields: [
           { name: "name", label: "Vendor Name", type: "text", required: true },
         ],
@@ -979,8 +999,26 @@ export const VOUCHER_CONFIG = {
       { name: "check_no", label: "ST Inv No", type: "text" },
       { name: "check_date", label: "ST Inv Date", type: "Date" },
       { name: "rmk", label: "Narration", type: "textarea" },
-      { name: "rmk3", label: "Prd Cat", type: "text" },
-      { name: "invoice_no", label: "Com Inv No", type: "text" },
+      { name: "invoice_no", label: "Com Inv No", type: "text",
+        validate: async (value, masterData) => {
+          if (!value || !masterData.pycd) return null;
+          try {
+            const response = await axios.get(
+              `/api/voucher/check-invoice?tran_code=9&pycd=${
+                masterData.pycd
+              }&invoice_no=${encodeURIComponent(value)}`
+            );
+            if (response.data.exists) {
+              const nextInvoiceNo =
+                response.data.nextInvoiceNo || parseInt(value) + 1;
+              return `Invoice number ${value} already exists for this vendor. Try ${nextInvoiceNo} or another number.`;
+            }
+            return null;
+          } catch (error) {
+            return `Error checking invoice number: ${error.message}`;
+          }
+        },
+       },
       {
         name: "godown",
         label: "Godown",
@@ -1128,6 +1166,7 @@ export const VOUCHER_CONFIG = {
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
+        required:true,
         modalFields: [
           { name: "name", label: "Vendor Name", type: "text", required: true },
         ],
@@ -1135,8 +1174,26 @@ export const VOUCHER_CONFIG = {
       { name: "check_no", label: "ST Inv No", type: "text" },
       { name: "check_date", label: "ST Inv Date", type: "Date" },
       { name: "rmk", label: "Narration", type: "textarea" },
-      { name: "rmk3", label: "Prd Cat", type: "text" },
-      { name: "invoice_no", label: "Com Inv No", type: "text" },
+      { name: "invoice_no", label: "Com Inv No", type: "text",
+        validate: async (value, masterData) => {
+          if (!value || !masterData.pycd) return null;
+          try {
+            const response = await axios.get(
+              `/api/voucher/check-invoice?tran_code=10&pycd=${
+                masterData.pycd
+              }&invoice_no=${encodeURIComponent(value)}`
+            );
+            if (response.data.exists) {
+              const nextInvoiceNo =
+                response.data.nextInvoiceNo || parseInt(value) + 1;
+              return `Invoice number ${value} already exists for this vendor. Try ${nextInvoiceNo} or another number.`;
+            }
+            return null;
+          } catch (error) {
+            return `Error checking invoice number: ${error.message}`;
+          }
+        },
+       },
       {
         name: "godown",
         label: "Godown",

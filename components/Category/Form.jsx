@@ -1004,29 +1004,6 @@ const validateForm = async () => {
         <div className="overflow-x-auto">
           <table className="w-full table-auto">
             <thead>
-              <tr className="bg-gray-100 text-xs border-b text-gray-700">
-                <th className="p-2 w-10">
-                  <input
-                    type="checkbox"
-                    checked={
-                      lines.length > 0 &&
-                      lines.every((_, i) =>
-                        selectedRows.includes(`${prefix}-${i}`)
-                      )
-                    }
-                    onChange={() => toggleAllRowSelection(isMain)}
-                    disabled={loading.submit}
-                    className="cursor-pointer"
-                  />
-                </th>
-                <th className="p-2 w-10">#</th>
-                {fields.map((f) => (
-                  <th key={f.name} className="p-2 text-left font-medium">
-                    {f.label}
-                  </th>
-                ))}
-                <th className="p-2 w-10"></th>
-              </tr>
             </thead>
             <tbody>
               <AnimatePresence>
