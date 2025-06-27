@@ -4,8 +4,6 @@ export const VOUCHER_CONFIG = {
     tran_code: 2,
     hasDeductionBlock: true,
     masterFields: [
-      { name: "dateD", label: "Date", type: "date", required: true },
-      { name: "time", label: "Time", type: "time", required: true },
       {
         name: "pycd",
         formName: "pycd",
@@ -258,8 +256,6 @@ export const VOUCHER_CONFIG = {
     tran_code: 1,
     hasDeductionBlock: true,
     masterFields: [
-      { name: "dateD", label: "Date", type: "date", required: true },
-      { name: "time", label: "Time", type: "time", required: true },
       {
         name: "pycd",
         formName: "pycd",
@@ -504,7 +500,6 @@ export const VOUCHER_CONFIG = {
     tran_code: 3,
     hasDeductionBlock: false,
     masterFields: [
-      { name: "dateD", label: "Date", type: "date", required: true },
       {
         name: "vr_no",
         label: "Vr No",
@@ -599,8 +594,8 @@ export const VOUCHER_CONFIG = {
     tran_code: 4,
     hasDeductionBlock: false,
     masterFields: [
-      { name: "dateD", label: "Date", type: "date", required: true },
-      { name: "time", label: "Time", type: "time", required: true },
+      // { name: "dateD", label: "Date", type: "date", required: true },
+      // { name: "time", label: "Time", type: "time", required: true },
       {
         name: "vr_no",
         label: "Vr No",
@@ -722,7 +717,7 @@ export const VOUCHER_CONFIG = {
         label: "Gross Amount",
         type: "number",
         required: true,
-        dependencies: ["qty", "rate"],
+        dependencies: ["qty", "rate","no_of_pack", "qty_per_pack"],
         calculate: (v) => v.qty * v.rate,
       },
       { name: "st_rate", label: "ST Rate", type: "number" },
@@ -730,7 +725,7 @@ export const VOUCHER_CONFIG = {
         name: "st_amount",
         label: "ST Amount",
         type: "number",
-        dependencies: ["gross_amount", "st_rate"],
+        dependencies: ["gross_amount", "st_rate","no_of_pack", "qty_per_pack","rate"],
         calculate: (v) => (v.gross_amount * v.st_rate) / 100,
       },
       { name: "additional_tax", label: "Additional Tax", type: "number" },
@@ -739,8 +734,9 @@ export const VOUCHER_CONFIG = {
         label: "Amount",
         required: true,
         type: "number",
-        dependencies: ["qty", "rate"], // Updated dependencies
+        dependencies: ["qty", "rate","st_rate", "additional_tax","no_of_pack", "qty_per_pack"], // Updated dependencies
         calculate: (v) => {
+          console.log("V: ",v)
           const gross_amount = v.qty * v.rate; // Calculate gross_amount
           const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
           return gross_amount + st_amount + (v.additional_tax || 0); // Include additional_tax
@@ -769,7 +765,9 @@ export const VOUCHER_CONFIG = {
       },
       netTotal: {
         label: "Total Amount",
-        calculate: (lines) => lines.reduce((sum, l) => sum + (l.camt || 0), 0),
+        calculate: (lines) => {
+          console.log("Chajge:",lines)
+        return lines.reduce((sum, l) => sum + (l.camt || 0), 0)}
       },
     },
     tableFields: [
@@ -792,8 +790,6 @@ export const VOUCHER_CONFIG = {
     tran_code: 6,
     hasDeductionBlock: false,
     masterFields: [
-      { name: "dateD", label: "Date", type: "date", required: true },
-      { name: "time", label: "Time", type: "time", required: true },
       {
         name: "vr_no",
         label: "Vr No",
@@ -902,7 +898,7 @@ export const VOUCHER_CONFIG = {
         name: "gross_amount",
         label: "Gross Amount",
         type: "number",
-        dependencies: ["qty", "rate"],
+        dependencies: ["qty", "rate","no_of_pack", "qty_per_pack"],
         calculate: (v) => v.qty * v.rate,
       },
       { name: "st_rate", label: "ST Rate", type: "number" },
@@ -910,7 +906,7 @@ export const VOUCHER_CONFIG = {
         name: "st_amount",
         label: "ST Amount",
         type: "number",
-        dependencies: ["gross_amount", "st_rate"],
+        dependencies: ["gross_amount", "st_rate","no_of_pack", "qty_per_pack","rate"],
         calculate: (v) => (v.gross_amount * v.st_rate) / 100,
       },
       { name: "additional_tax", label: "Additional Tax", type: "number" },
@@ -919,7 +915,7 @@ export const VOUCHER_CONFIG = {
         label: "Amount",
         required: true,
         type: "number",
-        dependencies: ["qty", "rate"], // Updated dependencies
+        dependencies: ["qty", "rate","st_rate", "additional_tax","no_of_pack", "qty_per_pack"], // Updated dependencies
         calculate: (v) => {
           const gross_amount = v.qty * v.rate; // Calculate gross_amount
           const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
@@ -972,8 +968,7 @@ export const VOUCHER_CONFIG = {
     tran_code: 9,
     hasDeductionBlock: false,
     masterFields: [
-      { name: "dateD", label: "Date", type: "date", required: true },
-      { name: "time", label: "Time", type: "time", required: true },
+
       {
         name: "vr_no",
         label: "Vr No",
@@ -1077,7 +1072,7 @@ export const VOUCHER_CONFIG = {
         name: "gross_amount",
         label: "Gross Amount",
         type: "number",
-        dependencies: ["qty", "rate"],
+        dependencies: ["qty", "rate","no_of_pack", "qty_per_pack"],
         calculate: (v) => v.qty * v.rate,
       },
       { name: "st_rate", label: "ST Rate", type: "number" },
@@ -1085,7 +1080,7 @@ export const VOUCHER_CONFIG = {
         name: "st_amount",
         label: "ST Amount",
         type: "number",
-        dependencies: ["gross_amount", "st_rate"],
+        dependencies: ["gross_amount", "st_rate","no_of_pack", "qty_per_pack","rate"],
         calculate: (v) => (v.gross_amount * v.st_rate) / 100,
       },
       { name: "additional_tax", label: "Additional Tax", type: "number" },
@@ -1094,7 +1089,7 @@ export const VOUCHER_CONFIG = {
         label: "Amount",
         required: true,
         type: "number",
-        dependencies: ["qty", "rate"], // Updated dependencies
+        dependencies: ["qty", "rate","no_of_pack", "qty_per_pack","st_rate","additional_tax"], // Updated dependencies
         calculate: (v) => {
           const gross_amount = v.qty * v.rate; // Calculate gross_amount
           const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
@@ -1147,8 +1142,6 @@ export const VOUCHER_CONFIG = {
     tran_code: 10,
     hasDeductionBlock: false,
     masterFields: [
-      { name: "dateD", label: "Date", type: "date", required: true },
-      { name: "time", label: "Time", type: "time", required: true },
       {
         name: "vr_no",
         label: "Vr No",
@@ -1252,7 +1245,7 @@ export const VOUCHER_CONFIG = {
         name: "gross_amount",
         label: "Gross Amount",
         type: "number",
-        dependencies: ["qty", "rate"],
+        dependencies: ["qty", "rate","no_of_pack", "qty_per_pack"],
         calculate: (v) => v.qty * v.rate,
       },
       { name: "st_rate", label: "ST Rate", type: "number" },
@@ -1260,7 +1253,7 @@ export const VOUCHER_CONFIG = {
         name: "st_amount",
         label: "ST Amount",
         type: "number",
-        dependencies: ["gross_amount", "st_rate"],
+        dependencies: ["gross_amount", "st_rate", "no_of_pack", "qty_per_pack", "rate"],
         calculate: (v) => (v.gross_amount * v.st_rate) / 100,
       },
       { name: "additional_tax", label: "Additional Tax", type: "number" },
@@ -1269,7 +1262,7 @@ export const VOUCHER_CONFIG = {
         label: "Amount",
         required: true,
         type: "number",
-        dependencies: ["qty", "rate"], // Updated dependencies
+        dependencies: ["qty", "rate","no_of_pack", "qty_per_pack","st_rate","additional_tax"], // Updated dependencies
         calculate: (v) => {
           const gross_amount = v.qty * v.rate; // Calculate gross_amount
           const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount

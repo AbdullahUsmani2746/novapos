@@ -176,6 +176,7 @@ const DataViewModal = ({ data, isOpen, onClose }) => {
 
   const formatDateOnly = (dateString) => {
     if (!dateString) return "N/A";
+    console.log(dateString)
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -656,9 +657,9 @@ export default function VoucherTable({
           <Table>
             <TableHeader>
               <TableRow className="bg-gradient-to-r from-primary to-primary border-none">
-                {TABLE_FIELDS.map((field) => (
+                {TABLE_FIELDS.map((field,index) => (
                   <TableHead
-                    key={field.name}
+                    key={index}
                     className="font-semibold text-sm text-white px-6 py-4 whitespace-nowrap"
                   >
                     {field.label}
@@ -674,8 +675,8 @@ export default function VoucherTable({
               <TableBody>
                 {[...Array(limit)].map((_, idx) => (
                   <TableRow key={idx} className="border-gray-200">
-                    {TABLE_FIELDS.map((field) => (
-                      <TableCell key={field.name} className="px-6 py-4">
+                    {TABLE_FIELDS.map((field,index) => (
+                      <TableCell key={index} className="px-6 py-4">
                         <Skeleton className="h-5 w-full bg-gray-200 text-primary" />
                       </TableCell>
                     ))}
@@ -709,7 +710,7 @@ export default function VoucherTable({
                 ) : (
                   data.map((entry, idx) => (
                     <motion.tr
-                      key={entry.id}
+                      key={idx}
                       data-row-index={idx}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -721,9 +722,9 @@ export default function VoucherTable({
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}
                     >
-                      {TABLE_FIELDS.map((field) => (
+                      {TABLE_FIELDS.map((field,index) => (
                         <TableCell
-                          key={field.name}
+                          key={index}
                           className="px-6 py-4 text-primary font-medium"
                         >
                           {field.options
@@ -815,8 +816,8 @@ export default function VoucherTable({
                   </Button>
                 </PaginationItem>
 
-                {pageNumbers.map((num) => (
-                  <PaginationItem key={num}>
+                {pageNumbers.map((num,index) => (
+                  <PaginationItem key={index}>
                     <PaginationLink
                       onClick={() => handlePageChange(num)}
                       isActive={num === page}

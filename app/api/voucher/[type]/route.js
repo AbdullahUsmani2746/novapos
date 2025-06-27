@@ -124,7 +124,7 @@ export async function POST(req, { params }) {
       if (master.check_date !== "") {
         masterCheckDateTime = new Date(`${master.check_date}T${master.time}`);
       }
-      masterDateTime = new Date(`${master.dateD}T${master.time}`);
+      masterDateTime = new Date();
 
       console.log("masterDateTime:", masterDateTime);
       master.dateD = masterDateTime; // Format date as YYYY-MM-DD

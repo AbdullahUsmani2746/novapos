@@ -447,6 +447,8 @@ export default function VoucherForm({
       {}
     );
 
+    console.log(calculatedTotals)
+
     setTotals(calculatedTotals);
     prevMainLinesRef.current = JSON.stringify(mainLines);
     prevDeductionLinesRef.current = JSON.stringify(deductionLines);
@@ -500,6 +502,7 @@ export default function VoucherForm({
       (acc, dep) => ({ ...acc, [dep]: parseFloat(line[dep]) || 0 }),
       {}
     );
+    console.log(dependencies)
     return fieldConfig.calculate(dependencies) || 0;
   };
 
@@ -1061,8 +1064,8 @@ const validateForm = async () => {
                   (isMain && k !== "deductionTotal") ||
                   (!isMain && k === "deductionTotal")
               )
-              .map(([k, config]) => (
-                <div key={k} className="text-right">
+              .map(([k, config],index) => (
+                <div key={index} className="text-right">
                   <span className="text-xs text-gray-700">
                     {config.label}:{" "}
                   </span>
