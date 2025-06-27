@@ -587,8 +587,9 @@ export default function VoucherTable({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="p-6 bg-secondary min-h-screen"
+      className="p-6 bg-secondary "
     >
+      <div className="flex flex-col justify-between">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-primary mb-2">
@@ -783,7 +784,7 @@ export default function VoucherTable({
           </Table>
         </div>
       </Card>
-
+</div>
       {/* Pagination */}
       <AnimatePresence>
         {!loading && data.length > 0 && (
@@ -799,8 +800,8 @@ export default function VoucherTable({
               {Math.min(page * limit, data.length)} of {data.length} entries
             </div>
 
-            <Pagination>
-              <PaginationContent className="space-x-1">
+            <Pagination className=" block mx-0">
+              <PaginationContent className="space-x-1 justify-end">
                 <PaginationItem>
                   <Button
                     variant="outline"
@@ -861,7 +862,8 @@ export default function VoucherTable({
       {/* The Modal */}
       {isEditModal && (
         <VoucherModal
-          type="purchase"
+          type={type}
+          category={category}
           editModes={isEditModal}
           onCloseEdit={() => {
             setIsEditModal(false);

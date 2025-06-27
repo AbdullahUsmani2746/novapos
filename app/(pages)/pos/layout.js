@@ -1,5 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { signOut } from "next-auth/react";
+
 import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, 
@@ -220,7 +222,7 @@ const ModernPosLayout = ({ children }) => {
         <span className="text-white font-medium group-hover:text-primary">Settings</span>
       </Button>
       <Button
-        onClick={() => router.push('/')}
+        onClick={() => signOut({ callbackUrl: "/auth/signin" })}
         variant="ghost"
         className="w-full justify-start p-3 hover:bg-red-50 text-white group transition-all duration-300"
       >

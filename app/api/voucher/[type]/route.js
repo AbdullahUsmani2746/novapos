@@ -327,8 +327,11 @@ export async function PUT(req) {
     // Format date/times
     console.log("Parsing dates...");
     if ([1, 2, 4, 6].includes(tran_code)) {
+      let checkDateObj;
       const dateObj = new Date(`${master.dateD}T${master.time}`);
-      const checkDateObj = new Date(`${master.check_date}T${master.time}`);
+      if (master.check_date !== "") {
+      checkDateObj = new Date(`${master.check_date}T${master.time}`);
+      }
 
       master.dateD = dateObj;
       master.time = dateObj;

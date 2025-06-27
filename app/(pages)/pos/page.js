@@ -14,11 +14,35 @@ import {
   ArrowRight,
   Zap
 } from 'lucide-react';
+import axios from 'axios';
 
 const ModernPOSDashboard = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
   const router = useRouter();
+  const [stats, setStats] = useState({
+  todaysSales: 0,
+  transactions: 0,
+  customers: 0,
+});
+
+
+useEffect(() => {
+  setIsLoaded(true);
+
+  const fetchStats = async () => {
+    try {
+      const res = await axios.get('/api/pos/stats');
+      const data = await res.data;
+      setStats(data);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
+  fetchStats();
+}, []);
+
 
   useEffect(() => {
     setIsLoaded(true);
@@ -66,22 +90,22 @@ const ModernPOSDashboard = () => {
   const statsCards = [
     {
       title: 'Today\'s Sales',
-      value: '0',
-      change: '0',
+      value: `${stats.todaysSales}`,
+      // change: '0',
       icon: DollarSign,
       color: 'text-green-500'
     },
     {
       title: 'Transactions',
-      value: '0',
-      change: '0',
+    value: stats.transactions,
+      // change: '0',
       icon: TrendingUp,
       color: 'text-blue-500'
     },
     {
       title: 'Customers',
-      value: '0',
-      change: '0',
+    value: stats.customers,
+      // change: '0',
       icon: Users,
       color: 'text-purple-500'
     }

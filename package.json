@@ -10,6 +10,7 @@
     "prisma:sync": "npx prisma db push && npx prisma generate"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.10.0",
     "@hookform/resolvers": "^5.0.1",
     "@prisma/client": "^6.3.1",
     "@radix-ui/react-avatar": "^1.1.3",
@@ -26,6 +27,7 @@
     "@radix-ui/react-tooltip": "^1.1.8",
     "@woocommerce/woocommerce-rest-api": "^1.0.1",
     "axios": "^1.7.9",
+    "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -37,6 +39,7 @@
     "lucide-react": "^0.475.0",
     "moment": "^2.30.1",
     "next": "15.1.7",
+    "next-auth": "^4.24.11",
     "prisma": "^6.6.0",
     "react": "^19.0.0",
     "react-day-picker": "^9.7.0",

@@ -271,7 +271,7 @@ export default function DynamicVoucherPage({ params: paramsPromise }) {
                   {typeConfig.label}s
                 </h1>
                 <p className="text-slate-500 font-medium">
-                  Manage {params.category} • {typeConfig.label.toLowerCase()}
+                  Manage {params.category} • {typeConfig.label}
                 </p>
               </div>
             </motion.div>
@@ -340,7 +340,7 @@ export default function DynamicVoucherPage({ params: paramsPromise }) {
                   variant="outline" 
                   className="text-sm font-bold px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-slate-200 text-slate-700 hover:from-slate-200 hover:to-slate-100 transition-all duration-300"
                 >
-                  {params.category}
+                  {params.category.charAt(0).toUpperCase() + params.category.slice(1)}
                 </Badge>
               </CardContent>
             </Card>

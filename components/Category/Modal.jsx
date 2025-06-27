@@ -52,7 +52,7 @@ return (
           className="bg-primary hover:bg-primary/90 text-white flex items-center gap-2 font-medium"
         >
           <PlusIcon className="h-4 w-4" />
-          Create {type}
+          Create {type.charAt(0).toUpperCase() + type.slice(1) }
         </Button>
       )}
 
@@ -66,7 +66,7 @@ return (
             >
               <DialogHeader className="border-b pb-4">
                 <DialogTitle className="text-xl font-semibold">
-                  {editMode ? `Edit ${type} ${category}` : `Create ${type} ${category}`}
+                  {editMode ? `Edit ${type.charAt(0).toUpperCase()+type.slice(1)} ${category.charAt(0).toUpperCase()+category.slice(1)}` : `Create ${type.charAt(0).toUpperCase()+type.slice(1)} ${category.charAt(0).toUpperCase()+category.slice(1)}`}
                 </DialogTitle>
               </DialogHeader>
               <div className="pt-4 overflow-auto">

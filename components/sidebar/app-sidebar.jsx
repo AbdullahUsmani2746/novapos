@@ -43,11 +43,11 @@ const data = {
       items: [
         {
           title: "Add Account",
-          url: "/add-account",
+          url: "/accounting/add-account",
         },
         {
           title: "Show Account",
-          url: "/show-account",
+          url: "/accounting/show-account",
         },
 
       ],
@@ -60,14 +60,14 @@ const data = {
       items: [
         {
           title: "Payment Voucher",
-          url: "/voucher/payment",
+          url: "/accounting/voucher/payment",
         },
         {
           title: "Receipt Voucher",
-          url: "/voucher/receipt",
+          url: "/accounting/voucher/receipt",
         },{
           title: "Journal Voucher",
-          url: "/voucher/journal",
+          url: "/accounting/voucher/journal",
         },
         
       ],
@@ -80,11 +80,11 @@ const data = {
       items: [
         {
           title: "Purchase Invoice",
-          url: "/invoice/purchase",
+          url: "/accounting/invoice/purchase",
         },
         {
           title: "Sale Invoice",
-          url: "/invoice/sale",
+          url: "/accounting/invoice/sale",
         },
         
       ],
@@ -97,11 +97,11 @@ const data = {
       items: [
         {
           title: "Purchase Reuturn",
-          url: "/return/purchaseReturn",
+          url: "/accounting/return/purchaseReturn",
         },
         {
           title: "Sale Reuturn",
-          url: "/return/saleReturn",
+          url: "/accounting/return/saleReturn",
         },
         
       ],
