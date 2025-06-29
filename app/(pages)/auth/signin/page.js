@@ -1,69 +1,76 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { signIn, getSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Separator } from "@/components/ui/separator"
-import { Eye, EyeOff, Loader2, Store, Calculator } from "lucide-react"
-import { redirectByRole } from "@/lib/auth-helpers"
+import { useState, useEffect } from "react";
+import { signIn, getSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { Eye, EyeOff, Loader2, Store, Calculator } from "lucide-react";
+import { redirectByRole } from "@/lib/auth-helpers";
 
 export default function SignIn() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
-  const router = useRouter()
-  
-  const [callbackUrl, setCallbackUrl] = useState("/")
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
-useEffect(() => {
-  const urlParams = new URLSearchParams(window.location.search)
-  const cb = urlParams.get("callbackUrl")
-  if (cb) setCallbackUrl(cb)
-}, [])
+  const [callbackUrl, setCallbackUrl] = useState("/");
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const cb = urlParams.get("callbackUrl");
+    if (cb) setCallbackUrl(cb);
+  }, []);
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
     try {
       const result = await signIn("credentials", {
         email,
         password,
         redirect: false,
-      })
+      });
 
       if (result?.error) {
-        setError("Invalid email or password")
+        setError("Invalid email or password");
       } else {
         // Get user session to determine redirect
-        const session = await getSession()
+        const session = await getSession();
         if (session?.user?.role) {
-          const redirectUrl = redirectByRole(session.user.role)
-          router.push(redirectUrl)
+          const redirectUrl = redirectByRole(session.user.role);
+          router.push(redirectUrl);
         } else {
-          router.push(callbackUrl)
+          router.push(callbackUrl);
         }
       }
     } catch (error) {
-      setError("An error occurred. Please try again.")
+      setError("An error occurred. Please try again.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleGoogleSignIn = async () => {
-    setIsLoading(true)
-    await signIn("google", { callbackUrl })
-  }
+    setIsLoading(true);
+    await signIn("google", { callbackUrl });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center p-4">
@@ -82,22 +89,28 @@ useEffect(() => {
 
         <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-2xl font-semibold text-center">Welcome back</CardTitle>
+            <CardTitle className="text-2xl font-semibold text-center">
+              Welcome back
+            </CardTitle>
             <CardDescription className="text-center text-gray-600">
               Sign in to your account to continue
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent className="space-y-4">
             {error && (
               <Alert className="border-red-200 bg-red-50">
-                <AlertDescription className="text-red-800">{error}</AlertDescription>
+                <AlertDescription className="text-red-800">
+                  {error}
+                </AlertDescription>
               </Alert>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
@@ -108,9 +121,11 @@ useEffect(() => {
                   className="h-11"
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                <Label htmlFor="password" className="text-sm font-medium">
+                  Password
+                </Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -126,7 +141,11 @@ useEffect(() => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -138,9 +157,14 @@ useEffect(() => {
                     type="checkbox"
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
-                  <Label htmlFor="remember" className="text-sm text-gray-600">Remember me</Label>
+                  <Label htmlFor="remember" className="text-sm text-gray-600">
+                    Remember me
+                  </Label>
                 </div>
-                <Link href="/auth/forgot-password" className="text-sm text-blue-600 hover:text-blue-500">
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-sm text-blue-600 hover:text-blue-500"
+                >
                   Forgot password?
                 </Link>
               </div>
@@ -166,7 +190,9 @@ useEffect(() => {
                 <Separator />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">Or continue with</span>
+                <span className="bg-white px-2 text-gray-500">
+                  Or continue with
+                </span>
               </div>
             </div>
 
@@ -202,7 +228,10 @@ useEffect(() => {
           <CardFooter className="flex flex-col space-y-4 pt-6">
             <div className="text-sm text-center text-gray-600">
               Don&apos;t have an account?
-              <Link href="/auth/signup" className="text-blue-600 hover:text-blue-500 font-medium">
+              <Link
+                href="/auth/signup"
+                className="text-blue-600 hover:text-blue-500 font-medium"
+              >
                 Contact your administrator
               </Link>
             </div>
@@ -212,15 +241,23 @@ useEffect(() => {
         {/* Demo Credentials */}
         <Card className="mt-6 bg-gray-50 border-gray-200">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-700">Demo Credentials</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-700">
+              Demo Credentials
+            </CardTitle>
           </CardHeader>
           <CardContent className="pt-0 space-y-2 text-xs text-gray-600">
-            <div><strong>Admin:</strong> admin@demo.com / admin123</div>
-            <div><strong>Cashier:</strong> cashier@demo.com / cashier123</div>
-            <div><strong>Accountant:</strong> accountant@demo.com / accountant123</div>
+            <div>
+              <strong>Admin:</strong> admin@demo.com / admin123
+            </div>
+            <div>
+              <strong>Cashier:</strong> cashier@demo.com / cashier123
+            </div>
+            <div>
+              <strong>Accountant:</strong> accountant@demo.com / accountant123
+            </div>
           </CardContent>
         </Card>
       </div>
     </div>
-  )
+  );
 }
