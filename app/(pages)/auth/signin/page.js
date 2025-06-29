@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { signIn, getSession } from "next-auth/react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,8 +20,14 @@ export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get("callbackUrl") || "/"
+  
+  const [callbackUrl, setCallbackUrl] = useState("/")
+
+useEffect(() => {
+  const urlParams = new URLSearchParams(window.location.search)
+  const cb = urlParams.get("callbackUrl")
+  if (cb) setCallbackUrl(cb)
+}, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
