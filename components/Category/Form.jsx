@@ -212,6 +212,7 @@ export default function VoucherForm({
   onClose,
   editMode = false,
   existingData = null,
+  onSuccess
 }) {
   const voucherConfig = VOUCHER_CONFIG[type] || {};
   const [masterData, setMasterData] = useState({});
@@ -742,6 +743,10 @@ const validateForm = async () => {
 
       await method(url, formData);
       toast.success(`Voucher ${editMode ? "updated" : "saved"} successfully`);
+      // Call onSuccess callback if it exists
+    if (typeof onSuccess === 'function') {
+      onSuccess();
+    }
       onClose();
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.message;

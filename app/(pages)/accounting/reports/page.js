@@ -18,7 +18,7 @@ const getReportIcon = (key) => {
   };
   
   const IconComponent = iconMap[key] || iconMap.default;
-  return <IconComponent className="h-6 w-6" />;
+  return <IconComponent className="h-6 w-6 text-white" />;
 };
 
 // Status badge colors
@@ -27,20 +27,20 @@ const getStatusColor = (status) => {
     case 'active': return 'bg-green-100 text-green-800 hover:bg-green-200';
     case 'pending': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
     case 'draft': return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
-    default: return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+    default: return 'bg-primary text-primary hover:bg-primary';
   }
 };
 
 const ReportsPage = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white">
       {/* Header Section */}
       <div className="bg-white border-b border-gray-200/60 backdrop-blur-sm">
         <div className="container mx-auto px-6 py-8">
           <div className="flex flex-col space-y-4">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <BarChart3 className="h-8 w-8 text-blue-600" />
+              <div className="p-2 bg-primary rounded-lg">
+                <BarChart3 className="h-8 w-8 text-primary" />
               </div>
               <div>
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
@@ -61,7 +61,7 @@ const ReportsPage = () => {
                 </span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
                 <span className="text-sm font-medium text-gray-700">Real-time Data</span>
               </div>
             </div>
@@ -72,9 +72,9 @@ const ReportsPage = () => {
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">
         {/* Quick Actions */}
-        <div className="mb-8">
+        {/* <div className="mb-8">
           <div className="flex flex-wrap gap-3">
-            <Button variant="outline" size="sm" className="hover:bg-blue-50 hover:border-blue-200">
+            <Button variant="outline" size="sm" className="hover:bg-primary hover:border-primary">
               <Calendar className="h-4 w-4 mr-2" />
               Schedule Report
             </Button>
@@ -83,7 +83,7 @@ const ReportsPage = () => {
               Export All
             </Button>
           </div>
-        </div>
+        </div> */}
 
         {/* Reports Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -93,16 +93,16 @@ const ReportsPage = () => {
               className="group relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm hover:bg-white hover:-translate-y-1"
             >
               {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-transparent to-purple-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/50 via-transparent to-purple-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               
               <CardHeader className="relative pb-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl group-hover:from-blue-200 group-hover:to-blue-100 transition-all duration-300">
+                    <div className="p-2 bg-gradient-to-br from-primary to-primary rounded-xl group-hover:from-primary group-hover:to-primary transition-all duration-300">
                       {getReportIcon(key)}
                     </div>
                     <div>
-                      <CardTitle className="text-xl font-semibold text-gray-900 group-hover:text-blue-900 transition-colors">
+                      <CardTitle className="text-xl font-semibold text-gray-900 group-hover:text-primary transition-colors">
                         {report.title}
                       </CardTitle>
                       {report.status && (
@@ -144,9 +144,9 @@ const ReportsPage = () => {
               </CardContent>
 
               <CardFooter className="relative pt-4 border-t border-gray-100">
-                <Link href={`/reports/${key}`} className="w-full">
+                <Link href={`/accounting/reports/${key}`} className="w-full">
                   <Button 
-                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-2.5 transition-all duration-300 group-hover:shadow-lg"
+                    className="w-full bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-white font-medium py-2.5 transition-all duration-300 group-hover:shadow-lg"
                     size="default"
                   >
                     <span className="flex items-center justify-center space-x-2">
@@ -158,7 +158,7 @@ const ReportsPage = () => {
               </CardFooter>
 
               {/* Hover Border Effect */}
-              <div className="absolute inset-0 rounded-lg border-2 border-blue-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+              <div className="absolute inset-0 rounded-lg border-2 border-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
             </Card>
           ))}
         </div>

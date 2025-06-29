@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export default function VoucherModal({ type, category, editModes = false, onCloseEdit, existingData={}}) {
+export default function VoucherModal({ type, category, editModes = false, onCloseEdit, existingData={}, onSuccess}) {
   console.log("Exisitng Data: ",existingData)
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(editModes);
@@ -75,6 +75,7 @@ return (
                   editMode={editMode}
                   onClose={handleClose}
                   existingData={editMode ? existingData : {}}
+                  onSuccess={onSuccess} // Pass this through
                 />
               </div>
             </DialogContent>

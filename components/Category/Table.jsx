@@ -176,7 +176,7 @@ const DataViewModal = ({ data, isOpen, onClose }) => {
 
   const formatDateOnly = (dateString) => {
     if (!dateString) return "N/A";
-    console.log(dateString)
+    console.log(dateString);
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -436,6 +436,7 @@ export default function VoucherTable({
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [isEditModal, setIsEditModal] = useState(false);
   const [focusedRowIndex, setFocusedRowIndex] = useState(-1);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch voucher data with pagination
   const fetchData = useCallback(async () => {
@@ -451,6 +452,7 @@ export default function VoucherTable({
       setError("Failed to load data. Please try again.");
       console.error(err);
     } finally {
+      setIsRefreshing(false);
       setLoading(false);
     }
   }, [type, page, limit, refreshTrigger]);
@@ -480,7 +482,7 @@ export default function VoucherTable({
     // }
 
     fetchData();
-  }, [page, limit]);
+  }, [page, limit, refreshTrigger]);
 
   const formatCellContent = useCallback((value, field) => {
     if (value === null || value === undefined) return "-";
@@ -591,201 +593,204 @@ export default function VoucherTable({
       className="p-6 bg-secondary "
     >
       <div className="flex flex-col justify-between">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-primary mb-2">
-          {String(type).charAt(0).toUpperCase() + String(type).slice(1)}{" "}
-          Management
-        </h1>
-        <p className="text-primary">
-          Manage and track your {type}s efficiently
-        </p>
-      </div>
-
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Alert
-            variant="destructive"
-            className="mb-6 border-primary bg-primary"
-          >
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle className="text-red-800">Error</AlertTitle>
-            <AlertDescription className="text-red-700">
-              {error}
-            </AlertDescription>
-          </Alert>
-        </motion.div>
-      )}
-
-      {/* Controls */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="outline"
-            className="bg-primary text-white hover:bg-secondary hover:text-primary border-0"
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
-          </Button>
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-primary mb-2">
+            {String(type).charAt(0).toUpperCase() + String(type).slice(1)}{" "}
+            Management
+          </h1>
+          <p className="text-primary">
+            Manage and track your {type}s efficiently
+          </p>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <span className="text-sm font-medium text-primary">Show:</span>
-          <Select value={limit.toString()} onValueChange={handleLimitChange}>
-            <SelectTrigger className="w-20 h-9 border-primary focus:border-primary focus:ring-primary">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[10, 25, 50].map((value) => (
-                <SelectItem key={value} value={value.toString()}>
-                  {value}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <span className="text-sm text-primary">entries</span>
-        </div>
-      </div>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Alert
+              variant="destructive"
+              className="mb-6 border-primary bg-primary"
+            >
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle className="text-red-800">Error</AlertTitle>
+              <AlertDescription className="text-red-700">
+                {error}
+              </AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
 
-      {/* Table Card */}
-      <Card className="overflow-hidden shadow-lg border-0 bg-white/70 backdrop-blur-sm">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gradient-to-r from-primary to-primary border-none">
-                {TABLE_FIELDS.map((field,index) => (
-                  <TableHead
-                    key={index}
-                    className="font-semibold text-sm text-white px-6 py-4 whitespace-nowrap"
-                  >
-                    {field.label}
+        {/* Controls */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="outline"
+              className="bg-primary text-white hover:bg-secondary hover:text-primary border-0"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Filter
+            </Button>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <span className="text-sm font-medium text-primary">Show:</span>
+            <Select value={limit.toString()} onValueChange={handleLimitChange}>
+              <SelectTrigger className="w-20 h-9 border-primary focus:border-primary focus:ring-primary">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[10, 25, 50].map((value) => (
+                  <SelectItem key={value} value={value.toString()}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-primary">entries</span>
+          </div>
+        </div>
+
+        {/* Table Card */}
+        <Card className="overflow-hidden shadow-lg border-0 bg-white/70 backdrop-blur-sm">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gradient-to-r from-primary to-primary border-none">
+                  {TABLE_FIELDS.map((field, index) => (
+                    <TableHead
+                      key={index}
+                      className="font-semibold text-sm text-white px-6 py-4 whitespace-nowrap"
+                    >
+                      {field.label}
+                    </TableHead>
+                  ))}
+                  <TableHead className="font-semibold text-sm text-white px-6 py-4 text-center">
+                    Actions
                   </TableHead>
-                ))}
-                <TableHead className="font-semibold text-sm text-white px-6 py-4 text-center">
-                  Actions
-                </TableHead>
-              </TableRow>
-            </TableHeader>
+                </TableRow>
+              </TableHeader>
 
-            {loading ? (
-              <TableBody>
-                {[...Array(limit)].map((_, idx) => (
-                  <TableRow key={idx} className="border-gray-200">
-                    {TABLE_FIELDS.map((field,index) => (
-                      <TableCell key={index} className="px-6 py-4">
-                        <Skeleton className="h-5 w-full bg-gray-200 text-primary" />
-                      </TableCell>
-                    ))}
-                    <TableCell className="px-6 py-4">
-                      <Skeleton className="h-8 w-16 bg-gray-200 mx-auto text-primary" />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            ) : (
-              <TableBody>
-                {data.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={TABLE_FIELDS.length + 1}
-                      className="text-center py-12 text-primary"
-                    >
-                      <div className="flex flex-col items-center space-y-3">
-                        <FileText className="h-12 w-12 text-primary" />
-                        <div>
-                          <p className="text-lg font-medium">
-                            No vouchers found
-                          </p>
-                          <p className="text-sm">
-                            Create your first voucher to get started
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  data.map((entry, idx) => (
-                    <motion.tr
-                      key={idx}
-                      data-row-index={idx}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className="border-gray-200 hover:bg-blue-50/50 transition-all duration-200 cursor-pointer focus:outline-none focus:bg-blue-100/70 focus:ring-2 focus:ring-blue-500/50"
-                      tabIndex={0}
-                      onClick={() => handleRowClick(entry, idx)}
-                      onKeyDown={(e) => handleKeyDown(e, entry, idx)}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
-                    >
-                      {TABLE_FIELDS.map((field,index) => (
-                        <TableCell
-                          key={index}
-                          className="px-6 py-4 text-primary font-medium"
-                        >
-                          {field.options
-                            ? entry[field.value1]?.[field.value2] || "-"
-                            : field.isTotal
-                            ? // Extract total from transactions where sub_tran_id === 3
-                              entry.transactions
-                                ?.filter((tran) => tran.sub_tran_id === 3)
-                                ?.reduce(
-                                  (sum, tran) =>
-                                    sum + ((tran.damt > 0 && tran.damt) || (tran.camt > 0 && tran.camt )|| 0),
-                                  0
-                                )
-                                ?.toLocaleString()
-                            : formatCellContent(entry[field.name], field)}
+              {loading ? (
+                <TableBody>
+                  {[...Array(limit)].map((_, idx) => (
+                    <TableRow key={idx} className="border-gray-200">
+                      {TABLE_FIELDS.map((field, index) => (
+                        <TableCell key={index} className="px-6 py-4">
+                          <Skeleton className="h-5 w-full bg-gray-200 text-primary" />
                         </TableCell>
                       ))}
-                      <TableCell className="px-6 py-4 text-center">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 hover:bg-primary focus:bg-primary group"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRowClick(entry, idx);
-                          }}
-                        >
-                          <Eye className="h-4 w-4 text-primary group-hover:text-white" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 hover:bg-primary focus:bg-primary group"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleModal(entry, idx);
-                          }}
-                        >
-                          <Edit className="h-4 w-4 text-primary group-hover:text-white" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 hover:bg-primary focus:bg-primary group"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteClick(entry, idx);
-                          }}
-                        >
-                          <Delete className="h-4 w-4 text-primary group-hover:text-white" />
-                        </Button>
+                      <TableCell className="px-6 py-4">
+                        <Skeleton className="h-8 w-16 bg-gray-200 mx-auto text-primary" />
                       </TableCell>
-                    </motion.tr>
-                  ))
-                )}
-              </TableBody>
-            )}
-          </Table>
-        </div>
-      </Card>
-</div>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              ) : (
+                <TableBody>
+                  {data.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={TABLE_FIELDS.length + 1}
+                        className="text-center py-12 text-primary"
+                      >
+                        <div className="flex flex-col items-center space-y-3">
+                          <FileText className="h-12 w-12 text-primary" />
+                          <div>
+                            <p className="text-lg font-medium">
+                              No vouchers found
+                            </p>
+                            <p className="text-sm">
+                              Create your first voucher to get started
+                            </p>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    data.map((entry, idx) => (
+                      <motion.tr
+                        key={idx}
+                        data-row-index={idx}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        className="border-gray-200 hover:bg-blue-50/50 transition-all duration-200 cursor-pointer focus:outline-none focus:bg-blue-100/70 focus:ring-2 focus:ring-blue-500/50"
+                        tabIndex={0}
+                        onClick={() => handleRowClick(entry, idx)}
+                        onKeyDown={(e) => handleKeyDown(e, entry, idx)}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                      >
+                        {TABLE_FIELDS.map((field, index) => (
+                          <TableCell
+                            key={index}
+                            className="px-6 py-4 text-primary font-medium"
+                          >
+                            {field.options
+                              ? entry[field.value1]?.[field.value2] || "-"
+                              : field.isTotal
+                              ? // Extract total from transactions where sub_tran_id === 3
+                                entry.transactions
+                                  ?.filter((tran) => tran.sub_tran_id === 3)
+                                  ?.reduce(
+                                    (sum, tran) =>
+                                      sum +
+                                      ((tran.damt > 0 && tran.damt) ||
+                                        (tran.camt > 0 && tran.camt) ||
+                                        0),
+                                    0
+                                  )
+                                  ?.toLocaleString()
+                              : formatCellContent(entry[field.name], field)}
+                          </TableCell>
+                        ))}
+                        <TableCell className="px-6 py-4 text-center">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 hover:bg-primary focus:bg-primary group"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRowClick(entry, idx);
+                            }}
+                          >
+                            <Eye className="h-4 w-4 text-primary group-hover:text-white" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 hover:bg-primary focus:bg-primary group"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleModal(entry, idx);
+                            }}
+                          >
+                            <Edit className="h-4 w-4 text-primary group-hover:text-white" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 hover:bg-primary focus:bg-primary group"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClick(entry, idx);
+                            }}
+                          >
+                            <Delete className="h-4 w-4 text-primary group-hover:text-white" />
+                          </Button>
+                        </TableCell>
+                      </motion.tr>
+                    ))
+                  )}
+                </TableBody>
+              )}
+            </Table>
+          </div>
+        </Card>
+      </div>
       {/* Pagination */}
       <AnimatePresence>
         {!loading && data.length > 0 && (
@@ -816,7 +821,7 @@ export default function VoucherTable({
                   </Button>
                 </PaginationItem>
 
-                {pageNumbers.map((num,index) => (
+                {pageNumbers.map((num, index) => (
                   <PaginationItem key={index}>
                     <PaginationLink
                       onClick={() => handlePageChange(num)}
@@ -849,7 +854,14 @@ export default function VoucherTable({
           </motion.div>
         )}
       </AnimatePresence>
-
+      {/* {isRefreshing && (
+        <div className="fixed top-4 right-4 z-50">
+          <div className="flex items-center bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg">
+            <RefreshCw className="animate-spin h-5 w-5 mr-2" />
+            Refreshing data...
+          </div>
+        </div>
+      )} */}
       {/* Data View Modal */}
       <DataViewModal
         data={selectedRow}
@@ -859,7 +871,6 @@ export default function VoucherTable({
           setSelectedRow(null);
         }}
       />
-
       {/* The Modal */}
       {isEditModal && (
         <VoucherModal

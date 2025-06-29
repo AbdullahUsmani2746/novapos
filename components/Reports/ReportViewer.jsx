@@ -408,7 +408,7 @@ const ReportViewer = ({ reportType }) => {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-200 shadow-sm hover:shadow-md"
+                  className="w-full justify-start text-left font-normal border-slate-200 hover:border-s300 hover:bg-blue-50/50 transition-all duration-200 shadow-sm hover:shadow-md"
                 >
                   {dateValue ? (
                     <span className="text-slate-900 font-medium">

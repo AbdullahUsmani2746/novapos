@@ -21,7 +21,7 @@ export default withAuth(
 
     // POS routes
     if (pathname.startsWith("/pos")) {
-      if (!["ADMIN", "MANAGER", "CASHIER"].includes(token?.role)) {
+      if (!["ADMIN", "MANAGER", "CASHIER","ACCOUNTANT"].includes(token?.role)) {
         return Response.redirect(new URL("/unauthorized", req.url))
       }
     }

@@ -116,7 +116,7 @@ const data = {
     },
     {
       title: "Reports",
-      url: "/reports",
+      url: "/accounting/reports",
       icon: SquareTerminal,
       isActive: true,
      
@@ -130,47 +130,47 @@ const data = {
       items: [
         {
           title: "Company Setup",
-          url: "/setup/companies",
+          url: "/accounting/setup/companies",
         },
         {
           title: "Cost Center Setup",
-          url: "/setup/cost_centers",
+          url: "/accounting/setup/cost_centers",
         },
         {
           title: "Department Setup",
-          url: "/setup/departments",
+          url: "/accounting/setup/departments",
         },
         {
           title: "Godown Setup",
-          url: "/setup/godowns",
+          url: "/accounting/setup/godowns",
         },
         {
           title: "Season Setup",
-          url: "/setup/seasons",
+          url: "/accounting/setup/seasons",
         },
         {
           title: "Financial Year Setup",
-          url: "/setup/financial_years",
+          url: "/accounting/setup/financial_years",
         },
         {
           title: "Product Category Setup",
-          url: "/setup/purchase_product_categories",
+          url: "/accounting/setup/purchase_product_categories",
         },
         {
           title: "Delivery Mode Setup",
-          url: "/setup/delivery_modes",
+          url: "/accounting/setup/delivery_modes",
         },
         {
           title: "Delivery Terms Setup",
-          url: "/setup/delivery_terms",
+          url: "/accounting/setup/delivery_terms",
         },
         {
           title: "Commission Term Setup",
-          url: "/setup/commission_terms",
+          url: "/accounting/setup/commission_terms",
         },
         {
           title: "Employee Setup",
-          url: "/setup/employees",
+          url: "/accounting/setup/employees",
         },
         
       ],
