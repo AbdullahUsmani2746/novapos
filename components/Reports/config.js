@@ -9,75 +9,109 @@ export const REPORT_CONFIG = {
         name: "dateFrom",
         label: "From Date",
         type: "date",
-        required: true
+        required: true,
       },
       {
         name: "dateTo",
         label: "To Date",
         type: "date",
-        required: true
+        required: true,
       },
       {
         name: "vendor",
         label: "Vendor",
-        valueKey:"acno",
+        valueKey: "acno",
         type: "select",
-        nameKey:"acname",
+        nameKey: "acname",
         options: "vendors",
         apiEndpoint: "/api/accounts/acno?macno=006",
-        clearable: true
+        clearable: true,
       },
       {
         name: "godown",
         label: "Godown",
-        nameKey:"godown",
-        
+        nameKey: "godown",
+
         type: "select",
         options: "godowns",
         apiEndpoint: "/api/setup/godowns",
-        clearable: true
-      }
+        clearable: true,
+      },
     ],
     columns: [
       { field: "dateD", headerName: "Date", width: 120, type: "date" },
       { field: "vr_no", headerName: "Voucher No", width: 120 },
       { field: "invoice_no", headerName: "Invoice No", width: 150 },
-      { 
-        field: "vendor_name", 
-        headerName: "Vendor", 
+      {
+        field: "vendor_name",
+        headerName: "Vendor",
         width: 200,
-        valueGetter: (params) => params.row.acno?.acname || ''
+        valueGetter: (params) => params.row.acno?.acname || "",
       },
-      { 
-        field: "godown_name", 
-        headerName: "Godown", 
+      {
+        field: "godown_name",
+        headerName: "Godown",
         width: 150,
-        valueGetter: (params) => params.row.godownDetails?.godown || ''
+        valueGetter: (params) => params.row.godownDetails?.godown || "",
       },
-      { field: "total_qty", headerName: "Total Qty", width: 120, type: "number" },
-      { field: "total_amount", headerName: "Total Amount", width: 150, type: "currency" },
+      {
+        field: "total_qty",
+        headerName: "Total Qty",
+        width: 120,
+        type: "number",
+      },
+      {
+        field: "total_amount",
+        headerName: "Total Amount",
+        width: 150,
+        type: "currency",
+      },
     ],
     detailColumns: [
-      { field: "item", headerName: "Item", width: 200, valueGetter: (params) => params.row.itemDetails?.item || '' },
+      {
+        field: "item",
+        headerName: "Item",
+        width: 200,
+        valueGetter: (params) => params.row.itemDetails?.item || "",
+      },
       { field: "qty", headerName: "Qty", width: 100, type: "number" },
       { field: "rate", headerName: "Rate", width: 100, type: "currency" },
-      { field: "gross_amount", headerName: "Gross Amount", width: 150, type: "currency" },
+      {
+        field: "gross_amount",
+        headerName: "Gross Amount",
+        width: 150,
+        type: "currency",
+      },
       { field: "st_rate", headerName: "ST Rate", width: 100, type: "number" },
-      { field: "st_amount", headerName: "ST Amount", width: 150, type: "currency" },
-      { field: "additional_tax", headerName: "Additional Tax", width: 150, type: "currency" },
-      { field: "camt", headerName: "Amount", width: 150, type: "currency" }
+      {
+        field: "st_amount",
+        headerName: "ST Amount",
+        width: 150,
+        type: "currency",
+      },
+      {
+        field: "additional_tax",
+        headerName: "Additional Tax",
+        width: 150,
+        type: "currency",
+      },
+      { field: "camt", headerName: "Amount", width: 150, type: "currency" },
     ],
     summaryFields: [
       { field: "total_qty", label: "Total Quantity", type: "number" },
-      { field: "total_gross_amount", label: "Total Gross Amount", type: "currency" },
+      {
+        field: "total_gross_amount",
+        label: "Total Gross Amount",
+        type: "currency",
+      },
       { field: "total_tax", label: "Total Tax", type: "currency" },
-      { field: "total_amount", label: "Total Net Amount", type: "currency" }
+      { field: "total_amount", label: "Total Net Amount", type: "currency" },
     ],
     exportOptions: {
       pdf: true,
       excel: true,
-      csv: true
-    }
+      csv: true,
+    },
   },
   purchaseReturn: {
     title: "Purchase Return Report",
@@ -88,75 +122,109 @@ export const REPORT_CONFIG = {
         name: "dateFrom",
         label: "From Date",
         type: "date",
-        required: true
+        required: true,
       },
       {
         name: "dateTo",
         label: "To Date",
         type: "date",
-        required: true
+        required: true,
       },
       {
         name: "vendor",
-        nameKey:"acname",
-        valueKey:"acno",
+        nameKey: "acname",
+        valueKey: "acno",
         label: "Vendor",
         type: "select",
         options: "vendors",
         apiEndpoint: "/api/accounts/acno?macno=006",
-        clearable: true
+        clearable: true,
       },
       {
         name: "godown",
-        nameKey:"godown",
+        nameKey: "godown",
         label: "Godown",
         type: "select",
         options: "godowns",
         apiEndpoint: "/api/setup/godowns",
-        clearable: true
-      }
+        clearable: true,
+      },
     ],
     columns: [
       { field: "dateD", headerName: "Date", width: 120, type: "date" },
       { field: "vr_no", headerName: "Voucher No", width: 120 },
       { field: "invoice_no", headerName: "Invoice No", width: 150 },
-      { 
-        field: "vendor_name", 
-        headerName: "Vendor", 
+      {
+        field: "vendor_name",
+        headerName: "Vendor",
         width: 200,
-        valueGetter: (params) => params.row.acno?.acname || ''
+        valueGetter: (params) => params.row.acno?.acname || "",
       },
-      { 
-        field: "godown_name", 
-        headerName: "Godown", 
+      {
+        field: "godown_name",
+        headerName: "Godown",
         width: 150,
-        valueGetter: (params) => params.row.godownDetails?.godown || ''
+        valueGetter: (params) => params.row.godownDetails?.godown || "",
       },
-      { field: "total_qty", headerName: "Total Qty", width: 120, type: "number" },
-      { field: "total_amount", headerName: "Total Amount", width: 150, type: "currency" },
-      { field: "rmk", headerName: "Narration", width: 200 }
+      {
+        field: "total_qty",
+        headerName: "Total Qty",
+        width: 120,
+        type: "number",
+      },
+      {
+        field: "total_amount",
+        headerName: "Total Amount",
+        width: 150,
+        type: "currency",
+      },
+      { field: "rmk", headerName: "Narration", width: 200 },
     ],
     detailColumns: [
-      { field: "item", headerName: "Item", width: 200, valueGetter: (params) => params.row.itemDetails?.item || '' },
+      {
+        field: "item",
+        headerName: "Item",
+        width: 200,
+        valueGetter: (params) => params.row.itemDetails?.item || "",
+      },
       { field: "qty", headerName: "Qty", width: 100, type: "number" },
       { field: "rate", headerName: "Rate", width: 100, type: "currency" },
-      { field: "gross_amount", headerName: "Gross Amount", width: 150, type: "currency" },
+      {
+        field: "gross_amount",
+        headerName: "Gross Amount",
+        width: 150,
+        type: "currency",
+      },
       { field: "st_rate", headerName: "ST Rate", width: 100, type: "number" },
-      { field: "st_amount", headerName: "ST Amount", width: 150, type: "currency" },
-      { field: "additional_tax", headerName: "Additional Tax", width: 150, type: "currency" },
-      { field: "amount", headerName: "Amount", width: 150, type: "currency" }
+      {
+        field: "st_amount",
+        headerName: "ST Amount",
+        width: 150,
+        type: "currency",
+      },
+      {
+        field: "additional_tax",
+        headerName: "Additional Tax",
+        width: 150,
+        type: "currency",
+      },
+      { field: "amount", headerName: "Amount", width: 150, type: "currency" },
     ],
     summaryFields: [
       { field: "total_qty", label: "Total Quantity", type: "number" },
-      { field: "total_gross_amount", label: "Total Gross Amount", type: "currency" },
+      {
+        field: "total_gross_amount",
+        label: "Total Gross Amount",
+        type: "currency",
+      },
       { field: "total_tax", label: "Total Tax", type: "currency" },
-      { field: "total_amount", label: "Total Net Amount", type: "currency" }
+      { field: "total_amount", label: "Total Net Amount", type: "currency" },
     ],
     exportOptions: {
       pdf: true,
       excel: true,
-      csv: true
-    }
+      csv: true,
+    },
   },
   sale: {
     title: "Sales Report",
@@ -167,75 +235,109 @@ export const REPORT_CONFIG = {
         name: "dateFrom",
         label: "From Date",
         type: "date",
-        required: true
+        required: true,
       },
       {
         name: "dateTo",
         label: "To Date",
         type: "date",
-        required: true
+        required: true,
       },
       {
         name: "customer",
         label: "Customer",
         type: "select",
-        nameKey:"acname",
-        valueKey:"acno",
+        nameKey: "acname",
+        valueKey: "acno",
         options: "customers",
         apiEndpoint: "/api/accounts/acno?macno=001",
-        clearable: true
+        clearable: true,
       },
       {
         name: "godown",
         label: "Godown",
-        nameKey:"godown",
+        nameKey: "godown",
         type: "select",
         options: "godowns",
         apiEndpoint: "/api/setup/godowns",
-        clearable: true
-      }
+        clearable: true,
+      },
     ],
     columns: [
       { field: "dateD", headerName: "Date", width: 120, type: "date" },
       { field: "vr_no", headerName: "Voucher No", width: 120 },
       { field: "invoice_no", headerName: "Invoice No", width: 150 },
-      { 
-        field: "customer_name", 
-        headerName: "Customer", 
+      {
+        field: "customer_name",
+        headerName: "Customer",
         width: 200,
-        valueGetter: (params) => params.row.acno?.acname || ''
+        valueGetter: (params) => params.row.acno?.acname || "",
       },
-      { 
-        field: "godown_name", 
-        headerName: "Godown", 
+      {
+        field: "godown_name",
+        headerName: "Godown",
         width: 150,
-        valueGetter: (params) => params.row.godownDetails?.godown || ''
+        valueGetter: (params) => params.row.godownDetails?.godown || "",
       },
-      { field: "total_qty", headerName: "Total Qty", width: 120, type: "number" },
-      { field: "total_amount", headerName: "Total Amount", width: 150, type: "currency" },
-      { field: "rmk", headerName: "Narration", width: 200 }
+      {
+        field: "total_qty",
+        headerName: "Total Qty",
+        width: 120,
+        type: "number",
+      },
+      {
+        field: "total_amount",
+        headerName: "Total Amount",
+        width: 150,
+        type: "currency",
+      },
+      { field: "rmk", headerName: "Narration", width: 200 },
     ],
     detailColumns: [
-      { field: "item", headerName: "Item", width: 200, valueGetter: (params) => params.row.itemDetails?.item || '' },
+      {
+        field: "item",
+        headerName: "Item",
+        width: 200,
+        valueGetter: (params) => params.row.itemDetails?.item || "",
+      },
       { field: "qty", headerName: "Qty", width: 100, type: "number" },
       { field: "rate", headerName: "Rate", width: 100, type: "currency" },
-      { field: "gross_amount", headerName: "Gross Amount", width: 150, type: "currency" },
+      {
+        field: "gross_amount",
+        headerName: "Gross Amount",
+        width: 150,
+        type: "currency",
+      },
       { field: "st_rate", headerName: "ST Rate", width: 100, type: "number" },
-      { field: "st_amount", headerName: "ST Amount", width: 150, type: "currency" },
-      { field: "additional_tax", headerName: "Additional Tax", width: 150, type: "currency" },
-      { field: "amount", headerName: "Amount", width: 150, type: "currency" }
+      {
+        field: "st_amount",
+        headerName: "ST Amount",
+        width: 150,
+        type: "currency",
+      },
+      {
+        field: "additional_tax",
+        headerName: "Additional Tax",
+        width: 150,
+        type: "currency",
+      },
+      { field: "amount", headerName: "Amount", width: 150, type: "currency" },
     ],
     summaryFields: [
       { field: "total_qty", label: "Total Quantity", type: "number" },
-      { field: "total_gross_amount", label: "Total Gross Amount", type: "currency" },
+      {
+        field: "total_gross_amount",
+        label: "Total Gross Amount",
+        type: "currency",
+      },
       { field: "total_tax", label: "Total Tax", type: "currency" },
-      { field: "total_amount", label: "Total Net Amount", type: "currency" }
+      { field: "total_amount", label: "Total Net Amount", type: "currency" },
     ],
     exportOptions: {
       pdf: true,
       excel: true,
-      csv: true
-    }
+      csv: true,
+    },
   },
   saleReturn: {
     title: "Sales Return Report",
@@ -246,75 +348,109 @@ export const REPORT_CONFIG = {
         name: "dateFrom",
         label: "From Date",
         type: "date",
-        required: true
+        required: true,
       },
       {
         name: "dateTo",
         label: "To Date",
         type: "date",
-        required: true
+        required: true,
       },
       {
         name: "customer",
         label: "Customer",
         type: "select",
-        nameKey:"acname",
-        valueKey:"acno",
+        nameKey: "acname",
+        valueKey: "acno",
         options: "customers",
         apiEndpoint: "/api/accounts/acno?macno=001",
-        clearable: true
+        clearable: true,
       },
       {
         name: "godown",
         label: "Godown",
         type: "select",
-        nameKey:"godown",
+        nameKey: "godown",
         options: "godowns",
         apiEndpoint: "/api/setup/godowns",
-        clearable: true
-      }
+        clearable: true,
+      },
     ],
     columns: [
       { field: "dateD", headerName: "Date", width: 120, type: "date" },
       { field: "vr_no", headerName: "Voucher No", width: 120 },
       { field: "invoice_no", headerName: "Invoice No", width: 150 },
-      { 
-        field: "customer_name", 
-        headerName: "Customer", 
+      {
+        field: "customer_name",
+        headerName: "Customer",
         width: 200,
-        valueGetter: (params) => params.row.acno?.acname || ''
+        valueGetter: (params) => params.row.acno?.acname || "",
       },
-      { 
-        field: "godown_name", 
-        headerName: "Godown", 
+      {
+        field: "godown_name",
+        headerName: "Godown",
         width: 150,
-        valueGetter: (params) => params.row.godownDetails?.godown || ''
+        valueGetter: (params) => params.row.godownDetails?.godown || "",
       },
-      { field: "total_qty", headerName: "Total Qty", width: 120, type: "number" },
-      { field: "total_amount", headerName: "Total Amount", width: 150, type: "currency" },
-      { field: "rmk", headerName: "Narration", width: 200 }
+      {
+        field: "total_qty",
+        headerName: "Total Qty",
+        width: 120,
+        type: "number",
+      },
+      {
+        field: "total_amount",
+        headerName: "Total Amount",
+        width: 150,
+        type: "currency",
+      },
+      { field: "rmk", headerName: "Narration", width: 200 },
     ],
     detailColumns: [
-      { field: "item", headerName: "Item", width: 200, valueGetter: (params) => params.row.itemDetails?.item || '' },
+      {
+        field: "item",
+        headerName: "Item",
+        width: 200,
+        valueGetter: (params) => params.row.itemDetails?.item || "",
+      },
       { field: "qty", headerName: "Qty", width: 100, type: "number" },
       { field: "rate", headerName: "Rate", width: 100, type: "currency" },
-      { field: "gross_amount", headerName: "Gross Amount", width: 150, type: "currency" },
+      {
+        field: "gross_amount",
+        headerName: "Gross Amount",
+        width: 150,
+        type: "currency",
+      },
       { field: "st_rate", headerName: "ST Rate", width: 100, type: "number" },
-      { field: "st_amount", headerName: "ST Amount", width: 150, type: "currency" },
-      { field: "additional_tax", headerName: "Additional Tax", width: 150, type: "currency" },
-      { field: "amount", headerName: "Amount", width: 150, type: "currency" }
+      {
+        field: "st_amount",
+        headerName: "ST Amount",
+        width: 150,
+        type: "currency",
+      },
+      {
+        field: "additional_tax",
+        headerName: "Additional Tax",
+        width: 150,
+        type: "currency",
+      },
+      { field: "amount", headerName: "Amount", width: 150, type: "currency" },
     ],
     summaryFields: [
       { field: "total_qty", label: "Total Quantity", type: "number" },
-      { field: "total_gross_amount", label: "Total Gross Amount", type: "currency" },
+      {
+        field: "total_gross_amount",
+        label: "Total Gross Amount",
+        type: "currency",
+      },
       { field: "total_tax", label: "Total Tax", type: "currency" },
-      { field: "total_amount", label: "Total Net Amount", type: "currency" }
+      { field: "total_amount", label: "Total Net Amount", type: "currency" },
     ],
     exportOptions: {
       pdf: true,
       excel: true,
-      csv: true
-    }
+      csv: true,
+    },
   },
   stock: {
     title: "Stock Report",
@@ -324,131 +460,140 @@ export const REPORT_CONFIG = {
       {
         name: "category",
         label: "Category",
-        nameKey:"ic_name",
+        nameKey: "ic_name",
         type: "select",
         options: "itemCategories",
         apiEndpoint: "/api/setup/item_categories",
-        clearable: true
+        clearable: true,
       },
       {
         name: "showZero",
         label: "Show Zero Stock",
         type: "checkbox",
-        default: false
-      }
+        default: false,
+      },
     ],
     columns: [
       { field: "item", headerName: "Item", width: 250 },
       { field: "sku", headerName: "SKU", width: 150 },
-      { 
-        field: "category", 
-        headerName: "Category", 
+      {
+        field: "category",
+        headerName: "Category",
         width: 200,
-        valueGetter: (params) => params.row.itemCategories?.ic_name || ''
+        valueGetter: (params) => params.row.itemCategories?.ic_name || "",
       },
-      { field: "stock", headerName: "Current Stock", width: 150, type: "number" },
+      {
+        field: "stock",
+        headerName: "Current Stock",
+        width: 150,
+        type: "number",
+      },
       { field: "price", headerName: "Price", width: 120, type: "currency" },
-      { 
-        field: "value", 
-        headerName: "Stock Value", 
-        width: 150, 
+      {
+        field: "value",
+        headerName: "Stock Value",
+        width: 150,
         type: "currency",
-        valueGetter: (params) => (params.row.stock || 0) * (params.row.price || 0)
-      }
+        valueGetter: (params) =>
+          (params.row.stock || 0) * (params.row.price || 0),
+      },
     ],
     summaryFields: [
       { field: "total_items", label: "Total Items", type: "number" },
       { field: "total_stock", label: "Total Stock", type: "number" },
-      { field: "total_value", label: "Total Stock Value", type: "currency" }
+      { field: "total_value", label: "Total Stock Value", type: "currency" },
     ],
     exportOptions: {
       pdf: true,
       excel: true,
-      csv: true
-    }
+      csv: true,
+    },
   },
   stockActivity: {
     title: "Stock Activity Report",
-    description: "Movement of stock items over time",
+    description: "Product-wise stock movement analysis",
     apiEndpoint: "/api/reports/stockActivity",
     filters: [
       {
         name: "dateFrom",
         label: "From Date",
         type: "date",
-        required: true
+        required: true,
       },
       {
         name: "dateTo",
         label: "To Date",
         type: "date",
-        required: true
+        required: true,
       },
       {
-        name: "item",
-        label: "Item",
-        nameKey:"item",
-        valueKey:"itcd",
+        name: "product",
+        label: "Product",
         type: "select",
-        options: "items",
+        options: "products",
         apiEndpoint: "/api/setup/items",
-        clearable: true
+        valueKey: "itcd",
+        nameKey: "item",
+        clearable: true,
       },
       {
         name: "category",
         label: "Category",
-        namekey:"ic_name",
         type: "select",
         options: "itemCategories",
         apiEndpoint: "/api/setup/item_categories",
-        clearable: true
+        nameKey: "ic_name",
+        clearable: true,
       },
-      {
-        name: "godown",
-        label: "Godown",
-        nameKey:"godown",
-        type: "select",
-        options: "godowns",
-        apiEndpoint: "/api/setup/godowns",
-        clearable: true
-      },
-      {
-        name: "transactionType",
-        label: "Transaction Type",
-        type: "select",
-        options: [
-          { value: "all", label: "All" },
-          { value: "purchase", label: "Purchase" },
-          { value: "sale", label: "Sale" },
-          { value: "purchaseReturn", label: "Purchase Return" },
-          { value: "saleReturn", label: "Sale Return" }
-        ],
-        default: "all"
-      }
     ],
     columns: [
-      { field: "date", headerName: "Date", width: 120, type: "date" },
-      { field: "voucher_no", headerName: "Voucher No", width: 120 },
-      { field: "type", headerName: "Type", width: 120 },
-      { field: "item", headerName: "Item", width: 200, valueGetter: (params) => params.row.itemDetails?.item || '' },
-      { field: "qty", headerName: "Quantity", width: 120, type: "number" },
-      { field: "rate", headerName: "Rate", width: 120, type: "currency" },
-      { field: "amount", headerName: "Amount", width: 150, type: "currency" },
-      { field: "godown", headerName: "Godown", width: 150, valueGetter: (params) => params.row.godownDetails?.godown || '' },
-      { field: "party", headerName: "Party", width: 200, valueGetter: (params) => params.row.pycd?.acname || '' },
-      { field: "narration", headerName: "Narration", width: 200 }
-    ],
-    summaryFields: [
-      { field: "total_in", label: "Total In Quantity", type: "number" },
-      { field: "total_out", label: "Total Out Quantity", type: "number" },
-      { field: "net_movement", label: "Net Movement", type: "number" },
-      { field: "total_amount", label: "Total Amount", type: "currency" }
+      { field: "product_code", headerName: "Product Code", width: 120 },
+      { field: "product_name", headerName: "Product Name", width: 200 },
+      { field: "category", headerName: "Category", width: 150 },
+      {
+        field: "opening_stock",
+        headerName: "OPENING STOCK",
+        width: 120,
+        type: "number",
+      },
+      {
+        field: "purchase_qty",
+        headerName: "PURCHASE QTY",
+        width: 120,
+        type: "number",
+      },
+      {
+        field: "purchase_ret_qty",
+        headerName: "PURCAHSE RET QTY",
+        width: 140,
+        type: "number",
+      },
+      {
+        field: "total_qty",
+        headerName: "TOTAL QTY",
+        width: 120,
+        type: "number",
+      },
+      { field: "sale_qty", headerName: "SALE QTY", width: 120, type: "number" },
+      {
+        field: "sale_ret_qty",
+        headerName: "SALE RET QTY",
+        width: 140,
+        type: "number",
+      },
+      { field: "pos_qty", headerName: "POS QTY", width: 120, type: "number" },
+      {
+        field: "stock_balance",
+        headerName: "STOCK BALANCE",
+        width: 140,
+        type: "number",
+      },
     ],
     exportOptions: {
       pdf: true,
       excel: true,
-      csv: true
-    }
+      csv: true,
+    },
   },
   tradingMargin: {
     title: "Trading Margin Report",
@@ -459,58 +604,294 @@ export const REPORT_CONFIG = {
         name: "dateFrom",
         label: "From Date",
         type: "date",
-        required: true
+        required: true,
       },
       {
         name: "dateTo",
         label: "To Date",
         type: "date",
-        required: true
+        required: true,
       },
       {
         name: "item",
-        valueKey:"itcd",
-        nameKey:"item",
+        valueKey: "itcd",
+        nameKey: "item",
         label: "Item",
         type: "select",
         options: "items",
         apiEndpoint: "/api/setup/items",
-        clearable: true
+        clearable: true,
       },
       {
         name: "category",
         label: "Category",
-        nameKey:"ic_name",
+        nameKey: "ic_name",
         type: "select",
         options: "itemCategories",
         apiEndpoint: "/api/setup/item_categories",
-        clearable: true
-      }
+        clearable: true,
+      },
     ],
     columns: [
-      { field: "item", headerName: "Item", width: 250, valueGetter: (params) => params.row.itemDetails?.item || '' },
-      { field: "category", headerName: "Category", width: 200, valueGetter: (params) => params.row.itemDetails?.itemCategories?.ic_name || '' },
-      { field: "purchase_qty", headerName: "Purchase Qty", width: 120, type: "number" },
-      { field: "purchase_amount", headerName: "Purchase Amount", width: 150, type: "currency" },
-      { field: "avg_purchase_rate", headerName: "Avg Purchase Rate", width: 150, type: "currency" },
+      {
+        field: "item",
+        headerName: "Item",
+        width: 250,
+        valueGetter: (params) => params.row.itemDetails?.item || "",
+      },
+      {
+        field: "category",
+        headerName: "Category",
+        width: 200,
+        valueGetter: (params) =>
+          params.row.itemDetails?.itemCategories?.ic_name || "",
+      },
+      {
+        field: "purchase_qty",
+        headerName: "Purchase Qty",
+        width: 120,
+        type: "number",
+      },
+      {
+        field: "purchase_amount",
+        headerName: "Purchase Amount",
+        width: 150,
+        type: "currency",
+      },
+      {
+        field: "avg_purchase_rate",
+        headerName: "Avg Purchase Rate",
+        width: 150,
+        type: "currency",
+      },
       { field: "sale_qty", headerName: "Sale Qty", width: 120, type: "number" },
-      { field: "sale_amount", headerName: "Sale Amount", width: 150, type: "currency" },
-      { field: "avg_sale_rate", headerName: "Avg Sale Rate", width: 150, type: "currency" },
+      {
+        field: "sale_amount",
+        headerName: "Sale Amount",
+        width: 150,
+        type: "currency",
+      },
+      {
+        field: "avg_sale_rate",
+        headerName: "Avg Sale Rate",
+        width: 150,
+        type: "currency",
+      },
       { field: "margin", headerName: "Margin", width: 120, type: "currency" },
-      { field: "margin_percent", headerName: "Margin %", width: 120, type: "percent" }
+      {
+        field: "margin_percent",
+        headerName: "Margin %",
+        width: 120,
+        type: "percent",
+      },
     ],
     summaryFields: [
-      { field: "total_purchase_qty", label: "Total Purchase Qty", type: "number" },
-      { field: "total_purchase_amount", label: "Total Purchase Amount", type: "currency" },
+      {
+        field: "total_purchase_qty",
+        label: "Total Purchase Qty",
+        type: "number",
+      },
+      {
+        field: "total_purchase_amount",
+        label: "Total Purchase Amount",
+        type: "currency",
+      },
       { field: "total_sale_qty", label: "Total Sale Qty", type: "number" },
-      { field: "total_sale_amount", label: "Total Sale Amount", type: "currency" },
+      {
+        field: "total_sale_amount",
+        label: "Total Sale Amount",
+        type: "currency",
+      },
       { field: "total_margin", label: "Total Margin", type: "currency" },
-      { field: "avg_margin_percent", label: "Avg Margin %", type: "percent" }
+      { field: "avg_margin_percent", label: "Avg Margin %", type: "percent" },
     ],
     exportOptions: {
       pdf: true,
       excel: true,
-      csv: true
-    }
-  }
+      csv: true,
+    },
+  },
+  stockLedger: {
+    title: "Stock Ledger Report",
+    description: "Detailed movement of stock items over time",
+    apiEndpoint: "/api/reports/stockLedger",
+    filters: [
+      {
+        name: "dateFrom",
+        label: "From Date",
+        type: "date",
+        required: true,
+      },
+      {
+        name: "dateTo",
+        label: "To Date",
+        type: "date",
+        required: true,
+      },
+      {
+        name: "item",
+        label: "Item",
+        type: "select",
+        nameKey: "item",
+        valueKey: "itcd",
+        options: "items",
+        apiEndpoint: "/api/setup/items",
+        required: true,
+      },
+      {
+        name: "godown",
+        label: "Godown",
+        type: "select",
+        nameKey: "godown",
+        options: "godowns",
+        apiEndpoint: "/api/setup/godowns",
+        clearable: true,
+      },
+    ],
+    columns: [
+      { field: "date", headerName: "Date", width: 120, type: "date" },
+      { field: "transaction_no", headerName: "Trans No", width: 120 },
+      { field: "transaction_type", headerName: "Trans Type", width: 150 },
+      { field: "vendor_customer", headerName: "Vendor/Customer", width: 200 },
+      {
+        field: "opening_qty",
+        headerName: "Qty Opening",
+        width: 120,
+        type: "number",
+      },
+      { field: "qty_in", headerName: "Qty In", width: 100, type: "number" },
+      { field: "qty_out", headerName: "Qty Out", width: 100, type: "number" },
+      {
+        field: "closing_qty",
+        headerName: "Qty Closing",
+        width: 120,
+        type: "number",
+      },
+    ],
+    summaryFields: [
+      { field: "total_in", label: "Total In", type: "number" },
+      { field: "total_out", label: "Total Out", type: "number" },
+      { field: "net_movement", label: "Net Movement", type: "number" },
+    ],
+    exportOptions: {
+      pdf: true,
+      excel: true,
+      csv: true,
+    },
+  },
+  posTransactions: {
+    title: "POS Transactions Report",
+    description: "Detailed report of all Point of Sale transactions",
+    apiEndpoint: "/api/reports/posTransactions",
+    filters: [
+      {
+        name: "dateFrom",
+        label: "From Date",
+        type: "date",
+        required: true,
+      },
+      {
+        name: "dateTo",
+        label: "To Date",
+        type: "date",
+        required: true,
+      },
+      {
+        name: "customer",
+        label: "Customer",
+        type: "select",
+        nameKey: "acname",
+        valueKey: "acno",
+        options: "customers",
+        apiEndpoint: "/api/accounts/acno?macno=001",
+        clearable: true,
+      },
+      {
+        name: "paymentMode",
+        label: "Payment Mode",
+        type: "select",
+        options: [
+          { value: "all", label: "All" },
+          { value: "cash", label: "Cash" },
+          { value: "card", label: "Card" },
+          { value: "upi", label: "UPI" },
+          { value: "credit", label: "Credit" },
+        ],
+        default: "all",
+      },
+    ],
+    columns: [
+      { field: "dateD", headerName: "Date", width: 120, type: "date" },
+      { field: "vr_no", headerName: "Voucher No", width: 120 },
+      { field: "invoice_no", headerName: "Invoice No", width: 150 },
+      {
+        field: "customer_name",
+        headerName: "Customer",
+        width: 200,
+        valueGetter: (params) => params.row.acno?.acname || "Walk-in Customer",
+      },
+      { field: "payment_mode", headerName: "Payment Mode", width: 120 },
+      {
+        field: "total_qty",
+        headerName: "Total Qty",
+        width: 120,
+        type: "number",
+      },
+      {
+        field: "total_amount",
+        headerName: "Total Amount",
+        width: 150,
+        type: "currency",
+      },
+      {
+        field: "discount",
+        headerName: "Discount",
+        width: 120,
+        type: "currency",
+      },
+      {
+        field: "net_amount",
+        headerName: "Net Amount",
+        width: 150,
+        type: "currency",
+      },
+    ],
+    detailColumns: [
+      {
+        field: "item",
+        headerName: "Item",
+        width: 200,
+        valueGetter: (params) => params.row.itemDetails?.item || "",
+      },
+      { field: "qty", headerName: "Qty", width: 100, type: "number" },
+      { field: "rate", headerName: "Rate", width: 100, type: "currency" },
+      { field: "amount", headerName: "Amount", width: 150, type: "currency" },
+      {
+        field: "discount",
+        headerName: "Line Discount",
+        width: 150,
+        type: "currency",
+      },
+    ],
+    summaryFields: [
+      {
+        field: "total_transactions",
+        label: "Total Transactions",
+        type: "number",
+      },
+      { field: "total_qty", label: "Total Quantity", type: "number" },
+      { field: "total_amount", label: "Total Amount", type: "currency" },
+      { field: "total_discount", label: "Total Discount", type: "currency" },
+      {
+        field: "total_net_amount",
+        label: "Total Net Amount",
+        type: "currency",
+      },
+    ],
+    exportOptions: {
+      pdf: true,
+      excel: true,
+      csv: true,
+    },
+  },
 };

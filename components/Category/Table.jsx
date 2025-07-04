@@ -424,6 +424,7 @@ export default function VoucherTable({
   refreshTrigger = 0,
   isLoading = true,
   category = "",
+  onSuccess
 }) {
   const TABLE_FIELDS = VOUCHER_CONFIG[type]?.tableFields || [];
   const [data, setData] = useState([]);
@@ -877,6 +878,7 @@ export default function VoucherTable({
           type={type}
           category={category}
           editModes={isEditModal}
+          onSuccess={onSuccess}
           onCloseEdit={() => {
             setIsEditModal(false);
             setSelectedRow(null); // Clear selectedRow to avoid stale data

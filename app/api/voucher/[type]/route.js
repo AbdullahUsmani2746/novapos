@@ -131,7 +131,12 @@ export async function POST(req, { params }) {
       master.time = masterDateTime; // Format time as HH:MM:SS
       master.check_date = masterCheckDateTime; // Format check_date as YYYY-MM-DD HH:MM:SS
 
-      if (tran_code === 4 || tran_code === 6 || tran_code === 9 ||tran_code === 10) {
+      if (
+        tran_code === 4 ||
+        tran_code === 6 ||
+        tran_code === 9 ||
+        tran_code === 10
+      ) {
         master.godown = parseOptionalInt(master.godown);
       } // Format check_date as YYYY-MM-DD HH:MM:SS
     } else if (tran_code === 3) {
@@ -140,6 +145,28 @@ export async function POST(req, { params }) {
       masterDateTime = new Date(`${master.dateD}`);
       console.log("masterDateTime:", masterDateTime);
       master.dateD = masterDateTime; // Format date as YYYY-MM-DD    master.check_date = masterDateTime; // Format check_date as YYYY-MM-DD HH:MM:SS
+    }
+
+    // Add this validation before creating the master record (around line 70)
+    if ([9, 10].includes(tran_code)) {
+      for (const line of lines) {
+        const originalQty = parseFloat(line.original_qty || 0);
+        const returnQty = parseFloat(line.qty || 0);
+
+        if (returnQty > originalQty) {
+          return NextResponse.json(
+            {
+              message: `Cannot return more than original quantity for item ${line.itcd}`,
+              details: {
+                itemId: line.itcd,
+                originalQty,
+                returnQty,
+              },
+            },
+            { status: 400 }
+          );
+        }
+      }
     }
     console.log("master after:", master);
 
@@ -183,6 +210,11 @@ export async function POST(req, { params }) {
           const itemValue = parseOptionalInt(line.itcd);
           if (itemValue !== undefined) {
             base.itcd = itemValue;
+          }
+
+          // Add original_qty for returns (tran_code 9 and 10)
+          if ([9, 10].includes(tran_code) && line.original_qty) {
+            base.original_qty = parseFloat(line.original_qty) || 0;
           }
         }
         console.log("base:", base);
@@ -237,7 +269,7 @@ export async function POST(req, { params }) {
       console.log("ded:", ded);
     }
 
-    if ([1, 2, 4, 6,9,10].includes(tran_code)) {
+    if ([1, 2, 4, 6, 9, 10].includes(tran_code)) {
       let totalDamt = 0;
       let totalCamt = 0;
 
@@ -325,17 +357,17 @@ export async function PUT(req) {
         : parseInt(v);
 
     // Format date/times
-    console.log("Parsing dates...");
     if ([1, 2, 4, 6].includes(tran_code)) {
       let checkDateObj;
       const dateObj = new Date(`${master.dateD}T${master.time}`);
       if (master.check_date !== "") {
-      checkDateObj = new Date(`${master.check_date}T${master.time}`);
+        checkDateObj = new Date(`${master.check_date}T${master.time}`);
       }
 
       master.dateD = dateObj;
       master.time = dateObj;
       master.check_date = checkDateObj;
+
       if ([4, 6].includes(tran_code)) {
         master.godown = parseOptionalInt(master.godown);
       }
@@ -343,7 +375,7 @@ export async function PUT(req) {
       master.dateD = new Date(master.dateD);
     }
 
-    console.log("Updating master:", master);
+    // Update master
     await prisma.transactionsMaster.update({
       where: { tran_id },
       data: {
@@ -354,14 +386,8 @@ export async function PUT(req) {
     });
 
     // Update lines
-    console.log(`Updating ${lines?.length} lines...`);
     for (const line of lines) {
-      const {
-        id, // extract and exclude from update data
-        tran_id,
-        acno,
-        ...rest
-      } = line;
+      const { id, tran_id, acno, ...rest } = line;
 
       const updatedLine = {
         ...rest,
@@ -375,21 +401,52 @@ export async function PUT(req) {
         acno: tran_code === 4 ? "0004" : line.acno,
       };
 
-      console.log("Updating line:", updatedLine);
+      // Preserve original_qty for returns if it exists
+      if ([9, 10].includes(tran_code)) {
+        const existingLine = await prisma.transactions.findUnique({
+          where: { id: line.id },
+          select: { original_qty: true },
+        });
+
+        if (existingLine?.original_qty) {
+          updatedLine.original_qty = existingLine.original_qty;
+        } else if (line.original_qty) {
+          updatedLine.original_qty = parseFloat(line.original_qty) || 0;
+        }
+      }
 
       try {
         await prisma.transactions.update({
-          where: { id: line.id },
+          where: { id },
           data: updatedLine,
         });
       } catch (err) {
-        console.error(`Failed to update line id ${line.id}`, err.message);
+        console.error(`Failed to update line id ${id}:`, err.message);
       }
+    }
+
+    // 🔥 Delete removed lines
+    const existingLines = await prisma.transactions.findMany({
+      where: {
+        tran_id,
+        sub_tran_id: { not: 3 }, // skip auto
+      },
+      select: { id: true },
+    });
+
+    const incomingLineIds = lines.map((line) => line.id).filter(Boolean);
+    const linesToDelete = existingLines
+      .map((l) => l.id)
+      .filter((id) => !incomingLineIds.includes(id));
+
+    if (linesToDelete.length > 0) {
+      await prisma.transactions.deleteMany({
+        where: { id: { in: linesToDelete } },
+      });
     }
 
     // Update deductions
     if (deductions?.length > 0) {
-      console.log(`Updating ${deductions.length} deductions...`);
       for (const ded of deductions) {
         const updatedDed = {
           ...ded,
@@ -399,20 +456,41 @@ export async function PUT(req) {
           currency: parseOptionalInt(ded.currency),
         };
 
-        console.log("Updating deduction:", updatedDed);
-
         try {
           await prisma.transactions.update({
             where: { id: ded.id },
             data: updatedDed,
           });
         } catch (err) {
-          console.error(`Failed to update deduction id ${ded.id}`, err.message);
+          console.error(
+            `Failed to update deduction id ${ded.id}:`,
+            err.message
+          );
         }
       }
     }
 
-    // Auto Entry update logic
+    // 🔥 Delete removed deductions
+    const existingDeductions = await prisma.transactions.findMany({
+      where: {
+        tran_id,
+        sub_tran_id: 2,
+      },
+      select: { id: true },
+    });
+
+    const incomingDedIds = (deductions || []).map((d) => d.id).filter(Boolean);
+    const dedToDelete = existingDeductions
+      .map((d) => d.id)
+      .filter((id) => !incomingDedIds.includes(id));
+
+    if (dedToDelete.length > 0) {
+      await prisma.transactions.deleteMany({
+        where: { id: { in: dedToDelete } },
+      });
+    }
+
+    // Auto Entry (sub_tran_id: 3)
     if ([1, 2, 4, 6].includes(tran_code)) {
       let totalDamt = 0;
       let totalCamt = 0;
@@ -440,7 +518,6 @@ export async function PUT(req) {
           ? totalDamt
           : 0;
 
-      console.log("Looking for auto entry...");
       const autoEntry = await prisma.transactions.findFirst({
         where: { tran_id, sub_tran_id: 3 },
       });
@@ -452,7 +529,6 @@ export async function PUT(req) {
           narration1: "Auto Entry",
           acno: master.acno || null,
         };
-        console.log("Updating auto entry:", autoUpdate);
 
         try {
           await prisma.transactions.update({

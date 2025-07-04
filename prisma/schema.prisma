@@ -339,6 +339,7 @@ model Transactions {
   damt               Float?
   camt               Float?
   qty                Float?
+  original_qty       Float?             // Add this line to track original quantity for returns
   rate               Float?
   wht_rate           Float?
   st_rate            Float?

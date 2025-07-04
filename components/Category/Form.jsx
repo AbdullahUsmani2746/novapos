@@ -212,7 +212,8 @@ export default function VoucherForm({
   onClose,
   editMode = false,
   existingData = null,
-  onSuccess
+  onSuccess,
+  originalData, // Add this prop
 }) {
   const voucherConfig = VOUCHER_CONFIG[type] || {};
   const [masterData, setMasterData] = useState({});
@@ -323,7 +324,7 @@ export default function VoucherForm({
     const day = String(date.getUTCDate()).padStart(2, "0");
     const month = String(date.getUTCMonth() + 1).padStart(2, "0");
     const year = date.getUTCFullYear();
-    console.log(`${month}-${day}-${year}`)
+    console.log(`${month}-${day}-${year}`);
     return `${year}-${month}-${day}`;
   };
 
@@ -403,12 +404,42 @@ export default function VoucherForm({
       setDeductionLines(
         existingData.deductions?.length > 0 ? existingData.deductions : [{}]
       );
+    } else if (originalData) {
+      // Pre-fill with original data for returns
+      const mappedMaster = {
+        ...defaultMasterData,
+        pycd: String(originalData.pycd || ""),
+        godown: String(originalData.godown || ""),
+        dateD: formatDateToYYYYMMDD(new Date()),
+        time: formatTimeToHHMMSS(new Date()),
+        rmk: `Return for ${originalData.vr_no}`,
+        invoice_no: `RTN-${originalData.invoice_no}`,
+      };
+
+      const mappedLines = originalData.transactions
+        ?.filter((t) => t.sub_tran_id === 1) // Only main lines
+        ?.map((line) => ({
+          itcd: String(line.itcd || ""),
+          no_of_pack: Number(line.no_of_pack) || 0,
+          qty_per_pack: Number(line.qty_per_pack) || 0,
+          qty: 0, // Start with 0 for return
+          rate: Number(line.rate) || 0,
+          gross_amount: 0, // Will be calculated
+          st_rate: Number(line.st_rate) || 0,
+          st_amount: 0, // Will be calculated
+          additional_tax: Number(line.additional_tax) || 0,
+          camt: 0, // Will be calculated
+          original_qty: Number(line.qty) || 0, // Store original for validation
+        })) || [{}];
+
+      setMasterData(mappedMaster);
+      setMainLines(mappedLines.length > 0 ? mappedLines : [{}]);
     } else {
       setMasterData(defaultMasterData);
       setMainLines([{}]);
       setDeductionLines([{}]);
     }
-  }, [voucherConfig, editMode, existingData, fetchOptions]);
+  }, [voucherConfig, editMode, existingData, fetchOptions, originalData]);
 
   // Fetch next voucher number for create mode
   useEffect(() => {
@@ -448,7 +479,7 @@ export default function VoucherForm({
       {}
     );
 
-    console.log(calculatedTotals)
+    console.log(calculatedTotals);
 
     setTotals(calculatedTotals);
     prevMainLinesRef.current = JSON.stringify(mainLines);
@@ -457,44 +488,44 @@ export default function VoucherForm({
 
   // Event Handlers
   const handleMasterChange = async (name, value) => {
-  setMasterData((prev) => ({
-    ...prev,
-    [name]: value === "placeholder" ? "" : value,
-  }));
-
-  // Validate field if it has a validate function
-  const fieldConfig = voucherConfig.masterFields.find(
-    (f) => (f.formName || f.name) === name
-  );
-  if (fieldConfig?.validate) {
-    setLoading((prev) => ({ ...prev, validation: true }));
-    try {
-      const validationError = await fieldConfig.validate(value, {
-        ...masterData,
-        [name]: value, // Ensure the latest value is included
-      });
-      setErrors((prev) => ({
-        ...prev,
-        validation: { ...prev.validation, [name]: validationError },
-      }));
-    } catch (error) {
-      setErrors((prev) => ({
-        ...prev,
-        validation: {
-          ...prev.validation,
-          [name]: `Validation error: ${error.message}`,
-        },
-      }));
-    } finally {
-      setLoading((prev) => ({ ...prev, validation: false }));
-    }
-  } else {
-    setErrors((prev) => ({
+    setMasterData((prev) => ({
       ...prev,
-      validation: { ...prev.validation, [name]: null },
+      [name]: value === "placeholder" ? "" : value,
     }));
-  }
-}
+
+    // Validate field if it has a validate function
+    const fieldConfig = voucherConfig.masterFields.find(
+      (f) => (f.formName || f.name) === name
+    );
+    if (fieldConfig?.validate) {
+      setLoading((prev) => ({ ...prev, validation: true }));
+      try {
+        const validationError = await fieldConfig.validate(value, {
+          ...masterData,
+          [name]: value, // Ensure the latest value is included
+        });
+        setErrors((prev) => ({
+          ...prev,
+          validation: { ...prev.validation, [name]: validationError },
+        }));
+      } catch (error) {
+        setErrors((prev) => ({
+          ...prev,
+          validation: {
+            ...prev.validation,
+            [name]: `Validation error: ${error.message}`,
+          },
+        }));
+      } finally {
+        setLoading((prev) => ({ ...prev, validation: false }));
+      }
+    } else {
+      setErrors((prev) => ({
+        ...prev,
+        validation: { ...prev.validation, [name]: null },
+      }));
+    }
+  };
 
   const calculateFieldValue = (line, fieldConfig) => {
     if (!fieldConfig.calculate || !fieldConfig.dependencies)
@@ -503,7 +534,7 @@ export default function VoucherForm({
       (acc, dep) => ({ ...acc, [dep]: parseFloat(line[dep]) || 0 }),
       {}
     );
-    console.log(dependencies)
+    console.log(dependencies);
     return fieldConfig.calculate(dependencies) || 0;
   };
 
@@ -618,89 +649,107 @@ export default function VoucherForm({
     setSelectedRows((prev) => prev.filter((k) => !k.startsWith(prefix)));
   };
 
+  // Validation and Submission
+  const validateForm = async () => {
+    const newErrors = {};
 
-// Validation and Submission
-const validateForm = async () => {
-  const newErrors = {};
-
-  // Master fields validation
-  for (const field of voucherConfig.masterFields || []) {
-    const fieldName = field.formName || field.name;
-    if (field.required && !masterData[fieldName]?.toString().trim()) {
-      newErrors[fieldName] = `${field.label} is required`;
-    }
-    // Run async validation if exists
-    if (field.validate && masterData[fieldName]) {
-      setLoading((prev) => ({ ...prev, validation: true }));
-      try {
-        const validationError = await field.validate(
-          masterData[fieldName],
-          masterData
-        );
-        if (validationError) {
-          newErrors[fieldName] = validationError;
+    // Master fields validation
+    for (const field of voucherConfig.masterFields || []) {
+      const fieldName = field.formName || field.name;
+      if (field.required && !masterData[fieldName]?.toString().trim()) {
+        newErrors[fieldName] = `${field.label} is required`;
+      }
+      // Run async validation if exists
+      if (field.validate && masterData[fieldName]) {
+        setLoading((prev) => ({ ...prev, validation: true }));
+        try {
+          const validationError = await field.validate(
+            masterData[fieldName],
+            masterData
+          );
+          if (validationError) {
+            newErrors[fieldName] = validationError;
+          }
+        } catch (error) {
+          newErrors[fieldName] = `Validation error: ${error.message}`;
+        } finally {
+          setLoading((prev) => ({ ...prev, validation: false }));
         }
-      } catch (error) {
-        newErrors[fieldName] = `Validation error: ${error.message}`;
-      } finally {
-        setLoading((prev) => ({ ...prev, validation: false }));
       }
     }
-  }
 
-  // Main lines validation
-  if (
-    !mainLines.some((line) =>
-      Object.values(line).some((v) => v?.toString().trim())
-    )
-  ) {
-    newErrors.mainLines = "At least one line item is required";
-  } else {
-    mainLines.forEach((line, index) => {
-      voucherConfig.lineFields?.forEach((field) => {
-        const fieldName = field.formName || field.name;
-        if (field.required && !line[fieldName]?.toString().trim()) {
-          newErrors[`main-${index}-${fieldName}`] = `${field.label} is required`;
-        }
-      });
-    });
-  }
-
-  // Deduction lines validation
-  if (voucherConfig.hasDeductionBlock) {
-    deductionLines.forEach((line, index) => {
-      if (Object.values(line).some((v) => v?.toString().trim())) {
-        voucherConfig.deductionFields?.forEach((field) => {
+    // Main lines validation
+    if (
+      !mainLines.some((line) =>
+        Object.values(line).some((v) => v?.toString().trim())
+      )
+    ) {
+      newErrors.mainLines = "At least one line item is required";
+    } else {
+      mainLines.forEach((line, index) => {
+        voucherConfig.lineFields?.forEach((field) => {
           const fieldName = field.formName || field.name;
           if (field.required && !line[fieldName]?.toString().trim()) {
             newErrors[
-              `deduction-${index}-${fieldName}`
+              `main-${index}-${fieldName}`
             ] = `${field.label} is required`;
           }
+          // Add original quantity validation for returns
+          if (
+            fieldName === "qty" &&
+            (type === "purchaseReturn" || type === "saleReturn")
+          ) {
+            const originalQty = line.original_qty || 0;
+            const returnQty = parseFloat(line.qty) || 0;
+            if (returnQty <= 0) {
+              newErrors[
+                `main-${index}-${fieldName}`
+              ] = `Return quantity must be greater than 0`;
+            } else if (returnQty > originalQty) {
+              newErrors[
+                `main-${index}-${fieldName}`
+              ] = `Cannot return more than original quantity (${originalQty})`;
+            }
+          }
         });
-      }
-    });
-  }
-
-  // Balance check
-  if (voucherConfig.balanceCheck) {
-    const formData = {
-      master: masterData,
-      lines: mainLines,
-      deductions: deductionLines,
-      totals,
-    };
-    if (!voucherConfig.balanceCheck.condition(formData)) {
-      newErrors.balance =
-        typeof voucherConfig.balanceCheck.errorMessage === "function"
-          ? voucherConfig.balanceCheck.errorMessage(formData)
-          : voucherConfig.balanceCheck.errorMessage;
+      });
     }
-  }
 
-  setErrors((prev) => ({ ...prev, validation: newErrors }));
-  return Object.keys(newErrors).length === 0;
-};
+    // Deduction lines validation
+    if (voucherConfig.hasDeductionBlock) {
+      deductionLines.forEach((line, index) => {
+        if (Object.values(line).some((v) => v?.toString().trim())) {
+          voucherConfig.deductionFields?.forEach((field) => {
+            const fieldName = field.formName || field.name;
+            if (field.required && !line[fieldName]?.toString().trim()) {
+              newErrors[
+                `deduction-${index}-${fieldName}`
+              ] = `${field.label} is required`;
+            }
+          });
+        }
+      });
+    }
+
+    // Balance check
+    if (voucherConfig.balanceCheck) {
+      const formData = {
+        master: masterData,
+        lines: mainLines,
+        deductions: deductionLines,
+        totals,
+      };
+      if (!voucherConfig.balanceCheck.condition(formData)) {
+        newErrors.balance =
+          typeof voucherConfig.balanceCheck.errorMessage === "function"
+            ? voucherConfig.balanceCheck.errorMessage(formData)
+            : voucherConfig.balanceCheck.errorMessage;
+      }
+    }
+
+    setErrors((prev) => ({ ...prev, validation: newErrors }));
+    return Object.keys(newErrors).length === 0;
+  };
 
   const prepareFormData = () => ({
     master: { ...masterData, tran_code: voucherConfig.tran_code },
@@ -736,17 +785,15 @@ const validateForm = async () => {
     try {
       const formData = prepareFormData();
       const url =
-        editMode && existingData?.voucherId
-          ? `${apiMap[type]}`
-          : apiMap[type];
+        editMode && existingData?.voucherId ? `${apiMap[type]}` : apiMap[type];
       const method = editMode ? axios.put : axios.post;
 
       await method(url, formData);
       toast.success(`Voucher ${editMode ? "updated" : "saved"} successfully`);
       // Call onSuccess callback if it exists
-    if (typeof onSuccess === 'function') {
-      onSuccess();
-    }
+      if (typeof onSuccess === "function") {
+        onSuccess();
+      }
       onClose();
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.message;
@@ -815,7 +862,50 @@ const validateForm = async () => {
         />
       );
     }
-
+    if (
+      fieldName === "qty" &&
+      (type === "purchaseReturn" || type === "saleReturn")
+    ) {
+      return (
+        <div className="space-y-1">
+          <Label className="text-xs text-gray-700">
+            {fieldConfig.label}
+            {fieldConfig.required && <span className="text-red-500">*</span>}
+          </Label>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              value={value || ""}
+              onChange={(e) => {
+            const newValue = Math.min(
+              parseFloat(e.target.value) || 0,
+              line.original_qty || 0
+            );
+            handleLineChange(index, fieldName, newValue, isMain);
+          }}  
+              min={0}
+              max={line.original_qty || 0}
+              className="h-9 text-sm w-full"
+            />
+            <div className="text-xs text-gray-500 flex items-center gap-1">
+          <span>of</span>
+          <span className="font-medium">{line.original_qty || 0}</span>
+        </div>
+          </div>
+          {errors.validation[
+            `${isMain ? "main" : "deduction"}-${index}-${fieldName}`
+          ] && (
+            <p className="text-xs text-red-500">
+              {
+                errors.validation[
+                  `${isMain ? "main" : "deduction"}-${index}-${fieldName}`
+                ]
+              }
+            </p>
+          )}
+        </div>
+      );
+    }
     const inputType =
       fieldConfig.type === "number"
         ? "number"
@@ -1011,8 +1101,7 @@ const validateForm = async () => {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full table-auto">
-            <thead>
-            </thead>
+            <thead></thead>
             <tbody>
               <AnimatePresence>
                 {lines.map((line, idx) => (
@@ -1069,7 +1158,7 @@ const validateForm = async () => {
                   (isMain && k !== "deductionTotal") ||
                   (!isMain && k === "deductionTotal")
               )
-              .map(([k, config],index) => (
+              .map(([k, config], index) => (
                 <div key={index} className="text-right">
                   <span className="text-xs text-gray-700">
                     {config.label}:{" "}

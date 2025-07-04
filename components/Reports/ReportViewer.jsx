@@ -297,80 +297,233 @@ const ReportViewer = ({ reportType }) => {
     }
   };
 
-  const exportToExcel = async () => {
-    const worksheet = XLSX.utils.json_to_sheet(
-      data.map((item) => {
-        const row = {};
-        config.columns.forEach((col) => {
-          if (col.valueGetter) {
-            row[col.headerName] = col.valueGetter({ row: item });
-          } else {
-            row[col.headerName] = item[col.field];
-          }
-        });
-        return row;
-      })
-    );
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, config.title);
-    XLSX.writeFile(
-      workbook,
-      `${config.title}_${format(new Date(), "yyyy-MM-dd")}.xlsx`
-    );
-  };
-
-  const exportToPDF = async () => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text(config.title, 14, 20);
-    doc.setFontSize(10);
-    doc.text(`Generated on ${format(new Date(), "PPP")}`, 14, 28);
-
-    const headers = config.columns.map((col) => col.headerName);
-    const rows = data.map((item) =>
-      config.columns.map((col) => {
-        if (col.valueGetter) {
-          return String(col.valueGetter({ row: item }) || "");
-        }
-        return String(item[col.field] || "");
-      })
-    );
-
-    doc.autoTable({
-      head: [headers],
-      body: rows,
-      startY: 35,
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [59, 130, 246], textColor: 255 },
-      alternateRowStyles: { fillColor: [249, 250, 251] },
+const exportToExcel = async () => {
+  const workbook = XLSX.utils.book_new();
+  
+  // Main data sheet
+  const mainData = data.map((item) => {
+    const row = {};
+    config.columns.forEach((col) => {
+      if (col.valueGetter) {
+        row[col.headerName] = col.valueGetter({ row: item });
+      } else {
+        row[col.headerName] = item[col.field];
+      }
     });
+    return row;
+  });
+  
+  const mainWorksheet = XLSX.utils.json_to_sheet(mainData);
+  XLSX.utils.book_append_sheet(workbook, mainWorksheet, "Summary");
 
-    doc.save(`${config.title}_${format(new Date(), "yyyy-MM-dd")}.pdf`);
-  };
-
-  const exportToCSV = async () => {
-    const headers = config.columns.map((col) => col.headerName).join(",");
-    const rows = data
-      .map((item) =>
-        config.columns
-          .map((col) => {
-            let value = "";
+  // Detail sheets if available
+  if (config.detailColumns && data.some(item => item.transactions)) {
+    const detailData = [];
+    
+    data.forEach((item, index) => {
+      if (item.transactions && item.transactions.length > 0) {
+        item.transactions.forEach((detail) => {
+          const detailRow = {
+            "Parent ID": item.id || index + 1,
+            "Parent Date": item.dateD || '',
+            "Parent Voucher": item.vr_no || ''
+          };
+          
+          config.detailColumns.forEach((col) => {
             if (col.valueGetter) {
-              value = col.valueGetter({ row: item }) || "";
+              detailRow[col.headerName] = col.valueGetter({ row: detail });
             } else {
-              value = item[col.field] || "";
+              detailRow[col.headerName] = detail[col.field];
             }
+          });
+          detailData.push(detailRow);
+        });
+      }
+    });
+    
+    if (detailData.length > 0) {
+      const detailWorksheet = XLSX.utils.json_to_sheet(detailData);
+      XLSX.utils.book_append_sheet(workbook, detailWorksheet, "Details");
+    }
+  }
+
+  // Add styling
+  const wscols = config.columns.map(col => ({ width: col.width ? col.width/5 : 20 }));
+  mainWorksheet["!cols"] = wscols;
+
+  XLSX.writeFile(
+    workbook,
+    `${config.title}_${format(new Date(), "yyyy-MM-dd")}.xlsx`
+  );
+};
+
+const exportToPDF = async () => {
+  const doc = new jsPDF({
+    orientation: "landscape",
+    unit: "mm"
+  });
+  
+  // Title and header
+  doc.setFontSize(16);
+  doc.setTextColor(40);
+  doc.setFont("helvetica", "bold");
+  doc.text(config.title, 14, 20);
+  
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Generated on ${format(new Date(), "PPP")}`, 14, 28);
+  
+  // Main table
+  const headers = config.columns.map(col => ({
+    title: col.headerName,
+    dataKey: col.field
+  }));
+  
+  const rows = data.map(item => {
+    const row = {};
+    config.columns.forEach(col => {
+      row[col.field] = col.valueGetter 
+        ? String(col.valueGetter({ row: item }))
+        : String(item[col.field] || "");
+    });
+    return row;
+  });
+  
+  doc.autoTable({
+    head: [headers.map(h => h.title)],
+    body: rows.map(row => headers.map(header => row[header.dataKey])),
+    startY: 35,
+    margin: { left: 10, right: 10 },
+    styles: { 
+      fontSize: 8, 
+      cellPadding: 2,
+      font: "helvetica",
+      textColor: 40
+    },
+    headStyles: { 
+      fillColor: [59, 130, 246], 
+      textColor: 255,
+      fontStyle: 'bold'
+    },
+    alternateRowStyles: { fillColor: [249, 250, 251] },
+    columnStyles: {
+      // Apply currency formatting to currency columns
+      ...config.columns.reduce((acc, col) => {
+        if (col.type === "currency") {
+          acc[col.field] = { cellWidth: 15 };
+        }
+        return acc;
+      }, {})
+    }
+  });
+  
+  // Add details if available
+  if (config.detailColumns && data.some(item => item.transactions)) {
+    const detailHeaders = [
+      { title: "Parent ID", dataKey: "parentId" },
+      { title: "Parent Voucher", dataKey: "parentVoucher" },
+      ...config.detailColumns.map(col => ({
+        title: col.headerName,
+        dataKey: col.field
+      }))
+    ];
+    
+    const detailRows = [];
+    data.forEach(item => {
+      if (item.transactions && item.transactions.length > 0) {
+        item.transactions.forEach(detail => {
+          detailRows.push({
+            parentId: item.id || '',
+            parentVoucher: item.vr_no || '',
+            ...config.detailColumns.reduce((acc, col) => {
+              acc[col.field] = col.valueGetter 
+                ? String(col.valueGetter({ row: detail })) 
+                : String(detail[col.field] || "");
+              return acc;
+            }, {})
+          });
+        });
+      }
+    });
+    
+    if (detailRows.length > 0) {
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.text("Transaction Details", 14, 20);
+      
+      doc.autoTable({
+        head: [detailHeaders.map(h => h.title)],
+        body: detailRows.map(row => detailHeaders.map(header => row[header.dataKey])),
+        startY: 30,
+        margin: { left: 10, right: 10 },
+        styles: { 
+          fontSize: 8, 
+          cellPadding: 2,
+          font: "helvetica",
+          textColor: 40
+        },
+        headStyles: { 
+          fillColor: [79, 70, 229], 
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: { fillColor: [249, 250, 251] }
+      });
+    }
+  }
+  
+  doc.save(`${config.title}_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+};
+
+const exportToCSV = async () => {
+  let csvContent = "";
+  
+  // Main headers
+  const mainHeaders = config.columns.map(col => `"${col.headerName.replace(/"/g, '""')}"`);
+  csvContent += mainHeaders.join(",") + "\n";
+  
+  // Main data
+  data.forEach(item => {
+    const row = config.columns.map(col => {
+      let value = col.valueGetter 
+        ? col.valueGetter({ row: item }) 
+        : item[col.field] || "";
+      return `"${String(value).replace(/"/g, '""')}"`;
+    });
+    csvContent += row.join(",") + "\n";
+    
+    // Details if available
+    if (config.detailColumns && item.transactions && item.transactions.length > 0) {
+      csvContent += "\nDetails for " + (item.vr_no || item.id) + "\n";
+      
+      const detailHeaders = [
+        "Parent ID", "Parent Voucher", 
+        ...config.detailColumns.map(col => col.headerName)
+      ];
+      csvContent += detailHeaders.map(h => `"${h.replace(/"/g, '""')}"`).join(",") + "\n";
+      
+      item.transactions.forEach(detail => {
+        const detailRow = [
+          item.id || '',
+          item.vr_no || '',
+          ...config.detailColumns.map(col => {
+            const value = col.valueGetter 
+              ? col.valueGetter({ row: detail }) 
+              : detail[col.field] || "";
             return `"${String(value).replace(/"/g, '""')}"`;
           })
-          .join(",")
-      )
-      .join("\n");
-
-    const csvContent = `${headers}\n${rows}`;
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    saveAs(blob, `${config.title}_${format(new Date(), "yyyy-MM-dd")}.csv`);
-  };
+        ];
+        csvContent += detailRow.join(",") + "\n";
+      });
+      
+      csvContent += "\n";
+    }
+  });
+  
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  saveAs(blob, `${config.title}_${format(new Date(), "yyyy-MM-dd")}.csv`);
+};
 
   // Sorted data
   const sortedData = useMemo(() => {

@@ -1061,12 +1061,19 @@ export const VOUCHER_CONFIG = {
       { name: "no_of_pack", label: "No of Packs", type: "number" },
       { name: "qty_per_pack", label: "Qty Per Pack", type: "number" },
       {
-        name: "qty",
-        label: "Qty",
-        type: "number",
-        dependencies: ["no_of_pack", "qty_per_pack"],
-        calculate: (v) => v.no_of_pack * v.qty_per_pack,
-      },
+      name: "qty",
+      label: "Qty",
+      type: "number",
+      dependencies: ["no_of_pack", "qty_per_pack"],
+      calculate: (v) => v.no_of_pack * v.qty_per_pack,
+      validate: (value, line, allLines, originalData) => {
+        const originalQty = originalData?.find(l => l.itcd === line.itcd)?.qty || 0;
+        if (value > originalQty) {
+          return `Cannot return more than original quantity (${originalQty})`;
+        }
+        return null;
+      }
+    },
       { name: "rate", label: "Rate", type: "number" },
       {
         name: "gross_amount",
@@ -1234,12 +1241,19 @@ export const VOUCHER_CONFIG = {
       { name: "no_of_pack", label: "No of Packs", type: "number" },
       { name: "qty_per_pack", label: "Qty Per Pack", type: "number" },
       {
-        name: "qty",
-        label: "Qty",
-        type: "number",
-        dependencies: ["no_of_pack", "qty_per_pack"],
-        calculate: (v) => v.no_of_pack * v.qty_per_pack,
-      },
+      name: "qty",
+      label: "Qty",
+      type: "number",
+      dependencies: ["no_of_pack", "qty_per_pack"],
+      calculate: (v) => v.no_of_pack * v.qty_per_pack,
+      validate: (value, line, allLines, originalData) => {
+        const originalQty = originalData?.find(l => l.itcd === line.itcd)?.qty || 0;
+        if (value > originalQty) {
+          return `Cannot return more than original quantity (${originalQty})`;
+        }
+        return null;
+      }
+    },
       { name: "rate", label: "Rate", type: "number" },
       {
         name: "gross_amount",

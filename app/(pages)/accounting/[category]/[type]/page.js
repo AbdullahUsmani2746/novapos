@@ -208,10 +208,10 @@ export default function DynamicVoucherPage({ params: paramsPromise }) {
     fetchData();
   }, [params, refreshTrigger, router, typeConfig]);
 
-const refreshData = useCallback(() => {
-  setRefreshTrigger(prev => prev + 1);
-  setIsLoading(true);
-}, []);
+  const refreshData = useCallback(() => {
+    setRefreshTrigger((prev) => prev + 1);
+    setIsLoading(true);
+  }, []);
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -384,6 +384,7 @@ const refreshData = useCallback(() => {
                   category={params.category}
                   type={params.type}
                   isLoading={isLoading}
+                   onSuccess={refreshData}
                   refreshTrigger={refreshTrigger} // Pass the current value, not +1
                 />
               </motion.div>
