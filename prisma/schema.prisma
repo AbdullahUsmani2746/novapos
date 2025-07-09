@@ -40,15 +40,29 @@ model User {
   name          String?
   email         String    @unique
   emailVerified DateTime?
-  password      String?   // ⬅️ Add this line if it's not present
+  password      String?
   image         String?
   role          Role      @default(CASHIER)
   isActive      Boolean   @default(true)
+  shiftId       Int?       
+  shift         Shift?    @relation(fields: [shiftId], references: [id])
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
   sessions      Session[]
 }
+
+model Shift {
+  id          Int      @id @default(autoincrement())
+  name        String
+  startTime   String
+  endTime     String
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
 
 model VerificationToken {
   identifier String
