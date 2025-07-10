@@ -2,64 +2,90 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export async function GET(request) {
-
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
+  const role = searchParams.get('role') || "CASHIER";
 
-  console.log('Fetching stats for user ID:', id);
+  console.log('📊 Fetching stats for role:', role, '| user ID:', id);
 
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const userCondition = role === "CASHIER" ? { userId: id } : {};
 
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    // ✅ Total sales where tran_code = 5
-   const salesToday = await prisma.transactions.aggregate({
-  _sum: { gross_amount: true },
-  where: {
-    transactionsMaster: {
-      // dateD is commented out
-      tran_code: 5,
-      userId: id 
-    },
-  },
-});
-
-
-    // ✅ Count of TransactionsMaster where tran_code = 5
-    const transactionCount = await prisma.transactionsMaster.count({
+    // ✅ Total Sales (all pycd)
+    const totalSales = await prisma.transactions.aggregate({
+      _sum: { gross_amount: true },
       where: {
-        // dateD: {
-        //   gte: today,
-        //   lt: tomorrow,
-        // },
-        tran_code: 5,
-        userId: id 
+        transactionsMaster: {
+          tran_code: 5,
+          ...userCondition,
+        },
       },
     });
 
-    // ✅ Unique customers (by acno) for tran_code = 5
-    const uniqueCustomers = await prisma.transactionsMaster.count({
+    // ✅ Total Cash Sales
+    const totalCashSales = await prisma.transactions.aggregate({
+      _sum: { gross_amount: true },
       where: {
-        // dateD: {
-        //   gte: today,
-        //   lt: tomorrow,
-        // },
+        transactionsMaster: {
+          tran_code: 5,
+          pycd: '0001',
+          ...userCondition,
+        },
+      },
+    });
+
+    // ✅ Total Card Sales
+    const totalCardSales = await prisma.transactions.aggregate({
+      _sum: { gross_amount: true },
+      where: {
+        transactionsMaster: {
+          tran_code: 5,
+          pycd: '0003',
+          ...userCondition,
+        },
+      },
+    });
+
+    // ✅ Transaction Count
+    const transactionCount = await prisma.transactionsMaster.count({
+      where: {
         tran_code: 5,
-        userId: id 
+        ...userCondition,
+      },
+    });
+
+    // ✅ Unique Customers - Card
+    const customersCard = await prisma.transactionsMaster.count({
+      where: {
+        tran_code: 5,
+        pycd: '0003',
+        ...userCondition,
+      },
+    });
+
+    // ✅ Unique Customers - Cash
+    const customersCash = await prisma.transactionsMaster.count({
+      where: {
+        tran_code: 5,
+        pycd: '0001',
+        ...userCondition,
       },
     });
 
     return NextResponse.json({
-      todaysSales: salesToday._sum.gross_amount || 0,
+      totalSales: totalSales._sum.gross_amount || 0,
+      totalCashSales: totalCashSales._sum.gross_amount || 0,
+      totalCardSales: totalCardSales._sum.gross_amount || 0,
       transactions: transactionCount,
-      customers: uniqueCustomers,
+      customersCard,
+      customersCash,
     });
 
   } catch (error) {
     console.error('❌ Error fetching stats:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }

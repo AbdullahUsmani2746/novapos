@@ -356,6 +356,32 @@ export async function PUT(req) {
         ? null
         : parseInt(v);
 
+    // 🛠️ Revert existing stock for this transaction
+    if ([4, 6, 9, 10].includes(tran_code)) {
+      const existingLines = await prisma.transactions.findMany({
+        where: { tran_id, sub_tran_id: 1 },
+      });
+
+      for (const oldLine of existingLines) {
+        const itemId = parseOptionalInt(oldLine.itcd);
+        const qty = parseFloat(oldLine.qty || 0);
+
+        if (itemId && qty > 0) {
+          const isIncrement = [4, 10].includes(tran_code);
+          const revertQty = isIncrement ? -qty : qty;
+
+          await prisma.item.update({
+            where: { itcd: itemId },
+            data: {
+              stock: {
+                increment: revertQty,
+              },
+            },
+          });
+        }
+      }
+    }
+
     // Format date/times
     if ([1, 2, 4, 6].includes(tran_code)) {
       let checkDateObj;
@@ -397,22 +423,18 @@ export async function PUT(req) {
         ccno: [1, 2, 3].includes(tran_code)
           ? parseOptionalInt(line.ccno)
           : null,
-        itcd: [4, 6].includes(tran_code) ? parseOptionalInt(line.itcd) : null,
-        acno: tran_code === 4 ? "0004" : line.acno,
+        itcd: [4, 6, 9, 10].includes(tran_code)
+          ? parseOptionalInt(line.itcd)
+          : null,
+        acno: [4, 9].includes(tran_code)
+          ? "0004"
+          : [6, 10].includes(tran_code)
+          ? "0014"
+          : line.acno,
       };
 
-      // Preserve original_qty for returns if it exists
       if ([9, 10].includes(tran_code)) {
-        const existingLine = await prisma.transactions.findUnique({
-          where: { id: line.id },
-          select: { original_qty: true },
-        });
-
-        if (existingLine?.original_qty) {
-          updatedLine.original_qty = existingLine.original_qty;
-        } else if (line.original_qty) {
-          updatedLine.original_qty = parseFloat(line.original_qty) || 0;
-        }
+        updatedLine.original_qty = parseFloat(line.original_qty || 0);
       }
 
       try {
@@ -420,6 +442,25 @@ export async function PUT(req) {
           where: { id },
           data: updatedLine,
         });
+
+        // 🛠️ Apply new stock
+        if ([4, 6, 9, 10].includes(tran_code)) {
+          const itemId = parseOptionalInt(line.itcd);
+          const qty = parseFloat(line.qty || 0);
+          if (itemId && qty > 0) {
+            const isIncrement = [4, 10].includes(tran_code);
+            const updateQty = isIncrement ? qty : -qty;
+
+            await prisma.item.update({
+              where: { itcd: itemId },
+              data: {
+                stock: {
+                  increment: updateQty,
+                },
+              },
+            });
+          }
+        }
       } catch (err) {
         console.error(`Failed to update line id ${id}:`, err.message);
       }
@@ -565,6 +606,50 @@ export async function DELETE(req) {
       );
     }
 
+    // 🛠️ Get tran_code first
+    const master = await prisma.transactionsMaster.findUnique({
+      where: { tran_id },
+    });
+
+    if (!master) {
+      return NextResponse.json(
+        { message: "Transaction not found" },
+        { status: 404 }
+      );
+    }
+
+    const tran_code = master.tran_code;
+
+    // 🛠️ Revert stock before deleting if applicable
+    if ([4, 6, 9, 10].includes(tran_code)) {
+      const lines = await prisma.transactions.findMany({
+        where: {
+          tran_id,
+          sub_tran_id: 1,
+        },
+      });
+
+      for (const line of lines) {
+        const itemId = parseInt(line.itcd);
+        const qty = parseFloat(line.qty || 0);
+
+        if (itemId && qty > 0) {
+          const isIncrement = [4, 10].includes(tran_code);
+          const revertQty = isIncrement ? -qty : qty;
+
+          await prisma.item.update({
+            where: { itcd: itemId },
+            data: {
+              stock: {
+                increment: revertQty,
+              },
+            },
+          });
+        }
+      }
+    }
+
+    // Delete child and master records
     await prisma.transactions.deleteMany({ where: { tran_id } });
     await prisma.transactionsMaster.delete({ where: { tran_id } });
 
@@ -579,3 +664,4 @@ export async function DELETE(req) {
     );
   }
 }
+

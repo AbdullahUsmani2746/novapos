@@ -21,14 +21,19 @@ const ModernPOSDashboard = () => {
 
  const {data:session} = useSession();
   const userId = session?.user?.id;
+  const userRole = session?.user?.role;
+  const currency = "$";
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
   const router = useRouter();
   const [stats, setStats] = useState({
-  todaysSales: 0,
+  totalSales: 0,
   transactions: 0,
-  customers: 0,
+  customersCard: 0,
+  customersCash: 0,
+  totalCashSales: 0,
+  totalCardSales: 0
 });
 
 
@@ -38,7 +43,7 @@ useEffect(() => {
   const fetchStats = async () => {
     try {
       console.log('Fetching stats for user ID:', userId);
-      const res = await axios.get(`/api/pos/stats?id=${userId}`);
+      const res = await axios.get(`/api/pos/stats?id=${userId}&role=${userRole}`);
       const data = await res.data;
       setStats(data);
     } catch (error) {
@@ -95,8 +100,22 @@ useEffect(() => {
 
   const statsCards = [
     {
-      title: 'Today\'s Sales',
-      value: `${stats.todaysSales}`,
+      title: 'Total Sales',
+      value: `${currency}${stats.totalSales}`,
+      // change: '0',
+      icon: DollarSign,
+      color: 'text-green-500'
+    },
+    {
+      title: 'Total Card Sales',
+      value: `${currency}${stats.totalCardSales}`,
+      // change: '0',
+      icon: DollarSign,
+      color: 'text-green-500'
+    },
+    {
+      title: 'Total Cash Sales',
+      value: `${currency}${stats.totalCashSales}`,
       // change: '0',
       icon: DollarSign,
       color: 'text-green-500'
@@ -109,11 +128,18 @@ useEffect(() => {
       color: 'text-blue-500'
     },
     {
-      title: 'Customers',
-    value: stats.customers,
+      title: 'Card Customers',
+    value: stats.customersCard,
       // change: '0',
       icon: Users,
       color: 'text-purple-500'
+    },
+    {
+      title: 'Cash Customers',
+    value: stats.customersCash,
+      // change: '0',
+      icon: Users,
+      color: 'text-red-500'
     }
   ];
 

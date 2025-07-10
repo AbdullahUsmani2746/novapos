@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { REPORT_CONFIG } from "@/components/Reports/config";
+import { format } from "date-fns";
 
 export async function GET(request, { params }) {
   const { reportType } = await params;

@@ -796,6 +796,8 @@ export const VOUCHER_CONFIG = {
         type: "text",
         required: true,
         autoGenerate: true,
+        readOnly: true // Add this to make it non-editable
+
       },
 
       {
@@ -817,8 +819,28 @@ export const VOUCHER_CONFIG = {
           },
         ],
       },
-      { name: "check_no", label: "ST Inv No", type: "text" },
-      { name: "check_date", label: "ST Inv Date", type: "Date" },
+{ 
+      name: "check_no", 
+      label: "ST Inv No", 
+      type: "text",
+      required: true,
+      autoGenerate: true,
+      validate: async (value, masterData) => {
+        if (!value) return "ST Inv No is required";
+        try {
+          const response = await axios.get(
+            `/api/voucher/check-sale-numbers?field=check_no&value=${encodeURIComponent(value)}&tran_code=6`
+          );
+          if (response.data.exists) {
+            const nextNumber = response.data.nextNumber || parseInt(value) + 1;
+            return `ST Inv No ${value} already exists. Try ${nextNumber} or another number.`;
+          }
+          return null;
+        } catch (error) {
+          return `Error checking ST Inv No: ${error.message}`;
+        }
+      }
+    },      { name: "check_date", label: "ST Inv Date", type: "Date" },
       { name: "rmk", label: "Narration", type: "textarea" },
       { name: "invoice_no", label: "Com Inv No", type: "text",
         validate: async (value, masterData) => {
@@ -858,7 +880,29 @@ export const VOUCHER_CONFIG = {
           },
         ],
       },
-      { name: "rmk2", label: "Delivery No", type: "text" },
+      
+    { 
+      name: "rmk2", 
+      label: "Delivery No", 
+      type: "text",
+      required: true,
+      autoGenerate: true,
+      validate: async (value, masterData) => {
+        if (!value) return "Delivery No is required";
+        try {
+          const response = await axios.get(
+            `/api/voucher/check-sale-numbers?field=rmk2&value=${encodeURIComponent(value)}&tran_code=6`
+          );
+          if (response.data.exists) {
+            const nextNumber = response.data.nextNumber || parseInt(value) + 1;
+            return `Delivery No ${value} already exists. Try ${nextNumber} or another number.`;
+          }
+          return null;
+        } catch (error) {
+          return `Error checking Delivery No: ${error.message}`;
+        }
+      }
+    },
     ],
     lineFields: [
       {

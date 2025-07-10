@@ -94,6 +94,7 @@ const FormInput = ({
   label,
   required,
   className,
+  readOnly,
   ...props
 }) => (
   <div className="space-y-1">
@@ -108,7 +109,10 @@ const FormInput = ({
       <Input
         className={`w-full rounded-md border-gray-300 focus:ring-primary0 focus:border-primary0 ${
           Icon ? "pl-8" : "px-3"
-        } ${error ? "border-red-500 focus:ring-red-500" : ""} ${className}`}
+        } ${error ? "border-red-500 focus:ring-red-500" : ""} ${
+          readOnly ? "bg-gray-100 cursor-not-allowed" : ""
+        } ${className}`}
+        readOnly={readOnly}
         {...props}
       />
       {error && (
@@ -221,6 +225,7 @@ export default function VoucherForm({
   const [deductionLines, setDeductionLines] = useState([{}]);
   const [selectedRows, setSelectedRows] = useState([]);
   const [totals, setTotals] = useState({});
+  const [stockLevels, setStockLevels] = useState({});
   const [optionsData, setOptionsData] = useState({
     accounts: [],
     costCenters: [],
@@ -272,6 +277,18 @@ export default function VoucherForm({
       ),
     ];
   }, [voucherConfig]);
+
+  // Add this function to fetch stock levels
+  const fetchStockLevels = useCallback(async (productIds) => {
+    try {
+      const response = await axios.post("/api/voucher/check-stock", {
+        productIds,
+      });
+      setStockLevels((prev) => ({ ...prev, ...response.data }));
+    } catch (error) {
+      toast.error(`Failed to fetch stock levels: ${error.message}`);
+    }
+  }, []);
 
   const fetchOptions = useCallback(async () => {
     setLoading((prev) => ({ ...prev, options: true }));
@@ -463,6 +480,39 @@ export default function VoucherForm({
         }
       };
       fetchVrNo();
+
+      // For new sales vouchers, fetch next numbers
+      if (!editMode && type === "sale") {
+        const fetchNextNumbers = async () => {
+          try {
+            // Fetch next ST Inv No
+            const stInvResponse = await axios.get(
+              `/api/voucher/next-sale-number?field=check_no&tran_code=6`
+            );
+
+            // Fetch next Delivery No
+            const deliveryResponse = await axios.get(
+              `/api/voucher/next-sale-number?field=rmk2&tran_code=6`
+            );
+
+            setMasterData((prev) => ({
+              ...prev,
+              check_no: stInvResponse.data.nextNumber || "1",
+              rmk2: deliveryResponse.data.nextNumber || "1",
+            }));
+          } catch (error) {
+            console.error("Error fetching next numbers:", error);
+            // Fallback to simple increment if API fails
+            setMasterData((prev) => ({
+              ...prev,
+              check_no: "1",
+              rmk2: "1",
+            }));
+          }
+        };
+
+        fetchNextNumbers();
+      }
     }
   }, [voucherConfig, editMode]);
 
@@ -549,6 +599,10 @@ export default function VoucherForm({
 
     if (!fieldConfig) return;
 
+    if (type === "sale" && isMain && fieldName === "itcd" && value) {
+      // Fetch stock for this product
+      fetchStockLevels([value]);
+    }
     const processedValue =
       fieldConfig.type === "number"
         ? value === ""
@@ -751,7 +805,8 @@ export default function VoucherForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const prepareFormData = () => ({
+ const prepareFormData = () => {
+  const formData = {
     master: { ...masterData, tran_code: voucherConfig.tran_code },
     lines: mainLines.filter((line) =>
       Object.values(line).some((v) => v?.toString().trim())
@@ -761,7 +816,43 @@ export default function VoucherForm({
           Object.values(line).some((v) => v?.toString().trim())
         )
       : [],
-  });
+  };
+
+  // ✅ Validate stock for sale transactions
+  if (type === 'sale') {
+    const stockErrors = [];
+
+    formData.lines.forEach((line, index) => {
+      const stock = stockLevels[line.itcd] || 0;
+      const qty = parseFloat(line.qty || 0);
+
+      if (qty > stock) {
+        stockErrors.push({
+          index,
+          message: `Insufficient stock for item ${line.itcd}. Available: ${stock}, Requested: ${qty}`,
+        });
+      }
+    });
+
+    // ✅ If any stock errors, set them in state and abort submission
+    if (stockErrors.length > 0) {
+      const newValidationErrors = { ...errors.validation };
+
+      stockErrors.forEach((error) => {
+        newValidationErrors[`main-${error.index}-qty`] = error.message;
+      });
+
+      setErrors((prev) => ({
+        ...prev,
+        validation: newValidationErrors,
+      }));
+
+      throw new Error('Stock validation failed');
+    }
+  }
+
+  return formData;
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -796,10 +887,16 @@ export default function VoucherForm({
       }
       onClose();
     } catch (error) {
+      if (error.message.includes('Insufficient stock')) {
+      toast.error('Cannot proceed with sale due to insufficient stock');
+      }
+      else{
       const errorMsg = error.response?.data?.message || error.message;
       toast.error(
+       
         `Failed to ${editMode ? "update" : "save"} voucher: ${errorMsg}`
       );
+    }
       setErrors((prev) => ({ ...prev, submit: errorMsg }));
     } finally {
       setLoading((prev) => ({ ...prev, submit: false }));
@@ -862,6 +959,40 @@ export default function VoucherForm({
         />
       );
     }
+    // Show stock info for product quantity in sale voucher
+    if (type === "sale" && isMain && fieldName === "qty" && line.itcd) {
+      const stock = stockLevels[line.itcd] || 0;
+      return (
+        <div className="space-y-1">
+          <Label className="text-xs text-gray-700">
+            {fieldConfig.label}
+            {fieldConfig.required && <span className="text-red-500">*</span>}
+          </Label>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              value={value || ""}
+              onChange={(e) =>
+                handleLineChange(index, fieldName, e.target.value, isMain)
+              }
+              min={0}
+              max={stock}
+              className="h-9 text-sm w-full"
+            />
+            <div className="text-xs text-gray-500 flex items-center gap-1">
+              <span>of</span>
+              <span className="font-medium">{stock}</span>
+              <span>available</span>
+            </div>
+          </div>
+          {errors.validation[`main-${index}-${fieldName}`] && (
+            <p className="text-xs text-red-500">
+              {errors.validation[`main-${index}-${fieldName}`]}
+            </p>
+          )}
+        </div>
+      );
+    }
     if (
       fieldName === "qty" &&
       (type === "purchaseReturn" || type === "saleReturn")
@@ -877,20 +1008,20 @@ export default function VoucherForm({
               type="number"
               value={value || ""}
               onChange={(e) => {
-            const newValue = Math.min(
-              parseFloat(e.target.value) || 0,
-              line.original_qty || 0
-            );
-            handleLineChange(index, fieldName, newValue, isMain);
-          }}  
+                const newValue = Math.min(
+                  parseFloat(e.target.value) || 0,
+                  line.original_qty || 0
+                );
+                handleLineChange(index, fieldName, newValue, isMain);
+              }}
               min={0}
               max={line.original_qty || 0}
               className="h-9 text-sm w-full"
             />
             <div className="text-xs text-gray-500 flex items-center gap-1">
-          <span>of</span>
-          <span className="font-medium">{line.original_qty || 0}</span>
-        </div>
+              <span>of</span>
+              <span className="font-medium">{line.original_qty || 0}</span>
+            </div>
           </div>
           {errors.validation[
             `${isMain ? "main" : "deduction"}-${index}-${fieldName}`
@@ -1023,7 +1154,10 @@ export default function VoucherForm({
                   onChange={(e) =>
                     handleMasterChange(fieldName, e.target.value)
                   }
-                  readOnly={field.name === "vr_no" && field.autoGenerate}
+                  readOnly={
+                    field.readOnly ||
+                    (field.name === "vr_no" && field.autoGenerate)
+                  }
                   disabled={
                     loading.submit ||
                     (field.name === "vr_no" &&
