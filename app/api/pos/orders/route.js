@@ -23,13 +23,15 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const { cartItems, customer, total } = await request.json();
+    const { cartItems, customer, total, id } = await request.json();
 
     const order = await prisma.transactionsMaster.create({
       data: {
         dateD: new Date(),
         time: new Date(),
         tran_code: 5,
+        pycd:customer,
+        userId:id,
         vr_no: Math.floor(Math.random() * 1000000),
         invoice_no: `POS-${Date.now()}`,
         sync_status: 'pending',

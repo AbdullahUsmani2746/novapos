@@ -10,6 +10,12 @@ const ShiftPage = () => {
   const [modalType, setModalType] = useState("create");
   const [selectedShift, setSelectedShift] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showUsersModal, setShowUsersModal] = useState(false);
+  const [shiftUsers, setShiftUsers] = useState([]);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [total, setTotal] = useState(0);
+
   const [formData, setFormData] = useState({
     name: "",
     startTime: "",
@@ -19,6 +25,14 @@ const ShiftPage = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      fetchShifts();
+    }, 500);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm, page]);
+
+  useEffect(() => {
     fetchShifts();
   }, []);
 
@@ -26,18 +40,19 @@ const ShiftPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get("/api/shifts");
 
-      const formattedShifts = response.data.map((shift) => ({
+      const response = await axios.get("/api/shifts", {
+        params: { search: searchTerm, page, limit },
+      });
+
+      const formatted = response.data.shifts.map((shift) => ({
         ...shift,
-        startTime: shift.startTime.includes(":")
-          ? shift.startTime
-          : formatTime(shift.startTime),
-        endTime: shift.endTime.includes(":")
-          ? shift.endTime
-          : formatTime(shift.endTime),
+        startTime: formatTime(shift.startTime),
+        endTime: formatTime(shift.endTime),
       }));
-      setShifts(formattedShifts);
+
+      setShifts(formatted);
+      setTotal(response.data.total);
     } catch (error) {
       console.error("Error fetching shifts:", error);
       setError(error.message || "An error occurred");
@@ -70,6 +85,11 @@ const ShiftPage = () => {
     }
 
     return timeString;
+  };
+
+   const openUsersModal = (users) => {
+    setShiftUsers(users);
+    setShowUsersModal(true);
   };
 
   const handleSubmit = async () => {
@@ -180,18 +200,18 @@ const ShiftPage = () => {
     shift.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-3"></div>
-          <p className="text-muted-foreground text-sm md:text-base">
-            Loading shifts...
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="min-h-screen bg-background flex items-center justify-center p-4">
+  //       <div className="text-center">
+  //         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-3"></div>
+  //         <p className="text-muted-foreground text-sm md:text-base">
+  //           Loading shifts...
+  //         </p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   if (error && shifts.length === 0) {
     return (
@@ -274,75 +294,163 @@ const ShiftPage = () => {
           </div>
         </div>
 
-        <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-border">
-              <thead className="bg-primary">
-                <tr>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 md:px-6 md:py-3 text-center text-xs sm:text-xs font-medium text-primary-foreground uppercase tracking-wider">
-                    Shift Name
-                  </th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 md:px-6 md:py-3 text-center text-xs sm:text-xs font-medium text-primary-foreground uppercase tracking-wider">
-                    Start Time
-                  </th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 md:px-6 md:py-3 text-center text-xs sm:text-xs font-medium text-primary-foreground uppercase tracking-wider">
-                    End Time
-                  </th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 md:px-6 md:py-3 text-center text-xs sm:text-xs font-medium text-primary-foreground uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-card divide-y divide-border">
-                {filteredShifts.map((shift) => (
-                  <tr key={shift.id} className="hover:bg-secondary">
-                    <td className="px-2 py-2 sm:px-3 sm:py-3 whitespace-nowrap">
-                      <div className="text-xs sm:text-sm font-sm text-primary text-center ">
-                        {shift.name}
-                      </div>
-                    </td>
-                    <td className="px-2 py-2 sm:px-3 sm:py-3 whitespace-nowrap text-center">
-                      <div className="text-xs sm:text-sm text-primary">
-                        {formatTo12Hour(shift.startTime)}
-                      </div>
-                    </td>
-                    <td className="px-2 py-2 sm:px-3 sm:py-3 whitespace-nowrap text-center ">
-                      <div className="text-xs sm:text-sm text-primary">
-                        {formatTo12Hour(shift.endTime)}
-                      </div>
-                    </td>
-                    <td className="px-2 py-2 sm:px-3 sm:py-3 whitespace-nowrap text-center text-xs sm:text-sm font-medium">
-                      <div className="flex justify-center space-x-1 sm:space-x-2">
-                        <button
-                          onClick={() => openModal("edit", shift)}
-                          className="text-primary hover:text-primary/80 p-1 rounded-md hover:bg-primary/10 transition-colors"
-                        >
-                          <Edit className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(shift.id)}
-                          className="text-destructive hover:text-destructive/80 p-1 rounded-md hover:bg-destructive/10 transition-colors"
-                        >
-                          <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {loading ? (
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading shifts...</p>
           </div>
+        ) : (
+          <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-border">
+               <thead className="bg-primary">
+    <tr>
+      <th className="px-2 py-1 sm:px-3 sm:py-2 md:px-6 md:py-3 text-center text-xs sm:text-xs font-medium text-primary-foreground uppercase tracking-wider">
+        Shift Name
+      </th>
+      <th className="px-2 py-1 sm:px-3 sm:py-2 md:px-6 md:py-3 text-center text-xs sm:text-xs font-medium text-primary-foreground uppercase tracking-wider">
+        Start Time
+      </th>
+      <th className="px-2 py-1 sm:px-3 sm:py-2 md:px-6 md:py-3 text-center text-xs sm:text-xs font-medium text-primary-foreground uppercase tracking-wider">
+        End Time
+      </th>
+      <th className="px-2 py-1 sm:px-3 sm:py-2 md:px-6 md:py-3 text-center text-xs sm:text-xs font-medium text-primary-foreground uppercase tracking-wider">
+        Users
+      </th>
+      <th className="px-2 py-1 sm:px-3 sm:py-2 md:px-6 md:py-3 text-center text-xs sm:text-xs font-medium text-primary-foreground uppercase tracking-wider">
+        Actions
+      </th>
+    </tr>
+  </thead>
+                <tbody className="bg-card divide-y divide-border">
+                {filteredShifts.map((shift) => (
+    <tr key={shift.id} className="hover:bg-secondary">
+      <td className="px-2 py-2 sm:px-3 sm:py-3 whitespace-nowrap">
+        <div className="text-xs sm:text-sm font-sm text-primary text-center">
+          {shift.name}
+        </div>
+      </td>
+      <td className="px-2 py-2 sm:px-3 sm:py-3 whitespace-nowrap text-center">
+        <div className="text-xs sm:text-sm text-primary">
+          {formatTo12Hour(shift.startTime)}
+        </div>
+      </td>
+      <td className="px-2 py-2 sm:px-3 sm:py-3 whitespace-nowrap text-center">
+        <div className="text-xs sm:text-sm text-primary">
+          {formatTo12Hour(shift.endTime)}
+        </div>
+      </td>
+      <td className="px-2 py-2 sm:px-3 sm:py-3 whitespace-nowrap text-center">
+        <button 
+          onClick={() => openUsersModal(shift.users)}
+          className={`text-xs sm:text-sm px-2 py-1 rounded-full ${
+            shift.users.length > 0 
+              ? "bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer"
+              : "bg-muted text-muted-foreground cursor-default"
+          }`}
+        >
+          {shift.users.length} user{shift.users.length !== 1 ? 's' : ''}
+        </button>
+      </td>
+      <td className="px-2 py-2 sm:px-3 sm:py-3 whitespace-nowrap text-center text-xs sm:text-sm font-medium">
+        <div className="flex justify-center space-x-1 sm:space-x-2">
+          <button
+            onClick={() => openModal("edit", shift)}
+            className="text-primary hover:text-primary/80 p-1 rounded-md hover:bg-primary/10 transition-colors"
+          >
+            <Edit className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(shift.id)}
+            className="text-destructive hover:text-destructive/80 p-1 rounded-md hover:bg-destructive/10 transition-colors"
+          >
+            <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
+          </button>
+        </div>
+      </td>
+    </tr>
+  ))}
+                </tbody>
+              </table>
+            </div>
 
-          {filteredShifts.length === 0 && (
-            <div className="text-center py-6 sm:py-8 md:py-10 lg:py-12">
-              <Clock className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-2 sm:mb-3 md:mb-4" />
-              <p className="text-muted-foreground text-xs sm:text-sm md:text-base">
-                No shifts found
-              </p>
+            {filteredShifts.length === 0 && (
+              <div className="text-center py-6 sm:py-8 md:py-10 lg:py-12">
+                <Clock className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-2 sm:mb-3 md:mb-4" />
+                <p className="text-muted-foreground text-xs sm:text-sm md:text-base">
+                  No shifts found
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+        <div className="flex items-center justify-between py-4">
+          <span className="text-sm text-muted-foreground">
+            Page {page} of {Math.ceil(total / limit)}
+          </span>
+
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setPage((p) => Math.max(p - 1, 1))}
+              disabled={page === 1}
+              className="px-3 py-1 rounded bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+            >
+              Previous
+            </button>
+
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page >= Math.ceil(total / limit)}
+              className="px-3 py-1 rounded bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {showUsersModal && (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-card rounded-lg shadow-sm border border-border w-full max-w-xs sm:max-w-sm md:max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-3 sm:p-4 md:p-5 lg:p-6 border-b border-border">
+          <h3 className="text-base sm:text-lg font-semibold">
+            Users in Shift
+          </h3>
+          <button
+            onClick={() => setShowUsersModal(false)}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="h-4 w-4 sm:h-5 sm:w-5" />
+          </button>
+        </div>
+
+        <div className="p-3 sm:p-4 md:p-5 lg:p-6">
+          {shiftUsers.length > 0 ? (
+            <div className="space-y-3">
+              {shiftUsers.map((user) => (
+                <div key={user.id} className="flex items-center justify-between p-2 border rounded-lg">
+                  <div>
+                    <p className="font-medium">{user.name}</p>
+                    <p className="text-sm text-muted-foreground capitalize">{user.role.toLowerCase()}</p>
+                  </div>
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {user.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <UserX className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">No users assigned to this shift</p>
             </div>
           )}
         </div>
       </div>
+    </div>
+  )}
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
@@ -415,14 +523,14 @@ const ShiftPage = () => {
               <div className="flex justify-end space-x-2 sm:space-x-3 pt-3 sm:pt-4">
                 <button
                   onClick={closeModal}
-                  className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-foreground bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-primary bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-foreground bg-secondary hover:bg-secondary/80 disabled:bg-primary/50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center space-x-1 sm:space-x-2"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-primary bg-secondary hover:bg-secondary/80 disabled:bg-primary/50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center space-x-1 sm:space-x-2"
                 >
                   {submitting && (
                     <div className="animate-spin h-3 w-3 sm:h-4 sm:w-4 border-2 border-primary-foreground border-t-transparent rounded-full"></div>

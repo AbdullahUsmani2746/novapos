@@ -50,6 +50,7 @@ model User {
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
   sessions      Session[]
+  transactionsMaster TransactionsMaster[] @relation("UserTransactions")
 }
 
 model Shift {
@@ -292,7 +293,6 @@ model Users {
   user_id            String               @id @unique @db.VarChar(10)
   user_name          String?              @db.VarChar(50)
   company_id         Int
-  transactionsMaster TransactionsMaster[]
   company            Company              @relation(fields: [company_id], references: [id])
 }
 
@@ -318,17 +318,17 @@ model TransactionsMaster {
   rmk3          String?       @map("RMK3")
   rmk4          String?       @map("RMK4")
   rmk5          String?       @map("RMK5")
-  userId        String?        @map("USER_ID")
+  userId        String?       @map("USER_ID")
   invoice_no    String?       @db.Char(150)
   godown        Int?
-  user          Users?         @relation(fields: [userId], references: [user_id])
-  company       Company?       @relation(fields: [company_id], references: [id])
+  user          User?         @relation("UserTransactions", fields: [userId], references: [id])
+  company       Company?      @relation(fields: [company_id], references: [id])
   godownDetails Godown?       @relation(fields: [godown], references: [id])
-  acno          ACNO?          @relation(fields: [pycd], references: [acno])
+  acno          ACNO?         @relation(fields: [pycd], references: [acno])
   transactions  Transactions[]
-  wc_order_id   Int?          @unique
-  sync_status   String?       @default("synced") @db.VarChar(20)
-  last_sync     DateTime?     @default(now())
+  wc_order_id   Int?           @unique
+  sync_status   String?        @default("synced") @db.VarChar(20)
+  last_sync     DateTime?      @default(now())
 
   @@unique([tran_code, vr_no]) // Enforces no duplicate voucher numbers per tran_code
   @@map("TRANSACTIONS_MASTER")

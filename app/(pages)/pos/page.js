@@ -15,8 +15,13 @@ import {
   Zap
 } from 'lucide-react';
 import axios from 'axios';
+import { useSession } from 'next-auth/react';
 
 const ModernPOSDashboard = () => {
+
+ const {data:session} = useSession();
+  const userId = session?.user?.id;
+
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
   const router = useRouter();
@@ -32,7 +37,8 @@ useEffect(() => {
 
   const fetchStats = async () => {
     try {
-      const res = await axios.get('/api/pos/stats');
+      console.log('Fetching stats for user ID:', userId);
+      const res = await axios.get(`/api/pos/stats?id=${userId}`);
       const data = await res.data;
       setStats(data);
     } catch (error) {

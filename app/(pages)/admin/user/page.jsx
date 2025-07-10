@@ -25,6 +25,7 @@ const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [shifts, setShifts] = useState([]);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -32,16 +33,26 @@ const UserManagement = () => {
     role: "CASHIER",
     isActive: true,
   });
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [total, setTotal] = useState(0);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm]);
+
+  useEffect(() => {
     fetchUsers();
     fetchShifts();
-  }, []);
+  }, [debouncedSearchTerm, roleFilter, page]);
 
-  // Add this effect to clear shift when role changes
   useEffect(() => {
     if (formData.role !== "CASHIER") {
       setFormData((prev) => ({ ...prev, shiftId: null }));
@@ -51,7 +62,7 @@ const UserManagement = () => {
   const fetchShifts = async () => {
     try {
       const response = await axios.get("/api/shifts");
-      setShifts(response.data);
+      setShifts(response.data); 
     } catch (error) {
       console.error("Error fetching shifts:", error);
     }
@@ -61,10 +72,18 @@ const UserManagement = () => {
     try {
       setLoading(true);
       setError(null);
+
       const response = await axios.get("/api/users", {
-        params: { includeShifts: true },
+        params: {
+          search: debouncedSearchTerm,
+          role: roleFilter,
+          page,
+          limit,
+        },
       });
-      setUsers(response.data);
+
+      setUsers(response.data.users);
+      setTotal(response.data.total);
     } catch (error) {
       console.error("Error fetching users:", error);
       setError(error.message || "An error occurred");
@@ -178,16 +197,6 @@ const UserManagement = () => {
     setError(null);
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -196,16 +205,16 @@ const UserManagement = () => {
     return matchesSearch && matchesRole;
   });
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading users...</p>
-        </div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="min-h-screen bg-background flex items-center justify-center">
+  //       <div className="text-center">
+  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+  //         <p className="text-muted-foreground">Loading users...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   if (error && users.length === 0) {
     return (
@@ -315,162 +324,195 @@ const UserManagement = () => {
         </div>
 
         {/* Users Table */}
-        <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-border">
-              <thead className="bg-primary">
-                <tr>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-primary-foreground uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-primary-foreground uppercase tracking-wider hidden sm:table-cell">
-                    Role
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-primary-foreground uppercase tracking-wider hidden sm:table-cell">
-                    Status
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-primary-foreground uppercase tracking-wider hidden md:table-cell">
-                    {roleFilter === "all" || roleFilter === "CASHIER"
-                      ? "Shift"
-                      : ""}
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-right text-xs font-medium text-primary-foreground uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-card divide-y divide-border">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-secondary">
-                    <td className="px-3 py-3 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-8 w-8 md:h-10 md:w-10">
-                          <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-primary flex items-center justify-center">
-                            <span className="text-primary-foreground font-medium text-xs md:text-sm">
-                              {user.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="ml-2 md:ml-4">
-                          <div className="text-sm font-medium text-primary">
-                            {user.name}
-                          </div>
-                          <div className="text-xs md:text-sm text-primary">
-                            {user.email}
-                          </div>
-
-                          {/* Role & Status - mobile only */}
-                          <div className="sm:hidden mt-1 flex flex-wrap gap-1">
-                            <span
-                              className={`inline-flex px-1.5 py-0.5 text-xs font-semibold rounded-full ${
-                                user.role === "ADMIN"
-                                  ? "bg-purple-100 text-purple-800"
-                                  : "bg-blue-100 text-blue-800"
-                              }`}
-                            >
-                              {user.role}
-                            </span>
-                            <span
-                              className={`inline-flex px-1.5 py-0.5 text-xs font-semibold rounded-full ${
-                                user.isActive
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {user.isActive ? "Active" : "Inactive"}
-                            </span>
-
-                            {/* Shift - show on mobile if role is CASHIER */}
-                            {user.role === "CASHIER" && (
-                              <div className="text-muted-foreground text-xs">
-                                {user.shift ? (
-                                  <>
-                                    {user.shift.name} |{" "}
-                                    {formatTo12Hour(user.shift.startTime)} -{" "}
-                                    {formatTo12Hour(user.shift.endTime)}
-                                  </>
-                                ) : (
-                                  "Not assigned"
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="px-3 py-3 whitespace-nowrap hidden sm:table-cell">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          user.role === "ADMIN"
-                            ? "bg-purple-100 text-purple-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap hidden sm:table-cell">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          user.isActive
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {user.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-xs md:text-sm text-primary hidden md:table-cell">
-                      {user.role === "CASHIER" && user.shift ? (
-                        <div>
-                          <div>{user.shift.name}</div>
-                          <div className="text-muted-foreground text-xs">
-                            {formatTo12Hour(user.shift?.startTime)} -{" "}
-                            {formatTo12Hour(user.shift?.endTime)}
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">
-                          {user.role === "CASHIER" ? "Not assigned" : ""}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-1 md:space-x-2">
-                        <button
-                          onClick={() => openModal("edit", user)}
-                          className="text-primary hover:text-primary/80 p-1 rounded-md hover:bg-primary/10 transition-colors"
-                          aria-label="Edit user"
-                        >
-                          <Edit className="h-3 w-3 md:h-4 md:w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(user.id)}
-                          className="text-destructive hover:text-destructive/80 p-1 rounded-md hover:bg-destructive/10 transition-colors"
-                          aria-label="Delete user"
-                        >
-                          <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {loading ? (
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading users...</p>
           </div>
+        ) : (
+          <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-border">
+                <thead className="bg-primary">
+                  <tr>
+                    <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-primary-foreground uppercase tracking-wider">
+                      User
+                    </th>
+                    <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-primary-foreground uppercase tracking-wider hidden sm:table-cell">
+                      Role
+                    </th>
+                    <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-primary-foreground uppercase tracking-wider hidden sm:table-cell">
+                      Status
+                    </th>
+                    <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-primary-foreground uppercase tracking-wider hidden md:table-cell">
+                      {roleFilter === "all" || roleFilter === "CASHIER"
+                        ? "Shift"
+                        : ""}
+                    </th>
+                    <th className="px-3 py-2 md:px-6 md:py-3 text-right text-xs font-medium text-primary-foreground uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-card divide-y divide-border">
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-secondary">
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-8 w-8 md:h-10 md:w-10">
+                            <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-primary flex items-center justify-center">
+                              <span className="text-primary-foreground font-medium text-xs md:text-sm">
+                                {user.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="ml-2 md:ml-4">
+                            <div className="text-sm font-medium text-primary">
+                              {user.name}
+                            </div>
+                            <div className="text-xs md:text-sm text-primary">
+                              {user.email}
+                            </div>
 
-          {filteredUsers.length === 0 && (
-            <div className="text-center py-8 md:py-12">
-              <Users className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-3 md:mb-4" />
-              <p className="text-muted-foreground text-sm md:text-base">
-                No users found
-              </p>
+                            {/* Role & Status - mobile only */}
+                            <div className="sm:hidden mt-1 flex flex-wrap gap-1">
+                              <span
+                                className={`inline-flex px-1.5 py-0.5 text-xs font-semibold rounded-full ${
+                                  user.role === "ADMIN"
+                                    ? "bg-purple-100 text-purple-800"
+                                    : "bg-blue-100 text-blue-800"
+                                }`}
+                              >
+                                {user.role}
+                              </span>
+                              <span
+                                className={`inline-flex px-1.5 py-0.5 text-xs font-semibold rounded-full ${
+                                  user.isActive
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {user.isActive ? "Active" : "Inactive"}
+                              </span>
+
+                              {/* Shift - show on mobile if role is CASHIER */}
+                              {user.role === "CASHIER" && (
+                                <div className="text-muted-foreground text-xs">
+                                  {user.shift ? (
+                                    <>
+                                      {user.shift.name} |{" "}
+                                      {formatTo12Hour(user.shift.startTime)} -{" "}
+                                      {formatTo12Hour(user.shift.endTime)}
+                                    </>
+                                  ) : (
+                                    "Not assigned"
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="px-3 py-3 whitespace-nowrap hidden sm:table-cell">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            user.role === "ADMIN"
+                              ? "bg-purple-100 text-purple-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap hidden sm:table-cell">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            user.isActive
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {user.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-xs md:text-sm text-primary hidden md:table-cell">
+                        {user.role === "CASHIER" && user.shift ? (
+                          <div>
+                            <div>{user.shift.name}</div>
+                            <div className="text-muted-foreground text-xs">
+                              {formatTo12Hour(user.shift?.startTime)} -{" "}
+                              {formatTo12Hour(user.shift?.endTime)}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            {user.role === "CASHIER" ? "Not assigned" : ""}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end space-x-1 md:space-x-2">
+                          <button
+                            onClick={() => openModal("edit", user)}
+                            className="text-primary hover:text-primary/80 p-1 rounded-md hover:bg-primary/10 transition-colors"
+                            aria-label="Edit user"
+                          >
+                            <Edit className="h-3 w-3 md:h-4 md:w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(user.id)}
+                            className="text-destructive hover:text-destructive/80 p-1 rounded-md hover:bg-destructive/10 transition-colors"
+                            aria-label="Delete user"
+                          >
+                            <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          )}
+
+            {filteredUsers.length === 0 && (
+              <div className="text-center py-8 md:py-12">
+                <Users className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-3 md:mb-4" />
+                <p className="text-muted-foreground text-sm md:text-base">
+                  No users found
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Pagination */}
+        <div className="flex justify-between items-center py-4">
+          {/* Left: Page number */}
+          <span className="text-sm text-muted-foreground">
+            Page {page} of {Math.ceil(total / limit)}
+          </span>
+
+          {/* Right: Pagination buttons */}
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setPage((p) => Math.max(p - 1, 1))}
+              disabled={page === 1}
+              className="px-3 py-1 rounded text-foreground bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page >= Math.ceil(total / limit)}
+              className="px-3 py-1 rounded text-foreground bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
@@ -604,7 +646,7 @@ const UserManagement = () => {
                     className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-sm md:text-base bg-background"
                   >
                     <option value="">Select shift</option>
-                    {shifts.map((shift) => (
+                    {shifts.shifts?.map((shift) => (
                       <option key={shift.id} value={shift.id}>
                         {shift.name} ({formatTo12Hour(shift.startTime)} -{" "}
                         {formatTo12Hour(shift.endTime)})
@@ -636,7 +678,7 @@ const UserManagement = () => {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-foreground bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
+                  className="px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-primary bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
@@ -644,7 +686,7 @@ const UserManagement = () => {
                   type="button"
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-foreground bg-secondary hover:bg-secondary/80 disabled:bg-primary/50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center space-x-1 md:space-x-2"
+                  className="px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-primary bg-secondary hover:bg-secondary/80 disabled:bg-primary/50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center space-x-1 md:space-x-2"
                 >
                   {submitting && (
                     <div className="animate-spin h-3 w-3 md:h-4 md:w-4 border-2 border-primary-foreground border-t-transparent rounded-full"></div>

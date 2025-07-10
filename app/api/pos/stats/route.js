@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request) {
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+
+  console.log('Fetching stats for user ID:', id);
+
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -16,6 +22,7 @@ export async function GET() {
     transactionsMaster: {
       // dateD is commented out
       tran_code: 5,
+      userId: id 
     },
   },
 });
@@ -29,30 +36,26 @@ export async function GET() {
         //   lt: tomorrow,
         // },
         tran_code: 5,
+        userId: id 
       },
     });
 
     // ✅ Unique customers (by acno) for tran_code = 5
-    const uniqueCustomers = await prisma.transactions.findMany({
+    const uniqueCustomers = await prisma.transactionsMaster.count({
       where: {
-        transactionsMaster: {
-          dateD: {
-            gte: today,
-            lt: tomorrow,
-          },
-          tran_code: 5,
-        },
-        acno: {
-          not: null,
-        },
+        // dateD: {
+        //   gte: today,
+        //   lt: tomorrow,
+        // },
+        tran_code: 5,
+        userId: id 
       },
-      distinct: ['acno'],
     });
 
     return NextResponse.json({
       todaysSales: salesToday._sum.gross_amount || 0,
       transactions: transactionCount,
-      customers: uniqueCustomers.length || 0,
+      customers: uniqueCustomers,
     });
 
   } catch (error) {
