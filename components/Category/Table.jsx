@@ -198,89 +198,89 @@ const DataViewModal = ({ data, isOpen, onClose }) => {
     });
   };
 
- function prepareVoucherForPDF(voucher, documentType = "sales") {
-  const customer = {
-    name: voucher.acno?.acname || "Unknown",
-    strn: "Not Available",
-    ntn: "Not Available",
-    address: voucher.godownDetails?.godown || "Not Provided",
-  };
+  function prepareVoucherForPDF(voucher, documentType = "sales") {
+    const customer = {
+      name: voucher.acno?.acname || "Unknown",
+      strn: "Not Available",
+      ntn: "Not Available",
+      address: voucher.godownDetails?.godown || "Not Provided",
+    };
 
-  const entries = voucher.transactions
-    .filter((t) => t.sub_tran_id !== 3)
-    .map((t, idx) => {
-      const itemName = t.itemDetails?.item || "Unknown Item";
-      const batchNo = t.chno || "-";
-      const qty = t.qty ?? 0;
-      const unit = "KG"; // or t.unit if you have it
-      const rate = t.rate ?? 0;
-      const amount = (t.qty ?? 0) * (t.rate ?? 0);
+    const entries = voucher.transactions
+      .filter((t) => t.sub_tran_id !== 3)
+      .map((t, idx) => {
+        const itemName = t.itemDetails?.item || "Unknown Item";
+        const batchNo = t.chno || "-";
+        const qty = t.qty ?? 0;
+        const unit = "KG"; // or t.unit if you have it
+        const rate = t.rate ?? 0;
+        const amount = (t.qty ?? 0) * (t.rate ?? 0);
 
-      if (documentType === "delivery") {
-        return [
-          idx + 1,
-          itemName,
-          batchNo,
-          `${t.no_of_pack}x${t.qty_per_pack}=${qty}`,
-        ];
-      }
+        if (documentType === "delivery") {
+          return [
+            idx + 1,
+            itemName,
+            batchNo,
+            `${t.no_of_pack}x${t.qty_per_pack}=${qty}`,
+          ];
+        }
 
-      return [idx + 1, itemName, batchNo, qty, unit, rate, amount];
-    });
+        return [idx + 1, itemName, batchNo, qty, unit, rate, amount];
+      });
 
-  const totalAmount = entries.reduce(
-    (acc, row) => acc + (row.at(-1) || 0),
-    0
-  );
+    const totalAmount = entries.reduce(
+      (acc, row) => acc + (row.at(-1) || 0),
+      0
+    );
 
-  // Calculate total sales tax from all transactions
-  const totalSalesTax = voucher.transactions
-    .filter((t) => t.sub_tran_id !== 3)
-    .reduce((acc, t) => {
-      const amount = (t.qty ?? 0) * (t.rate ?? 0);
-      const taxRate = (t.st_rate ?? 0) + (t.additional_tax ?? 0);
-      return acc + (amount * (taxRate / 100));
-    }, 0);
+    // Calculate total sales tax from all transactions
+    const totalSalesTax = voucher.transactions
+      .filter((t) => t.sub_tran_id !== 3)
+      .reduce((acc, t) => {
+        const amount = (t.qty ?? 0) * (t.rate ?? 0);
+        const taxRate = (t.st_rate ?? 0) + (t.additional_tax ?? 0);
+        return acc + amount * (taxRate / 100);
+      }, 0);
 
-  const grandTotal = totalAmount + totalSalesTax;
+    const grandTotal = totalAmount + totalSalesTax;
 
-  const totals = {
-    amount: totalAmount,
-    tax: {
-      label: "SALES TAX",
-      value: totalSalesTax,
-    },
-    grandTotal: {
-      label: "GRAND TOTAL",
-      value: grandTotal,
-    },
-  };
+    const totals = {
+      amount: totalAmount,
+      tax: {
+        label: "SALES TAX",
+        value: totalSalesTax,
+      },
+      grandTotal: {
+        label: "GRAND TOTAL",
+        value: grandTotal,
+      },
+    };
 
-  const invoice = {
-    number: voucher.invoice_no || `INV-${voucher.vr_no}`,
-    date: voucher.dateD
-      ? new Date(voucher.dateD).toLocaleDateString("en-GB")
-      : new Date().toLocaleDateString("en-GB"),
-    po: "-",
-    dueDate: "30 Days",
-  };
+    const invoice = {
+      number: voucher.invoice_no || `INV-${voucher.vr_no}`,
+      date: voucher.dateD
+        ? new Date(voucher.dateD).toLocaleDateString("en-GB")
+        : new Date().toLocaleDateString("en-GB"),
+      po: "-",
+      dueDate: "30 Days",
+    };
 
-  return {
-    dateD: voucher.dateD,
-    tran_code: voucher.tran_code,
-    vr_no: voucher.vr_no,
-    userId: voucher.userId,
-    rmk: voucher.rmk,
-    rmk1: voucher.rmk1,
-    transactions: voucher.transactions,
-    acno: voucher.acno,
-    documentType,
-    customer,
-    entries,
-    totals,
-    invoice,
-  };
-}
+    return {
+      dateD: voucher.dateD,
+      tran_code: voucher.tran_code,
+      vr_no: voucher.vr_no,
+      userId: voucher.userId,
+      rmk: voucher.rmk,
+      rmk1: voucher.rmk1,
+      transactions: voucher.transactions,
+      acno: voucher.acno,
+      documentType,
+      customer,
+      entries,
+      totals,
+      invoice,
+    };
+  }
 
   const handleOnExport = async (type) => {
     setIsExporting(true);
@@ -523,61 +523,66 @@ const DataViewModal = ({ data, isOpen, onClose }) => {
               Close
             </Button>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  className="bg-blue-600 hover:bg-blue-700"
-                  disabled={isExporting}
-                >
-                  {isExporting ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Exporting {exportType}...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-4 w-4 mr-2" />
-                      Export
-                    </>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
+            {(data.tran_code === 4 ||
+              data.tran_code === 6 ||
+              data.tran_code === 9 ||
+              data.tran_code === 10) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    className="bg-blue-600 hover:bg-blue-700"
+                    disabled={isExporting}
+                  >
+                    {isExporting ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Exporting {exportType}...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4 mr-2" />
+                        Export
+                      </>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
 
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={() => handleOnExport("sales")}
-                  disabled={isExporting}
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Sales Invoice
-                  {isExporting && exportType === "sales" && (
-                    <RefreshCw className="w-4 h-4 ml-auto animate-spin" />
-                  )}
-                </DropdownMenuItem>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem
+                    onClick={() => handleOnExport("sales")}
+                    disabled={isExporting}
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Sales Invoice
+                    {isExporting && exportType === "sales" && (
+                      <RefreshCw className="w-4 h-4 ml-auto animate-spin" />
+                    )}
+                  </DropdownMenuItem>
 
-                <DropdownMenuItem
-                  onClick={() => handleOnExport("delivery")}
-                  disabled={isExporting}
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Delivery Note
-                  {isExporting && exportType === "delivery" && (
-                    <RefreshCw className="w-4 h-4 ml-auto animate-spin" />
-                  )}
-                </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleOnExport("delivery")}
+                    disabled={isExporting}
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Delivery Note
+                    {isExporting && exportType === "delivery" && (
+                      <RefreshCw className="w-4 h-4 ml-auto animate-spin" />
+                    )}
+                  </DropdownMenuItem>
 
-                <DropdownMenuItem
-                  onClick={() => handleOnExport("commission")}
-                  disabled={isExporting}
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Commission Invoice
-                  {isExporting && exportType === "commission" && (
-                    <RefreshCw className="w-4 h-4 ml-auto animate-spin" />
-                  )}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuItem
+                    onClick={() => handleOnExport("commission")}
+                    disabled={isExporting}
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Commission Invoice
+                    {isExporting && exportType === "commission" && (
+                      <RefreshCw className="w-4 h-4 ml-auto animate-spin" />
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </motion.div>
       </motion.div>
@@ -961,25 +966,30 @@ export default function VoucherTable({
                           >
                             <Edit className="h-4 w-4 text-primary group-hover:text-white" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 hover:bg-primary focus:bg-primary group"
-                            disabled={isDownloadingPDF}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              downloadVoucherPDF(
-                                entry.tran_id,
-                                entry.tran_code
-                              );
-                            }}
-                          >
-                            {isDownloadingPDF ? (
-                              <RefreshCw className="h-4 w-4 text-primary group-hover:text-white animate-spin" />
-                            ) : (
-                              <Printer className="h-4 w-4 text-primary group-hover:text-white" />
-                            )}
-                          </Button>
+
+                          {(entry.tran_code === 1 ||
+                            entry.tran_code === 2 ||
+                            entry.tran_code === 3) && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 hover:bg-primary focus:bg-primary group"
+                              disabled={isDownloadingPDF}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                downloadVoucherPDF(
+                                  entry.tran_id,
+                                  entry.tran_code
+                                );
+                              }}
+                            >
+                              {isDownloadingPDF ? (
+                                <RefreshCw className="h-4 w-4 text-primary group-hover:text-white animate-spin" />
+                              ) : (
+                                <Printer className="h-4 w-4 text-primary group-hover:text-white" />
+                              )}
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="ghost"
