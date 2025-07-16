@@ -582,7 +582,7 @@ const DataViewModal = ({ data, isOpen, onClose }) => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )}
+            )} 
           </div>
         </motion.div>
       </motion.div>
