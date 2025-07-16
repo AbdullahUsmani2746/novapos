@@ -24,7 +24,7 @@ export async function GET(request, { params }) {
     }
   });
 
-  console.log(config);
+  // console.log(config);
 
   try {
     let data = [];
@@ -443,8 +443,19 @@ async function getStockActivityReport(filters) {
             ...(filters.dateFrom && { gte: new Date(filters.dateFrom) }),
             ...(filters.dateTo && { lte: new Date(filters.dateTo) }),
           },
+          NOT: [
+            { tran_code: 1 },
+             { tran_code: 2 },
+              { tran_code: 3 },
+          ],
         }
-      : {}),
+      : {
+        NOT: [
+            { tran_code: 1 },
+             { tran_code: 2 },
+              { tran_code: 3 },
+          ],
+      }),
     ...(filters.godown && { godown: parseInt(filters.godown) }),
     ...(filters.product && {
       transactions: {
@@ -484,7 +495,7 @@ async function getStockActivityReport(filters) {
     orderBy: { dateD: "asc" },
   });
 
-  const formattedData = [];
+  console.log("Transactions fetched:", transactions);
 
   // Get opening stock: single value or map
   const openingData = await getOpeningStock(
@@ -493,70 +504,68 @@ async function getStockActivityReport(filters) {
     filters.dateFrom
   );
 
-  let runningBalanceMap = {}; // only needed when all products
+  const productMap = {}; // aggregate data per product
 
   transactions.forEach((t) => {
     (t.transactions || []).forEach((line) => {
       const productId = line.itcd;
       const qty = line.qty || 0;
-
       const openingStock = filters.product
         ? openingData
-        : (openingData[productId] || 0);
+        : openingData[productId] || 0;
 
-      // Initialize running balance per product
-      if (!runningBalanceMap[productId]) {
-        runningBalanceMap[productId] = openingStock;
+      if (!productMap[productId]) {
+        productMap[productId] = {
+          product_code: productId,
+          product_name: line.itemDetails?.item || "",
+          category: line.itemDetails?.itemCategories?.ic_name || "",
+          opening_stock: openingStock,
+          purchase_qty: 0,
+          purchase_ret_qty: 0,
+          sale_qty: 0,
+          sale_ret_qty: 0,
+          pos_qty: 0,
+        };
       }
-
-      const record = {
-        tranCode: t.tran_code,
-        date: t.dateD,
-        product_code: productId,
-        product_name: line.itemDetails?.item || "",
-        category: line.itemDetails?.itemCategories?.ic_name || "",
-        opening_stock: runningBalanceMap[productId],
-        purchase_qty: 0,
-        purchase_ret_qty: 0,
-        total_qty: 0,
-        sale_qty: 0,
-        sale_ret_qty: 0,
-        pos_qty: 0,
-        stock_balance: 0,
-      };
 
       switch (t.tran_code) {
         case 4:
-          record.purchase_qty = qty;
+          productMap[productId].purchase_qty += qty;
           break;
         case 9:
-          record.purchase_ret_qty = qty;
+          productMap[productId].purchase_ret_qty += qty;
           break;
         case 6:
-          record.sale_qty = qty;
+          productMap[productId].sale_qty += qty;
           break;
         case 10:
-          record.sale_ret_qty = qty;
+          productMap[productId].sale_ret_qty += qty;
           break;
         case 5:
-          record.pos_qty = qty;
+          productMap[productId].pos_qty += qty;
           break;
       }
-
-      const qty_in = record.purchase_qty + record.sale_ret_qty;
-      const qty_out =
-        record.sale_qty + record.purchase_ret_qty + record.pos_qty;
-
-      record.total_qty = qty_in - qty_out;
-
-      runningBalanceMap[productId] += record.total_qty;
-      record.stock_balance = runningBalanceMap[productId];
-
-      formattedData.push(record);
     });
   });
 
-  console.log("Final Stock Report:", formattedData.length, "rows");
+  const formattedData = Object.values(productMap).map((item) => {
+    const total_qty =
+      item.purchase_qty +
+      item.sale_ret_qty -
+      item.sale_qty -
+      item.purchase_ret_qty -
+      item.pos_qty;
+
+    const stock_balance = item.opening_stock + total_qty;
+
+    return {
+      ...item,
+      total_qty,
+      stock_balance,
+    };
+  });
+
+  console.log("Final Stock Activity Report:", formattedData.length, "rows");
   return formattedData;
 }
 
@@ -577,11 +586,13 @@ function calculateStockActivitySummary(data) {
   };
 }
 
+// Updated version of the getTradingMarginReport to include:
+// - Purchase (4), Purchase Return (9), Sale (6), Sale Return (10), POS (5)
 async function getTradingMarginReport(filters) {
   const where = {
     dateD: {
-      gte: filters.dateFrom ? new Date(filters.dateFrom) : undefined,
-      lte: filters.dateTo ? new Date(filters.dateTo) : undefined,
+      ...(filters.dateFrom && { gte: new Date(filters.dateFrom) }),
+      ...(filters.dateTo && { lte: new Date(filters.dateTo) }),
     },
   };
 
@@ -592,13 +603,10 @@ async function getTradingMarginReport(filters) {
       },
     };
   }
-
-  // Get all purchase and sale transactions
-  const purchaseTransactions = await prisma.transactionsMaster.findMany({
-    where: {
-      ...where,
-      tran_code: 4, // Purchase
-    },
+console.log("Filters for Trading Margin Report:");
+  // Fetch all relevant transactions (4, 5, 6, 9, 10)
+  const allTransactions = await prisma.transactionsMaster.findMany({
+    where,
     include: {
       transactions: {
         include: {
@@ -612,29 +620,11 @@ async function getTradingMarginReport(filters) {
     },
   });
 
-  const saleTransactions = await prisma.transactionsMaster.findMany({
-    where: {
-      ...where,
-      tran_code: 6, // Sale
-    },
-    include: {
-      transactions: {
-        include: {
-          itemDetails: {
-            include: {
-              itemCategories: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  // Group by item
   const itemMap = new Map();
 
-  // Process purchases
-  purchaseTransactions.forEach((t) => {
+  console.log("All Transactions Fetched:", allTransactions.length);
+
+  allTransactions.forEach((t) => {
     t.transactions.forEach((line) => {
       if (!line.itcd) return;
 
@@ -642,52 +632,77 @@ async function getTradingMarginReport(filters) {
       if (!itemMap.has(itemId)) {
         itemMap.set(itemId, {
           itemDetails: line.itemDetails,
+
+          // Quantities
           purchase_qty: 0,
-          purchase_amount: 0,
+          purchase_return_qty: 0,
           sale_qty: 0,
+          sale_return_qty: 0,
+          pos_qty: 0,
+
+          // Amounts
+          purchase_amount: 0,
+          purchase_return_amount: 0,
           sale_amount: 0,
+          sale_return_amount: 0,
+          pos_amount: 0,
         });
       }
 
       const itemData = itemMap.get(itemId);
-      itemData.purchase_qty += line.qty || 0;
-      itemData.purchase_amount += line.camt || 0;
-    });
-  });
 
-  // Process sales
-  saleTransactions.forEach((t) => {
-    t.transactions.forEach((line) => {
-      if (!line.itcd) return;
+      switch (t.tran_code) {
+        case 4: // Purchase
+          itemData.purchase_qty += line.qty || 0;
+          itemData.purchase_amount += line.camt || 0;
+          break;
 
-      const itemId = line.itcd;
-      if (!itemMap.has(itemId)) {
-        itemMap.set(itemId, {
-          itemDetails: line.itemDetails,
-          purchase_qty: 0,
-          purchase_amount: 0,
-          sale_qty: 0,
-          sale_amount: 0,
-        });
+        case 9: // Purchase Return
+          itemData.purchase_return_qty += line.qty || 0;
+          itemData.purchase_return_amount += line.camt || 0;
+          break;
+
+        case 6: // Sale
+          itemData.sale_qty += line.qty || 0;
+          itemData.sale_amount += line.damt || 0;
+          break;
+
+        case 10: // Sale Return
+          itemData.sale_return_qty += line.qty || 0;
+          itemData.sale_return_amount += line.damt || 0;
+          break;
+
+        case 5: // POS
+          itemData.pos_qty += line.qty || 0;
+          itemData.pos_amount += line.gross_amount || 0;
+          break;
       }
-
-      const itemData = itemMap.get(itemId);
-      itemData.sale_qty += line.qty || 0;
-      itemData.sale_amount += line.damt || 0;
     });
   });
 
-  console.log("YESSSSSSSSSSSSSSSSSS");
-
-  // Convert to array and calculate margins
   const marginData = Array.from(itemMap.values()).map((item) => {
+    const total_purchase_qty =
+      item.purchase_qty - item.purchase_return_qty;
+
+    const total_purchase_amount =
+      item.purchase_amount - item.purchase_return_amount;
+
+    const total_sale_qty =
+      item.sale_qty + item.pos_qty - item.sale_return_qty;
+
+    const total_sale_amount =
+      item.sale_amount + item.pos_amount - item.sale_return_amount;
+
     const avg_purchase_rate =
-      item.purchase_qty > 0 ? item.purchase_amount / item.purchase_qty : 0;
+      total_purchase_qty > 0 ? total_purchase_amount / total_purchase_qty : 0;
+
     const avg_sale_rate =
-      item.sale_qty > 0 ? item.sale_amount / item.sale_qty : 0;
-    const margin = item.sale_amount - item.purchase_amount;
+      total_sale_qty > 0 ? total_sale_amount / total_sale_qty : 0;
+
+    const margin = total_sale_amount - total_purchase_amount;
+
     const margin_percent =
-      item.purchase_amount > 0 ? (margin / item.purchase_amount) * 100 : 0;
+      total_purchase_amount > 0 ? (margin / total_purchase_amount) * 100 : 0;
 
     return {
       ...item,
@@ -698,7 +713,6 @@ async function getTradingMarginReport(filters) {
     };
   });
 
-  // Filter by category if specified
   if (filters.category) {
     const categoryId = parseInt(filters.category);
     return marginData.filter(
@@ -708,6 +722,7 @@ async function getTradingMarginReport(filters) {
 
   return marginData;
 }
+
 
 function calculateTradingMarginSummary(data) {
   const total_purchase_qty = data.reduce(
@@ -723,6 +738,25 @@ function calculateTradingMarginSummary(data) {
     (sum, item) => sum + item.sale_amount,
     0
   );
+
+  const total_pos_qty = data.reduce(
+    (sum, item) => sum + item.pos_qty,
+    0
+  );
+  const total_pos_amount = data.reduce(
+    (sum, item) => sum + item.pos_amount,
+    0
+  );
+  const total_sale_return_qty = data.reduce((sum, item) => sum + item.sale_return_qty, 0);
+  const total_sale_return_amount = data.reduce(
+    (sum, item) => sum + item.sale_return_amount,
+    0
+  );
+   const total_purchase_return_qty = data.reduce((sum, item) => sum + item.purchase_return_qty, 0);
+  const total_purchase_return_amount = data.reduce(
+    (sum, item) => sum + item.purchase_return_amount,
+    0
+  );
   const total_margin = total_sale_amount - total_purchase_amount;
   const avg_margin_percent =
     total_purchase_amount > 0
@@ -732,6 +766,13 @@ function calculateTradingMarginSummary(data) {
   return {
     total_purchase_qty,
     total_purchase_amount,
+    total_pos_qty,
+    total_pos_amount,
+    total_sale_return_qty,
+    total_sale_return_amount,
+    total_purchase_return_qty,
+    total_purchase_return_amount,
+    
     total_sale_qty,
     total_sale_amount,
     total_margin,
@@ -816,7 +857,11 @@ async function getStockLedgerReport(filters) {
         if (t.tran_code === 4 || t.tran_code === 10) {
           // Purchase or Sale Return
           qtyIn = line.qty || 0;
-        } else if (t.tran_code === 6 || t.tran_code === 9) {
+        } else if (
+          t.tran_code === 6 ||
+          t.tran_code === 9 ||
+          t.tran_code === 5
+        ) {
           // Sale or Purchase Return
           qtyOut = line.qty || 0;
         }
@@ -876,7 +921,11 @@ async function getOpeningBalance(itemId, godownId, dateFrom) {
         if (t.tran_code === 4 || t.tran_code === 10) {
           // Purchase or Sale Return
           balance += line.qty || 0;
-        } else if (t.tran_code === 6 || t.tran_code === 9) {
+        } else if (
+          t.tran_code === 6 ||
+          t.tran_code === 9 ||
+          t.tran_code === 5
+        ) {
           // Sale or Purchase Return
           balance -= line.qty || 0;
         }
@@ -940,7 +989,7 @@ async function getPOSTransactionsReport(filters) {
       transactions: filteredTransactions,
       dateD: new Date(t.dateD).toLocaleDateString(),
       customer_name: t.acno?.acname || "Walk-in Customer",
-      payment_mode: t.payment_mode || "Cash",
+      payment_mode: t.pycd === "0001" ? "Cash" : "Card",
       total_qty: filteredTransactions.reduce(
         (sum, line) => sum + (line.qty || 0),
         0
@@ -951,7 +1000,7 @@ async function getPOSTransactionsReport(filters) {
       ),
       discount: t.discount || 0,
       net_amount: filteredTransactions.reduce(
-        (sum, line) => sum + (line.damt || 0),
+        (sum, line) => sum + (line.gross_amount || 0), //damt
         0
       ),
     };
@@ -988,6 +1037,8 @@ function getTransactionTypeLabel(tran_code) {
   switch (tran_code) {
     case 4:
       return "Purchase";
+    case 5:
+      return "POS";
     case 6:
       return "Sale";
     case 9:
@@ -1071,5 +1122,3 @@ async function getOpeningStock(productId, godownId, dateFrom) {
     return stockMap;
   }
 }
-
-

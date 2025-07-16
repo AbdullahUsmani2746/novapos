@@ -27,11 +27,11 @@ import {
   Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import axios from 'axios'
+import axios from "axios";
 
 // Configuration - Easy to modify
 const CONFIG = {
-    baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000',
+  baseURL: process.env.REACT_APP_API_BASE_URL || "http://localhost:3000",
 
   levels: [
     {
@@ -100,75 +100,86 @@ const ChartOfAccounts = () => {
 
   // Mock API functions (replace with actual API calls)
   const api = {
-  get: async (endpoint, params = {}) => {
-    try {
-      const response = await axios.get(endpoint, {
-        params,
-        headers: {
-          'Content-Type': 'application/json',
-          // Add your auth headers here if needed
-          // 'Authorization': `Bearer ${getAuthToken()}`,
-        },
-      })
-      
-      return { data: response.data }
-    } catch (error) {
-      console.error('API GET Error:', error.response?.data || error.message)
-      throw new Error(error.response?.data?.message || error.message || 'Network error')
-    }
-  },
-  
-  post: async (endpoint, data) => {
-    try {
-      const response = await axios.post(endpoint, data, {
-        headers: {
-          'Content-Type': 'application/json',
-          // Add your auth headers here if needed
-          // 'Authorization': `Bearer ${getAuthToken()}`,
-        },
-      })
-      
-      return { data: response.data }
-    } catch (error) {
-      console.error('API POST Error:', error.response?.data || error.message)
-      throw new Error(error.response?.data?.message || error.message || 'Network error')
-    }
-  },
-  
-  put: async (endpoint, data) => {
-    try {
-      const response = await axios.put(endpoint, data, {
-        headers: {
-          'Content-Type': 'application/json',
-          // Add your auth headers here if needed
-          // 'Authorization': `Bearer ${getAuthToken()}`,
-        },
-      })
-      
-      return { data: response.data }
-    } catch (error) {
-      console.error('API PUT Error:', error.response?.data || error.message)
-      throw new Error(error.response?.data?.message || error.message || 'Network error')
-    }
-  },
-  
-  delete: async (endpoint) => {
-    try {
-      const response = await axios.delete(endpoint, {
-        headers: {
-          'Content-Type': 'application/json',
-          // Add your auth headers here if needed
-          // 'Authorization': `Bearer ${getAuthToken()}`,
-        },
-      })
-      
-      return { data: response.data }
-    } catch (error) {
-      console.error('API DELETE Error:', error.response?.data || error.message)
-      throw new Error(error.response?.data?.message || error.message || 'Network error')
-    }
-  }
-}
+    get: async (endpoint, params = {}) => {
+      try {
+        const response = await axios.get(endpoint, {
+          params,
+          headers: {
+            "Content-Type": "application/json",
+            // Add your auth headers here if needed
+            // 'Authorization': `Bearer ${getAuthToken()}`,
+          },
+        });
+
+        return { data: response.data };
+      } catch (error) {
+        console.error("API GET Error:", error.response?.data || error.message);
+        throw new Error(
+          error.response?.data?.message || error.message || "Network error"
+        );
+      }
+    },
+
+    post: async (endpoint, data) => {
+      try {
+        const response = await axios.post(endpoint, data, {
+          headers: {
+            "Content-Type": "application/json",
+            // Add your auth headers here if needed
+            // 'Authorization': `Bearer ${getAuthToken()}`,
+          },
+        });
+
+        return { data: response.data };
+      } catch (error) {
+        console.error("API POST Error:", error.response?.data || error.message);
+        throw new Error(
+          error.response?.data?.message || error.message || "Network error"
+        );
+      }
+    },
+
+    put: async (endpoint, data) => {
+      try {
+        const response = await axios.put(endpoint, data, {
+          headers: {
+            "Content-Type": "application/json",
+            // Add your auth headers here if needed
+            // 'Authorization': `Bearer ${getAuthToken()}`,
+          },
+        });
+
+        return { data: response.data };
+      } catch (error) {
+        console.error("API PUT Error:", error.response?.data || error.message);
+        throw new Error(
+          error.response?.data?.message || error.message || "Network error"
+        );
+      }
+    },
+
+    delete: async (endpoint) => {
+      try {
+        const response = await axios.delete(endpoint, {
+          headers: {
+            "Content-Type": "application/json",
+            // Add your auth headers here if needed
+            // 'Authorization': `Bearer ${getAuthToken()}`,
+          },
+        });
+
+        return { data: response.data };
+      } catch (error) {
+        console.error(
+          "API DELETE Error:",
+          error.response?.data || error.message
+        );
+        throw new Error(
+          error.response?.data?.message || error.message || "Network error"
+        );
+      }
+    },
+  };
 
   // Utility Functions
   const showToast = (message, type = "success") => {
@@ -202,66 +213,72 @@ const ChartOfAccounts = () => {
 
   // Data Fetching
   // Update fetchData function:
-const fetchData = async (levelKey, params = {}) => {
-  try {
-    setLoading(true)
-    const endpoint = CONFIG.endpoints[levelKey]
-    const response = await api.get(endpoint, params)
-    setData(prev => ({ ...prev, [levelKey]: response.data.data || response.data }))
-  } catch (error) {
-    console.error(`Error fetching ${levelKey}:`, error)
-    showToast(`Failed to load ${levelKey}: ${error.message}`, 'error')
-  } finally {
-    setLoading(false)
-  }
-}
-
-// Update handleCreate function error handling:
-const handleCreate = async (formData) => {
-  try {
-    setLoading(true)
-    const { level, data: itemData } = formData
-    const levelConfig = CONFIG.levels.find(l => l.key === level)
-    const nameField = levelConfig?.nameField
-    
-    // Check for duplicate names
-    if (checkDuplicateName(level, itemData[nameField])) {
-      showToast(`${itemData[nameField]} already exists`, 'error')
-      return
+  const fetchData = async (levelKey, params = {}) => {
+    try {
+      setLoading(true);
+      const endpoint = CONFIG.endpoints[levelKey];
+      const response = await api.get(endpoint, params);
+      setData((prev) => ({
+        ...prev,
+        [levelKey]: response.data.data || response.data,
+      }));
+    } catch (error) {
+      console.error(`Error fetching ${levelKey}:`, error);
+      showToast(`Failed to load ${levelKey}: ${error.message}`, "error");
+    } finally {
+      setLoading(false);
     }
-    
-    const code = getNextCode(level)
-    const newItem = {
-      ...itemData,
-      [levelConfig?.codeField]: code
-    }
+  };
 
-    // Add parent code if level has a parent
-    if (levelConfig?.parentField) {
-      const parentLevelConfig = CONFIG.levels.find(l => l.key === levelConfig.parentField)
-      console.log('Parent Level Config:', parentLevelConfig)
-      if (parentLevelConfig && itemData[parentLevelConfig.codeField]) {
-        newItem[parentLevelConfig.codeField] = itemData[parentLevelConfig.codeField]
+  // Update handleCreate function error handling:
+  const handleCreate = async (formData) => {
+    try {
+      setLoading(true);
+      const { level, data: itemData } = formData;
+      const levelConfig = CONFIG.levels.find((l) => l.key === level);
+      const nameField = levelConfig?.nameField;
+
+      // Check for duplicate names
+      if (checkDuplicateName(level, itemData[nameField])) {
+        showToast(`${itemData[nameField]} already exists`, "error");
+        return;
       }
-    }
 
-    console.log(newItem)
-    
-    await api.post(CONFIG.endpoints[level], newItem)
-    setData(prev => ({
-      ...prev,
-      [level]: [...prev[level], newItem]
-    }))
-    
-    showToast(`${levelConfig?.title} created successfully`)
-    setActiveModal(null)
-  } catch (error) {
-    console.error('Create error:', error)
-    showToast(`Failed to create item: ${error.message}`, 'error')
-  } finally {
-    setLoading(false)
-  }
-}
+      const code = getNextCode(level);
+      const newItem = {
+        ...itemData,
+        [levelConfig?.codeField]: code,
+      };
+
+      // Add parent code if level has a parent
+      if (levelConfig?.parentField) {
+        const parentLevelConfig = CONFIG.levels.find(
+          (l) => l.key === levelConfig.parentField
+        );
+        console.log("Parent Level Config:", parentLevelConfig);
+        if (parentLevelConfig && itemData[parentLevelConfig.codeField]) {
+          newItem[parentLevelConfig.codeField] =
+            itemData[parentLevelConfig.codeField];
+        }
+      }
+
+      console.log(newItem);
+
+      await api.post(CONFIG.endpoints[level], newItem);
+      setData((prev) => ({
+        ...prev,
+        [level]: [...prev[level], newItem],
+      }));
+
+      showToast(`${levelConfig?.title} created successfully`);
+      setActiveModal(null);
+    } catch (error) {
+      console.error("Create error:", error);
+      showToast(`Failed to create item: ${error.message}`, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchAllData = async () => {
     try {
@@ -649,6 +666,22 @@ const handleCreate = async (formData) => {
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
+                  <Button
+                    variant="outline"
+                    className="bg-primary hover:bg-primary/90 h-10 px-4 text-white"
+                    onClick={() => {
+                      // Clear selected item at this level
+                      setSelectedItems((prev) => ({
+                        ...prev,
+                        [levelConfig.key]: null,
+                      }));
+
+                      // Fetch all data again for this level
+                      fetchData(levelConfig.key);
+                    }}
+                  >
+                    Reset
+                  </Button>
                 </div>
 
                 <div className="space-y-2 max-h-80 overflow-y-auto">
@@ -656,6 +689,26 @@ const handleCreate = async (formData) => {
                     filteredData.map((item) => (
                       <motion.div
                         key={item[levelConfig?.codeField]}
+                        onClick={() => {
+                          // Select this item for current level
+                          setSelectedItems((prev) => ({
+                            ...prev,
+                            [levelConfig.key]: item[levelConfig.codeField],
+                          }));
+
+                          // Find child level
+                          const childLevel = CONFIG.levels.find(
+                            (l) => l.parentField === levelConfig.key
+                          );
+
+                          // Fetch child level data filtered by this code
+                          if (childLevel) {
+                            fetchData(childLevel.key, {
+                              [levelConfig.codeField]:
+                                item[levelConfig.codeField],
+                            });
+                          }
+                        }}
                         whileHover={{ scale: 1.01 }}
                         className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                       >

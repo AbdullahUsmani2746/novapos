@@ -2,6 +2,12 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import VoucherModal from "./Modal"; // Adjust path as needed;
 import { VOUCHER_CONFIG } from "./constants";
 import {
@@ -50,8 +56,12 @@ import {
   CheckCircle,
   Edit,
   Delete,
+  Printer,
 } from "lucide-react";
 import axios from "axios";
+import { createPortal } from "react-dom";
+import { generateVoucherPDF } from "@/components/Template/Payment"; // update path as needed
+import { generateUnifiedPDF } from "../Template/UnifiedReport";
 
 // Mock data for demonstration
 
@@ -161,6 +171,10 @@ const TransactionItem = ({ transaction, index }) => {
 
 // Main DataViewModal component
 const DataViewModal = ({ data, isOpen, onClose }) => {
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportType, setExportType] = useState("");
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
+
   if (!isOpen || !data) return null;
 
   const formatDate = (dateString) => {
@@ -184,7 +198,109 @@ const DataViewModal = ({ data, isOpen, onClose }) => {
     });
   };
 
-  return (
+ function prepareVoucherForPDF(voucher, documentType = "sales") {
+  const customer = {
+    name: voucher.acno?.acname || "Unknown",
+    strn: "Not Available",
+    ntn: "Not Available",
+    address: voucher.godownDetails?.godown || "Not Provided",
+  };
+
+  const entries = voucher.transactions
+    .filter((t) => t.sub_tran_id !== 3)
+    .map((t, idx) => {
+      const itemName = t.itemDetails?.item || "Unknown Item";
+      const batchNo = t.chno || "-";
+      const qty = t.qty ?? 0;
+      const unit = "KG"; // or t.unit if you have it
+      const rate = t.rate ?? 0;
+      const amount = (t.qty ?? 0) * (t.rate ?? 0);
+
+      if (documentType === "delivery") {
+        return [
+          idx + 1,
+          itemName,
+          batchNo,
+          `${t.no_of_pack}x${t.qty_per_pack}=${qty}`,
+        ];
+      }
+
+      return [idx + 1, itemName, batchNo, qty, unit, rate, amount];
+    });
+
+  const totalAmount = entries.reduce(
+    (acc, row) => acc + (row.at(-1) || 0),
+    0
+  );
+
+  // Calculate total sales tax from all transactions
+  const totalSalesTax = voucher.transactions
+    .filter((t) => t.sub_tran_id !== 3)
+    .reduce((acc, t) => {
+      const amount = (t.qty ?? 0) * (t.rate ?? 0);
+      const taxRate = (t.st_rate ?? 0) + (t.additional_tax ?? 0);
+      return acc + (amount * (taxRate / 100));
+    }, 0);
+
+  const grandTotal = totalAmount + totalSalesTax;
+
+  const totals = {
+    amount: totalAmount,
+    tax: {
+      label: "SALES TAX",
+      value: totalSalesTax,
+    },
+    grandTotal: {
+      label: "GRAND TOTAL",
+      value: grandTotal,
+    },
+  };
+
+  const invoice = {
+    number: voucher.invoice_no || `INV-${voucher.vr_no}`,
+    date: voucher.dateD
+      ? new Date(voucher.dateD).toLocaleDateString("en-GB")
+      : new Date().toLocaleDateString("en-GB"),
+    po: "-",
+    dueDate: "30 Days",
+  };
+
+  return {
+    dateD: voucher.dateD,
+    tran_code: voucher.tran_code,
+    vr_no: voucher.vr_no,
+    userId: voucher.userId,
+    rmk: voucher.rmk,
+    rmk1: voucher.rmk1,
+    transactions: voucher.transactions,
+    acno: voucher.acno,
+    documentType,
+    customer,
+    entries,
+    totals,
+    invoice,
+  };
+}
+
+  const handleOnExport = async (type) => {
+    setIsExporting(true);
+    setExportType(type);
+
+    try {
+      const res = await axios.get(`/api/voucher/getById?id=${data.tran_id}`);
+      const resData = await res.data.data;
+      const mapped = prepareVoucherForPDF(resData, type);
+      const doc = generateUnifiedPDF(mapped);
+      doc.save(`${type}_invoice.pdf`);
+    } catch (error) {
+      console.error("Export failed:", error);
+    } finally {
+      setIsExporting(false);
+      setExportType("");
+    }
+  };
+
+  return createPortal(
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
@@ -224,7 +340,6 @@ const DataViewModal = ({ data, isOpen, onClose }) => {
               <X className="h-4 w-4" />
             </Button>
           </div>
-
           <div className="p-6 space-y-6">
             {/* Main Information Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -397,24 +512,77 @@ const DataViewModal = ({ data, isOpen, onClose }) => {
               </div>
             )}
           </div>
-
           {/* Footer */}
           <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-end space-x-3 rounded-b-xl">
             <Button
               variant="outline"
               onClick={onClose}
+              disabled={isExporting}
               className="text-gray-700 hover:bg-gray-50"
             >
               Close
             </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  className="bg-blue-600 hover:bg-blue-700"
+                  disabled={isExporting}
+                >
+                  {isExporting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Exporting {exportType}...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                    </>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem
+                  onClick={() => handleOnExport("sales")}
+                  disabled={isExporting}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Sales Invoice
+                  {isExporting && exportType === "sales" && (
+                    <RefreshCw className="w-4 h-4 ml-auto animate-spin" />
+                  )}
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => handleOnExport("delivery")}
+                  disabled={isExporting}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Delivery Note
+                  {isExporting && exportType === "delivery" && (
+                    <RefreshCw className="w-4 h-4 ml-auto animate-spin" />
+                  )}
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => handleOnExport("commission")}
+                  disabled={isExporting}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Commission Invoice
+                  {isExporting && exportType === "commission" && (
+                    <RefreshCw className="w-4 h-4 ml-auto animate-spin" />
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 
@@ -424,7 +592,7 @@ export default function VoucherTable({
   refreshTrigger = 0,
   isLoading = true,
   category = "",
-  onSuccess
+  onSuccess,
 }) {
   const TABLE_FIELDS = VOUCHER_CONFIG[type]?.tableFields || [];
   const [data, setData] = useState([]);
@@ -438,7 +606,29 @@ export default function VoucherTable({
   const [isEditModal, setIsEditModal] = useState(false);
   const [focusedRowIndex, setFocusedRowIndex] = useState(-1);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
 
+  const downloadVoucherPDF = async (tranId, tran_code) => {
+    setIsDownloadingPDF(true);
+
+    try {
+      const res = await axios.get(`/api/voucher/getById?id=${tranId}`);
+      const data = await res.data.data;
+      console.log("NEW DAT: ", data);
+      const doc = generateVoucherPDF(data);
+      const name =
+        tran_code === 2
+          ? "PaymentVoucher"
+          : tran_code === 1
+          ? "ReceiptVoucher"
+          : "JournalVoucher";
+      doc.save(`${name}.pdf`);
+    } catch (err) {
+      console.error("Error downloading PDF:", err);
+    } finally {
+      setIsDownloadingPDF(false);
+    }
+  };
   // Fetch voucher data with pagination
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -770,6 +960,25 @@ export default function VoucherTable({
                             }}
                           >
                             <Edit className="h-4 w-4 text-primary group-hover:text-white" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 hover:bg-primary focus:bg-primary group"
+                            disabled={isDownloadingPDF}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              downloadVoucherPDF(
+                                entry.tran_id,
+                                entry.tran_code
+                              );
+                            }}
+                          >
+                            {isDownloadingPDF ? (
+                              <RefreshCw className="h-4 w-4 text-primary group-hover:text-white animate-spin" />
+                            ) : (
+                              <Printer className="h-4 w-4 text-primary group-hover:text-white" />
+                            )}
                           </Button>
                           <Button
                             size="sm"

@@ -113,32 +113,24 @@ export async function POST(req, { params }) {
 
     let masterDateTime;
     let masterCheckDateTime;
-    if (
-      tran_code === 2 ||
-      tran_code === 1 ||
-      tran_code === 6 ||
-      tran_code === 4 ||
-      tran_code === 9 ||
-      tran_code === 10
-    ) {
-      if (master.check_date !== "") {
-        masterCheckDateTime = new Date(`${master.check_date}T${master.time}`);
-      }
-      masterDateTime = new Date();
+    if ([1, 2, 4, 6, 9, 10].includes(tran_code)) {
+      const now = new Date();
 
-      console.log("masterDateTime:", masterDateTime);
-      master.dateD = masterDateTime; // Format date as YYYY-MM-DD
-      master.time = masterDateTime; // Format time as HH:MM:SS
-      master.check_date = masterCheckDateTime; // Format check_date as YYYY-MM-DD HH:MM:SS
+      masterCheckDateTime =
+        master.check_date && master.check_date !== ""
+          ? new Date(master.check_date)
+          : now;
 
-      if (
-        tran_code === 4 ||
-        tran_code === 6 ||
-        tran_code === 9 ||
-        tran_code === 10
-      ) {
+      masterDateTime =
+        master.dateD && master.dateD !== "" ? new Date(master.dateD) : now;
+
+      master.dateD = masterDateTime;
+      master.time = masterDateTime;
+      master.check_date = masterCheckDateTime;
+
+      if ([4, 6, 9, 10].includes(tran_code)) {
         master.godown = parseOptionalInt(master.godown);
-      } // Format check_date as YYYY-MM-DD HH:MM:SS
+      }
     } else if (tran_code === 3) {
       console.log("masterDate:", master.dateD);
 
@@ -294,9 +286,9 @@ export async function POST(req, { params }) {
       let camt = 0;
 
       if (tran_code === 1) {
-        damt = totalDamt - totalCamt;
+        camt = totalCamt - totalDamt ;
       } else if (tran_code === 2) {
-        camt = totalCamt - totalDamt;
+        damt = totalDamt - totalCamt ;
       } else if (tran_code === 4 || tran_code === 9) {
         damt = totalCamt; // mirror camt as damt
       } else if (tran_code === 6 || tran_code === 10) {
@@ -383,23 +375,27 @@ export async function PUT(req) {
     }
 
     // Format date/times
-    if ([1, 2, 4, 6].includes(tran_code)) {
-      let checkDateObj;
-      const dateObj = new Date(`${master.dateD}T${master.time}`);
-      if (master.check_date !== "") {
-        checkDateObj = new Date(`${master.check_date}T${master.time}`);
-      }
+   if ([1, 2, 4, 6, 9, 10].includes(tran_code)) {
+  const now = new Date();
 
-      master.dateD = dateObj;
-      master.time = dateObj;
-      master.check_date = checkDateObj;
+  const dateObj =
+    master.dateD && master.dateD !== "" ? new Date(master.dateD) : now;
 
-      if ([4, 6].includes(tran_code)) {
-        master.godown = parseOptionalInt(master.godown);
-      }
-    } else if (tran_code === 3) {
-      master.dateD = new Date(master.dateD);
-    }
+  const checkDateObj =
+    master.check_date && master.check_date !== ""
+      ? new Date(master.check_date)
+      : now;
+
+  master.dateD = dateObj;
+  master.time = dateObj;
+  master.check_date = checkDateObj;
+
+  if ([4, 6, 9, 10].includes(tran_code)) {
+    master.godown = parseOptionalInt(master.godown);
+  }
+} else if (tran_code === 3) {
+  master.dateD = new Date(master.dateD || new Date());
+}
 
     // Update master
     await prisma.transactionsMaster.update({
@@ -664,4 +660,3 @@ export async function DELETE(req) {
     );
   }
 }
-

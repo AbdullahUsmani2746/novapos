@@ -9,8 +9,8 @@ export const VOUCHER_CONFIG = {
         formName: "pycd",
         label: "Paid From",
         type: "select",
-        options: "accounts",
-        apiEndpoint: "/api/accounts/acno?macno=001",
+        options: "masterAccounts", // This is the key to store and access
+        apiEndpoint: "/api/accounts/acno?macno=003,004",
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
@@ -27,12 +27,18 @@ export const VOUCHER_CONFIG = {
             label: "Main Account",
             type: "select",
             options: "mainAccounts",
-            apiEndpoint: "/api/accounts/acno?macno=001",
+            apiEndpoint: "/api/accounts/acno?macno=003",
             valueKey: "acno",
             nameKey: "acname",
             required: true,
           },
         ],
+      },
+      {
+        name: "dateD",
+        label: "Date",
+        type: "date",
+        required: true,
       },
       {
         name: "vr_no",
@@ -44,11 +50,11 @@ export const VOUCHER_CONFIG = {
       { name: "check_no", label: "Check No", type: "text" },
       { name: "check_date", label: "Check Date", type: "date" },
       { name: "rmk", label: "Narration", type: "textarea" },
-      { name: "rmk1", label: "Export Inv From", type: "text" },
-      { name: "rmk2", label: "RMK1", type: "text" },
-      { name: "rmk3", label: "Fwd Cont#", type: "text" },
-      { name: "rmk4", label: "FE Ref#", type: "text" },
-      { name: "rmk5", label: "RMK5", type: "text" },
+      // { name: "rmk1", label: "Export Inv From", type: "text" },
+      // { name: "rmk2", label: "RMK1", type: "text" },
+      // { name: "rmk3", label: "Fwd Cont#", type: "text" },
+      // { name: "rmk4", label: "FE Ref#", type: "text" },
+      // { name: "rmk5", label: "RMK5", type: "text" },
     ],
     lineFields: [
       {
@@ -57,7 +63,7 @@ export const VOUCHER_CONFIG = {
         label: "A/c Name",
         type: "select",
         options: "accounts",
-        apiEndpoint: "/api/accounts/acno?macno=001",
+        apiEndpoint: "/api/accounts/acno?excludeMacno=003,004",
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
@@ -129,8 +135,8 @@ export const VOUCHER_CONFIG = {
         name: "damt",
         label: "Amount",
         type: "number",
-        dependencies: ["fc_amount", "rate"],
-        calculate: (v) => v.fc_amount * v.rate,
+        // dependencies: ["fc_amount", "rate"],
+        // calculate: (v) => v.fc_amount * v.rate,
       },
     ],
     deductionFields: [
@@ -140,7 +146,7 @@ export const VOUCHER_CONFIG = {
         label: "A/c Name",
         type: "select",
         options: "accounts",
-        apiEndpoint: "/api/accounts/acno?macno=001",
+        apiEndpoint: "/api/accounts/acno?excludeMacno=003,004",
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
@@ -262,7 +268,7 @@ export const VOUCHER_CONFIG = {
         label: "Received At",
         type: "select",
         options: "accounts",
-        apiEndpoint: "/api/accounts/acno?macno=001",
+        apiEndpoint: "/api/accounts/acno?macno=003,004",
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
@@ -287,6 +293,12 @@ export const VOUCHER_CONFIG = {
         ],
       },
       {
+        name: "dateD",
+        label: "Date",
+        type: "date",
+        required: true,
+      },
+      {
         name: "vr_no",
         label: "Vr No",
         type: "text",
@@ -296,10 +308,10 @@ export const VOUCHER_CONFIG = {
       { name: "check_no", label: "Check No", type: "text" },
       { name: "check_date", label: "Check Date", type: "date" },
       { name: "rmk", label: "Narration", type: "textarea" },
-      { name: "rmk1", label: "Exp Basis", type: "text" },
-      { name: "rmk2", label: "Export INV#", type: "text" },
-      { name: "rmk3", label: "Fwd Cont#", type: "text" },
-      { name: "rmk5", label: "FE Ref#", type: "text" },
+      // { name: "rmk1", label: "Exp Basis", type: "text" },
+      // { name: "rmk2", label: "Export INV#", type: "text" },
+      // { name: "rmk3", label: "Fwd Cont#", type: "text" },
+      // { name: "rmk5", label: "FE Ref#", type: "text" },
     ],
     lineFields: [
       {
@@ -308,7 +320,7 @@ export const VOUCHER_CONFIG = {
         label: "A/c Name",
         type: "select",
         options: "accounts",
-        apiEndpoint: "/api/accounts/acno?macno=001",
+        apiEndpoint: "/api/accounts/acno?excludeMacno=003,004",
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
@@ -391,7 +403,7 @@ export const VOUCHER_CONFIG = {
         label: "A/c Name",
         type: "select",
         options: "accounts",
-        apiEndpoint: "/api/accounts/acno?macno=001",
+        apiEndpoint: "/api/accounts/acno?excludeMacno=003,004",
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
@@ -507,6 +519,12 @@ export const VOUCHER_CONFIG = {
         required: true,
         autoGenerate: true,
       },
+      {
+        name: "dateD",
+        label: "Date",
+        type: "date",
+        required: true,
+      },
       { name: "rmk1", label: "Narration", type: "textarea" },
     ],
     lineFields: [
@@ -516,7 +534,7 @@ export const VOUCHER_CONFIG = {
         label: "A/c Name",
         type: "select",
         options: "accounts",
-        apiEndpoint: "/api/accounts/acno?macno=001",
+        apiEndpoint: "/api/accounts/acno?excludeMacno=003,004",
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
@@ -560,8 +578,32 @@ export const VOUCHER_CONFIG = {
       },
       { name: "invoice_no", label: "Invoice No", type: "text" },
       { name: "narration1", label: "Narration1", type: "text" },
-      { name: "damt", label: "Debit Amount", type: "number" },
-      { name: "camt", label: "Credit Amount", type: "number" },
+      {
+        name: "damt",
+        label: "Debit Amount",
+        type: "number",
+        validate: (value, line) => {
+          const debit = parseFloat(value) || 0;
+          const credit = parseFloat(line.camt) || 0;
+          if (debit > 0 && credit > 0) {
+            return "Cannot enter both Debit and Credit amounts in the same line.";
+          }
+          return null;
+        },
+      },
+      {
+        name: "camt",
+        label: "Credit Amount",
+        type: "number",
+        validate: (value, line) => {
+          const credit = parseFloat(value) || 0;
+          const debit = parseFloat(line.damt) || 0;
+          if (credit > 0 && debit > 0) {
+            return "Cannot enter both Debit and Credit amounts in the same line.";
+          }
+          return null;
+        },
+      },
     ],
     totals: {
       debitTotal: {
@@ -602,6 +644,12 @@ export const VOUCHER_CONFIG = {
         type: "text",
         required: true,
         autoGenerate: true,
+      },
+      {
+        name: "dateD",
+        label: "Date",
+        type: "date",
+        required: true,
       },
 
       {
@@ -717,7 +765,7 @@ export const VOUCHER_CONFIG = {
         label: "Gross Amount",
         type: "number",
         required: true,
-        dependencies: ["qty", "rate","no_of_pack", "qty_per_pack"],
+        dependencies: ["qty", "rate", "no_of_pack", "qty_per_pack"],
         calculate: (v) => v.qty * v.rate,
       },
       { name: "st_rate", label: "ST Rate", type: "number" },
@@ -725,7 +773,13 @@ export const VOUCHER_CONFIG = {
         name: "st_amount",
         label: "ST Amount",
         type: "number",
-        dependencies: ["gross_amount", "st_rate","no_of_pack", "qty_per_pack","rate"],
+        dependencies: [
+          "gross_amount",
+          "st_rate",
+          "no_of_pack",
+          "qty_per_pack",
+          "rate",
+        ],
         calculate: (v) => (v.gross_amount * v.st_rate) / 100,
       },
       { name: "additional_tax", label: "Additional Tax", type: "number" },
@@ -734,12 +788,20 @@ export const VOUCHER_CONFIG = {
         label: "Amount",
         required: true,
         type: "number",
-        dependencies: ["qty", "rate","st_rate", "additional_tax","no_of_pack", "qty_per_pack"], // Updated dependencies
+        dependencies: [
+          "qty",
+          "rate",
+          "st_rate",
+          "additional_tax",
+          "no_of_pack",
+          "qty_per_pack",
+        ], // Updated dependencies
         calculate: (v) => {
-          console.log("V: ",v)
+          console.log("V: ", v);
           const gross_amount = v.qty * v.rate; // Calculate gross_amount
           const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
-          return gross_amount + st_amount + (v.additional_tax || 0); // Include additional_tax
+          const addTax = ((gross_amount) * (v.additional_tax || 0) /100); // Calculate additional tax
+          return (gross_amount + st_amount) + (addTax|| 0); // Include additional_tax
         },
       },
     ],
@@ -766,8 +828,9 @@ export const VOUCHER_CONFIG = {
       netTotal: {
         label: "Total Amount",
         calculate: (lines) => {
-          console.log("Chajge:",lines)
-        return lines.reduce((sum, l) => sum + (l.camt || 0), 0)}
+          console.log("Chajge:", lines);
+          return lines.reduce((sum, l) => sum + (l.camt || 0), 0);
+        },
       },
     },
     tableFields: [
@@ -791,15 +854,19 @@ export const VOUCHER_CONFIG = {
     hasDeductionBlock: false,
     masterFields: [
       {
+        name: "dateD",
+        label: "Date",
+        type: "date",
+        required: true,
+      },
+      {
         name: "vr_no",
         label: "Vr No",
         type: "text",
         required: true,
         autoGenerate: true,
-        readOnly: true // Add this to make it non-editable
-
+        readOnly: true, // Add this to make it non-editable
       },
-
       {
         name: "pycd",
         label: "Customer",
@@ -809,7 +876,7 @@ export const VOUCHER_CONFIG = {
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
-        required:true,
+        required: true,
         modalFields: [
           {
             name: "name",
@@ -819,30 +886,38 @@ export const VOUCHER_CONFIG = {
           },
         ],
       },
-{ 
-      name: "check_no", 
-      label: "ST Inv No", 
-      type: "text",
-      required: true,
-      autoGenerate: true,
-      validate: async (value, masterData) => {
-        if (!value) return "ST Inv No is required";
-        try {
-          const response = await axios.get(
-            `/api/voucher/check-sale-numbers?field=check_no&value=${encodeURIComponent(value)}&tran_code=6`
-          );
-          if (response.data.exists) {
-            const nextNumber = response.data.nextNumber || parseInt(value) + 1;
-            return `ST Inv No ${value} already exists. Try ${nextNumber} or another number.`;
+      {
+        name: "check_no",
+        label: "ST Inv No",
+        type: "text",
+        required: true,
+        autoGenerate: true,
+        validate: async (value, masterData) => {
+          if (!value) return "ST Inv No is required";
+          try {
+            const response = await axios.get(
+              `/api/voucher/check-sale-numbers?field=check_no&value=${encodeURIComponent(
+                value
+              )}&tran_code=6`
+            );
+            if (response.data.exists) {
+              const nextNumber =
+                response.data.nextNumber || parseInt(value) + 1;
+              return `ST Inv No ${value} already exists. Try ${nextNumber} or another number.`;
+            }
+            return null;
+          } catch (error) {
+            return `Error checking ST Inv No: ${error.message}`;
           }
-          return null;
-        } catch (error) {
-          return `Error checking ST Inv No: ${error.message}`;
-        }
-      }
-    },      { name: "check_date", label: "ST Inv Date", type: "Date" },
+        },
+      },
+      { name: "check_date", label: "ST Inv Date", type: "Date" },
       { name: "rmk", label: "Narration", type: "textarea" },
-      { name: "invoice_no", label: "Com Inv No", type: "text",
+      {
+        name: "invoice_no",
+        label: "Com Inv No",
+        type: "text",
+        required: true,
         validate: async (value, masterData) => {
           if (!value || !masterData.pycd) return null;
           try {
@@ -861,7 +936,7 @@ export const VOUCHER_CONFIG = {
             return `Error checking invoice number: ${error.message}`;
           }
         },
-       },
+      },
       {
         name: "godown",
         label: "Godown",
@@ -880,29 +955,32 @@ export const VOUCHER_CONFIG = {
           },
         ],
       },
-      
-    { 
-      name: "rmk2", 
-      label: "Delivery No", 
-      type: "text",
-      required: true,
-      autoGenerate: true,
-      validate: async (value, masterData) => {
-        if (!value) return "Delivery No is required";
-        try {
-          const response = await axios.get(
-            `/api/voucher/check-sale-numbers?field=rmk2&value=${encodeURIComponent(value)}&tran_code=6`
-          );
-          if (response.data.exists) {
-            const nextNumber = response.data.nextNumber || parseInt(value) + 1;
-            return `Delivery No ${value} already exists. Try ${nextNumber} or another number.`;
+
+      {
+        name: "rmk2",
+        label: "Delivery No",
+        type: "text",
+        required: true,
+        autoGenerate: true,
+        validate: async (value, masterData) => {
+          if (!value) return "Delivery No is required";
+          try {
+            const response = await axios.get(
+              `/api/voucher/check-sale-numbers?field=rmk2&value=${encodeURIComponent(
+                value
+              )}&tran_code=6`
+            );
+            if (response.data.exists) {
+              const nextNumber =
+                response.data.nextNumber || parseInt(value) + 1;
+              return `Delivery No ${value} already exists. Try ${nextNumber} or another number.`;
+            }
+            return null;
+          } catch (error) {
+            return `Error checking Delivery No: ${error.message}`;
           }
-          return null;
-        } catch (error) {
-          return `Error checking Delivery No: ${error.message}`;
-        }
-      }
-    },
+        },
+      },
     ],
     lineFields: [
       {
@@ -942,7 +1020,7 @@ export const VOUCHER_CONFIG = {
         name: "gross_amount",
         label: "Gross Amount",
         type: "number",
-        dependencies: ["qty", "rate","no_of_pack", "qty_per_pack"],
+        dependencies: ["qty", "rate", "no_of_pack", "qty_per_pack"],
         calculate: (v) => v.qty * v.rate,
       },
       { name: "st_rate", label: "ST Rate", type: "number" },
@@ -950,20 +1028,35 @@ export const VOUCHER_CONFIG = {
         name: "st_amount",
         label: "ST Amount",
         type: "number",
-        dependencies: ["gross_amount", "st_rate","no_of_pack", "qty_per_pack","rate"],
+        dependencies: [
+          "gross_amount",
+          "st_rate",
+          "no_of_pack",
+          "qty_per_pack",
+          "rate",
+        ],
         calculate: (v) => (v.gross_amount * v.st_rate) / 100,
       },
       { name: "additional_tax", label: "Additional Tax", type: "number" },
       {
-       name: "damt",
+        name: "damt",
         label: "Amount",
         required: true,
         type: "number",
-        dependencies: ["qty", "rate","st_rate", "additional_tax","no_of_pack", "qty_per_pack"], // Updated dependencies
+        dependencies: [
+          "qty",
+          "rate",
+          "st_rate",
+          "additional_tax",
+          "no_of_pack",
+          "qty_per_pack",
+        ], // Updated dependencies
         calculate: (v) => {
+          console.log("V: ", v);
           const gross_amount = v.qty * v.rate; // Calculate gross_amount
           const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
-          return gross_amount + st_amount + (v.additional_tax || 0); // Include additional_tax
+          const addTax = ((gross_amount) * (v.additional_tax || 0) /100); // Calculate additional tax
+          return (gross_amount + st_amount) + (addTax|| 0); // Include additional_tax
         },
       },
     ],
@@ -993,7 +1086,7 @@ export const VOUCHER_CONFIG = {
       },
     },
     tableFields: [
-            { name: "dateD", label: "Date", type: "date" },
+      { name: "dateD", label: "Date", type: "date" },
       { name: "vr_no", label: "Voucher No", type: "text" },
       { name: "invoice_no", label: "Invoice No", type: "text" },
       {
@@ -1012,7 +1105,6 @@ export const VOUCHER_CONFIG = {
     tran_code: 9,
     hasDeductionBlock: false,
     masterFields: [
-
       {
         name: "vr_no",
         label: "Vr No",
@@ -1020,7 +1112,12 @@ export const VOUCHER_CONFIG = {
         required: true,
         autoGenerate: true,
       },
-
+      {
+        name: "dateD",
+        label: "Date",
+        type: "date",
+        required: true,
+      },
       {
         name: "pycd",
         label: "Vendor",
@@ -1030,7 +1127,7 @@ export const VOUCHER_CONFIG = {
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
-        required:true,
+        required: true,
         modalFields: [
           { name: "name", label: "Vendor Name", type: "text", required: true },
         ],
@@ -1038,7 +1135,10 @@ export const VOUCHER_CONFIG = {
       { name: "check_no", label: "ST Inv No", type: "text" },
       { name: "check_date", label: "ST Inv Date", type: "Date" },
       { name: "rmk", label: "Narration", type: "textarea" },
-      { name: "invoice_no", label: "Com Inv No", type: "text",
+      {
+        name: "invoice_no",
+        label: "Com Inv No",
+        type: "text",
         validate: async (value, masterData) => {
           if (!value || !masterData.pycd) return null;
           try {
@@ -1057,7 +1157,7 @@ export const VOUCHER_CONFIG = {
             return `Error checking invoice number: ${error.message}`;
           }
         },
-       },
+      },
       {
         name: "godown",
         label: "Godown",
@@ -1105,25 +1205,26 @@ export const VOUCHER_CONFIG = {
       { name: "no_of_pack", label: "No of Packs", type: "number" },
       { name: "qty_per_pack", label: "Qty Per Pack", type: "number" },
       {
-      name: "qty",
-      label: "Qty",
-      type: "number",
-      dependencies: ["no_of_pack", "qty_per_pack"],
-      calculate: (v) => v.no_of_pack * v.qty_per_pack,
-      validate: (value, line, allLines, originalData) => {
-        const originalQty = originalData?.find(l => l.itcd === line.itcd)?.qty || 0;
-        if (value > originalQty) {
-          return `Cannot return more than original quantity (${originalQty})`;
-        }
-        return null;
-      }
-    },
+        name: "qty",
+        label: "Qty",
+        type: "number",
+        dependencies: ["no_of_pack", "qty_per_pack"],
+        calculate: (v) => v.no_of_pack * v.qty_per_pack,
+        validate: (value, line, allLines, originalData) => {
+          const originalQty =
+            originalData?.find((l) => l.itcd === line.itcd)?.qty || 0;
+          if (value > originalQty) {
+            return `Cannot return more than original quantity (${originalQty})`;
+          }
+          return null;
+        },
+      },
       { name: "rate", label: "Rate", type: "number" },
       {
         name: "gross_amount",
         label: "Gross Amount",
         type: "number",
-        dependencies: ["qty", "rate","no_of_pack", "qty_per_pack"],
+        dependencies: ["qty", "rate", "no_of_pack", "qty_per_pack"],
         calculate: (v) => v.qty * v.rate,
       },
       { name: "st_rate", label: "ST Rate", type: "number" },
@@ -1131,20 +1232,35 @@ export const VOUCHER_CONFIG = {
         name: "st_amount",
         label: "ST Amount",
         type: "number",
-        dependencies: ["gross_amount", "st_rate","no_of_pack", "qty_per_pack","rate"],
+        dependencies: [
+          "gross_amount",
+          "st_rate",
+          "no_of_pack",
+          "qty_per_pack",
+          "rate",
+        ],
         calculate: (v) => (v.gross_amount * v.st_rate) / 100,
       },
       { name: "additional_tax", label: "Additional Tax", type: "number" },
       {
-       name: "camt",
+        name: "camt",
         label: "Amount",
         required: true,
         type: "number",
-        dependencies: ["qty", "rate","no_of_pack", "qty_per_pack","st_rate","additional_tax"], // Updated dependencies
-        calculate: (v) => {
+        dependencies: [
+          "qty",
+          "rate",
+          "no_of_pack",
+          "qty_per_pack",
+          "st_rate",
+          "additional_tax",
+        ], // Updated dependencies
+       calculate: (v) => {
+          console.log("V: ", v);
           const gross_amount = v.qty * v.rate; // Calculate gross_amount
           const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
-          return gross_amount + st_amount + (v.additional_tax || 0); // Include additional_tax
+          const addTax = ((gross_amount) * (v.additional_tax || 0) /100); // Calculate additional tax
+          return (gross_amount + st_amount) + (addTax|| 0); // Include additional_tax
         },
       },
     ],
@@ -1174,7 +1290,7 @@ export const VOUCHER_CONFIG = {
       },
     },
     tableFields: [
-           { name: "dateD", label: "Date", type: "date" },
+      { name: "dateD", label: "Date", type: "date" },
       { name: "vr_no", label: "Voucher No", type: "text" },
       { name: "invoice_no", label: "Invoice No", type: "text" },
       {
@@ -1200,6 +1316,12 @@ export const VOUCHER_CONFIG = {
         required: true,
         autoGenerate: true,
       },
+      {
+        name: "dateD",
+        label: "Date",
+        type: "date",
+        required: true,
+      },
 
       {
         name: "pycd",
@@ -1210,7 +1332,7 @@ export const VOUCHER_CONFIG = {
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
-        required:true,
+        required: true,
         modalFields: [
           { name: "name", label: "Vendor Name", type: "text", required: true },
         ],
@@ -1218,7 +1340,10 @@ export const VOUCHER_CONFIG = {
       { name: "check_no", label: "ST Inv No", type: "text" },
       { name: "check_date", label: "ST Inv Date", type: "Date" },
       { name: "rmk", label: "Narration", type: "textarea" },
-      { name: "invoice_no", label: "Com Inv No", type: "text",
+      {
+        name: "invoice_no",
+        label: "Com Inv No",
+        type: "text",
         validate: async (value, masterData) => {
           if (!value || !masterData.pycd) return null;
           try {
@@ -1237,7 +1362,7 @@ export const VOUCHER_CONFIG = {
             return `Error checking invoice number: ${error.message}`;
           }
         },
-       },
+      },
       {
         name: "godown",
         label: "Godown",
@@ -1285,25 +1410,26 @@ export const VOUCHER_CONFIG = {
       { name: "no_of_pack", label: "No of Packs", type: "number" },
       { name: "qty_per_pack", label: "Qty Per Pack", type: "number" },
       {
-      name: "qty",
-      label: "Qty",
-      type: "number",
-      dependencies: ["no_of_pack", "qty_per_pack"],
-      calculate: (v) => v.no_of_pack * v.qty_per_pack,
-      validate: (value, line, allLines, originalData) => {
-        const originalQty = originalData?.find(l => l.itcd === line.itcd)?.qty || 0;
-        if (value > originalQty) {
-          return `Cannot return more than original quantity (${originalQty})`;
-        }
-        return null;
-      }
-    },
+        name: "qty",
+        label: "Qty",
+        type: "number",
+        dependencies: ["no_of_pack", "qty_per_pack"],
+        calculate: (v) => v.no_of_pack * v.qty_per_pack,
+        validate: (value, line, allLines, originalData) => {
+          const originalQty =
+            originalData?.find((l) => l.itcd === line.itcd)?.qty || 0;
+          if (value > originalQty) {
+            return `Cannot return more than original quantity (${originalQty})`;
+          }
+          return null;
+        },
+      },
       { name: "rate", label: "Rate", type: "number" },
       {
         name: "gross_amount",
         label: "Gross Amount",
         type: "number",
-        dependencies: ["qty", "rate","no_of_pack", "qty_per_pack"],
+        dependencies: ["qty", "rate", "no_of_pack", "qty_per_pack"],
         calculate: (v) => v.qty * v.rate,
       },
       { name: "st_rate", label: "ST Rate", type: "number" },
@@ -1311,20 +1437,35 @@ export const VOUCHER_CONFIG = {
         name: "st_amount",
         label: "ST Amount",
         type: "number",
-        dependencies: ["gross_amount", "st_rate", "no_of_pack", "qty_per_pack", "rate"],
+        dependencies: [
+          "gross_amount",
+          "st_rate",
+          "no_of_pack",
+          "qty_per_pack",
+          "rate",
+        ],
         calculate: (v) => (v.gross_amount * v.st_rate) / 100,
       },
       { name: "additional_tax", label: "Additional Tax", type: "number" },
       {
-       name: "damt",
+        name: "damt",
         label: "Amount",
         required: true,
         type: "number",
-        dependencies: ["qty", "rate","no_of_pack", "qty_per_pack","st_rate","additional_tax"], // Updated dependencies
-        calculate: (v) => {
+        dependencies: [
+          "qty",
+          "rate",
+          "no_of_pack",
+          "qty_per_pack",
+          "st_rate",
+          "additional_tax",
+        ], // Updated dependencies
+       calculate: (v) => {
+          console.log("V: ", v);
           const gross_amount = v.qty * v.rate; // Calculate gross_amount
           const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
-          return gross_amount + st_amount + (v.additional_tax || 0); // Include additional_tax
+          const addTax = ((gross_amount) * (v.additional_tax || 0) /100); // Calculate additional tax
+          return (gross_amount + st_amount) + (addTax|| 0); // Include additional_tax
         },
       },
     ],
@@ -1354,7 +1495,7 @@ export const VOUCHER_CONFIG = {
       },
     },
     tableFields: [
-           { name: "dateD", label: "Date", type: "date" },
+      { name: "dateD", label: "Date", type: "date" },
       { name: "vr_no", label: "Voucher No", type: "text" },
       { name: "invoice_no", label: "Invoice No", type: "text" },
       {

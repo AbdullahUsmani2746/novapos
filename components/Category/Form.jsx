@@ -290,49 +290,62 @@ export default function VoucherForm({
     }
   }, []);
 
-  const fetchOptions = useCallback(async () => {
-    setLoading((prev) => ({ ...prev, options: true }));
-    try {
-      const requiredOptionTypes = getRequiredOptionTypes();
-      const endpoints = [
-        ...requiredOptionTypes.map((key) => ({
-          key,
-          url:
-            voucherConfig.masterFields?.find((f) => f.options === key)
-              ?.apiEndpoint ||
-            voucherConfig.lineFields?.find((f) => f.options === key)
-              ?.apiEndpoint ||
-            voucherConfig.deductionFields?.find((f) => f.options === key)
-              ?.apiEndpoint,
-        })),
-        { key: "mainAccounts", url: "/api/accounts/macno" },
-        { key: "itemCategories", url: "/api/setup/item_categories" },
-      ].filter((e) => e.url);
+const fetchOptions = useCallback(async () => {
+  setLoading((prev) => ({ ...prev, options: true }));
 
-      const results = await Promise.all(
-        endpoints.map(async ({ key, url }) => {
-          const response = await axios.get(url);
-          console.log(`Fetched ${key} from ${url}:`, response.data.data); // Log API response
-          return { key, data: response.data.data || [] };
-        })
-      );
+  try {
+    const allFields = [
+      ...(voucherConfig.masterFields || []),
+      ...(voucherConfig.lineFields || []),
+      ...(voucherConfig.deductionFields || [])
+    ];
 
-      const newOptionsData = results.reduce(
-        (acc, { key, data }) => ({ ...acc, [key]: data }),
-        {}
-      );
-      setOptionsData((prev) => ({ ...prev, ...newOptionsData }));
-    } catch (error) {
-      const errorMsg = error.message || "Unknown error";
-      setErrors((prev) => ({
-        ...prev,
-        options: `Failed to load options: ${errorMsg}`,
-      }));
-      toast.error(`Failed to load options: ${errorMsg}`);
-    } finally {
-      setLoading((prev) => ({ ...prev, options: false }));
-    }
-  }, [getRequiredOptionTypes, voucherConfig]);
+    const endpoints = [];
+
+    allFields.forEach(field => {
+      if (field.type === "select" && field.options && field.apiEndpoint) {
+        endpoints.push({ key: field.options, url: field.apiEndpoint });
+      }
+    });
+
+    // Add additional hardcoded ones if needed
+    const additionalEndpoints = [
+      { key: "mainAccounts", url: "/api/accounts/macno" },
+      { key: "itemCategories", url: "/api/setup/item_categories" }
+    ];
+
+    const allEndpoints = [...endpoints, ...additionalEndpoints];
+
+    // Remove duplicates based on key+url
+    const uniqueEndpoints = Array.from(
+      new Map(allEndpoints.map(item => [`${item.key}_${item.url}`, item])).values()
+    );
+
+    const results = await Promise.all(
+      uniqueEndpoints.map(async ({ key, url }) => {
+        const res = await axios.get(url);
+        return { key, data: res.data.data || [] };
+      })
+    );
+
+    const newOptionsData = results.reduce(
+      (acc, { key, data }) => ({ ...acc, [key]: data }),
+      {}
+    );
+
+    setOptionsData(prev => ({ ...prev, ...newOptionsData }));
+  } catch (error) {
+    const errorMsg = error.message || "Unknown error";
+    setErrors(prev => ({
+      ...prev,
+      options: `Failed to load options: ${errorMsg}`,
+    }));
+    toast.error(`Failed to load options: ${errorMsg}`);
+  } finally {
+    setLoading(prev => ({ ...prev, options: false }));
+  }
+}, [voucherConfig]);
+
 
   const formatDateToYYYYMMDD = (isoDate) => {
     if (!isoDate) return "";
@@ -588,42 +601,59 @@ export default function VoucherForm({
     return fieldConfig.calculate(dependencies) || 0;
   };
 
-  const handleLineChange = (index, fieldName, value, isMain) => {
-    const lines = isMain ? [...mainLines] : [...deductionLines];
-    const fieldConfigs = isMain
-      ? voucherConfig.lineFields
-      : voucherConfig.deductionFields;
-    const fieldConfig = fieldConfigs.find(
-      (f) => (f.formName || f.name) === fieldName
-    );
+const handleLineChange = (index, fieldName, value, isMain) => {
+  const lines = isMain ? [...mainLines] : [...deductionLines];
+  const fieldConfigs = isMain
+    ? voucherConfig.lineFields
+    : voucherConfig.deductionFields;
+  const fieldConfig = fieldConfigs.find(
+    (f) => (f.formName || f.name) === fieldName
+  );
 
-    if (!fieldConfig) return;
+  if (!fieldConfig) return;
 
-    if (type === "sale" && isMain && fieldName === "itcd" && value) {
-      // Fetch stock for this product
-      fetchStockLevels([value]);
-    }
-    const processedValue =
-      fieldConfig.type === "number"
-        ? value === ""
-          ? 0
-          : parseFloat(value) || 0
-        : value;
-    const newLine = { ...lines[index], [fieldName]: processedValue };
+  if (type === "sale" && isMain && fieldName === "itcd" && value) {
+    // Fetch stock for this product
+    fetchStockLevels([value]);
+  }
 
-    fieldConfigs
-      .filter((f) => f.dependencies?.includes(fieldName))
-      .forEach((depField) => {
-        newLine[depField.formName || depField.name] = calculateFieldValue(
-          newLine,
-          depField
-        );
-      });
+  const processedValue =
+    fieldConfig.type === "number"
+      ? value === ""
+        ? 0
+        : parseFloat(value) || 0
+      : value;
+  const newLine = { ...lines[index], [fieldName]: processedValue };
 
-    lines[index] = newLine;
-    if (isMain) setMainLines(lines);
-    else setDeductionLines(lines);
+  // For journal voucher, ensure damt and camt are mutually exclusive
+  if (type === "journal" && isMain && (fieldName === "damt" || fieldName === "camt")) {
+    newLine[fieldName === "damt" ? "camt" : "damt"] = 0;
+  }
 
+  fieldConfigs
+    .filter((f) => f.dependencies?.includes(fieldName))
+    .forEach((depField) => {
+      newLine[depField.formName || depField.name] = calculateFieldValue(
+        newLine,
+        depField
+      );
+    });
+
+  lines[index] = newLine;
+  if (isMain) setMainLines(lines);
+  else setDeductionLines(lines);
+
+  // Validate the field
+  if (fieldConfig.validate) {
+    const validationError = fieldConfig.validate(processedValue, newLine);
+    setErrors((prev) => ({
+      ...prev,
+      validation: {
+        ...prev.validation,
+        [`${isMain ? "main" : "deduction"}-${index}-${fieldName}`]: validationError,
+      },
+    }));
+  } else {
     setErrors((prev) => ({
       ...prev,
       validation: {
@@ -631,7 +661,8 @@ export default function VoucherForm({
         [`${isMain ? "main" : "deduction"}-${index}-${fieldName}`]: null,
       },
     }));
-  };
+  }
+};
 
   const addLine = (isMain) => {
     const newLine = {};
@@ -887,11 +918,12 @@ export default function VoucherForm({
       }
       onClose();
     } catch (error) {
+      let errorMsg ;
       if (error.message.includes('Insufficient stock')) {
       toast.error('Cannot proceed with sale due to insufficient stock');
       }
       else{
-      const errorMsg = error.response?.data?.message || error.message;
+      errorMsg = error.response?.data?.message || error.message;
       toast.error(
        
         `Failed to ${editMode ? "update" : "save"} voucher: ${errorMsg}`
@@ -1080,7 +1112,7 @@ export default function VoucherForm({
 
   const renderMasterFields = () => (
     <motion.div
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-6 bg-gray-50 rounded-lg"
+      className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-6 bg-gray-50 rounded-lg"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -1175,138 +1207,141 @@ export default function VoucherForm({
     </motion.div>
   );
 
-  const renderTable = (isMain) => {
-    const fields =
-      (isMain
-        ? voucherConfig.lineFields
-        : voucherConfig.deductionFields
-      )?.filter((f) => !["tran_code", "ac_no", "ccno"].includes(f.name)) || [];
-    if (!fields.length) return null;
+const renderTable = (isMain) => {
+  const fields =
+    (isMain
+      ? voucherConfig.lineFields
+      : voucherConfig.deductionFields
+    )?.filter((f) => !["tran_code", "ac_no", "ccno"].includes(f.name)) || [];
+  if (!fields.length) return null;
 
-    const lines = isMain ? mainLines : deductionLines;
-    const prefix = isMain ? "main" : "deduction";
-    const title = isMain
-      ? type === "payment"
-        ? "Payments"
-        : type === "receipt"
-        ? "Receipts"
-        : type === "journal"
-        ? "Journal Entries"
-        : type === "purchase"
-        ? "Purchases"
-        : "Sales"
-      : "Deductions";
+  const lines = isMain ? mainLines : deductionLines;
+  const prefix = isMain ? "main" : "deduction";
+  const title = isMain
+    ? type === "payment"
+      ? "Payments"
+      : type === "receipt"
+      ? "Receipts"
+      : type === "journal"
+      ? "Journal Entries"
+      : type === "purchase"
+      ? "Purchases"
+      : "Sales"
+    : "Deductions";
 
-    return (
-      <motion.div
-        className="mt-6 border rounded-lg bg-white shadow-sm overflow-hidden"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="bg-primary p-3 flex justify-between items-center text-white">
-          <div className="flex items-center gap-2">
-            <Badge className="bg-white text-primary">{lines.length}</Badge>
-            <span className="text-sm font-medium">{title}</span>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => deleteSelectedRows(isMain)}
-              disabled={
-                !selectedRows.some((k) => k.startsWith(prefix)) ||
-                loading.submit
-              }
-              className="bg-white text-primary hover:bg-primary"
-            >
-              <Trash2 className="h-4 w-4 mr-1" /> Delete
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => addLine(isMain)}
-              disabled={loading.submit}
-              className="bg-white text-primary hover:bg-primary"
-            >
-              <PlusCircle className="h-4 w-4 mr-1" /> Add
-            </Button>
-          </div>
+  return (
+    <motion.div
+      className="mt-6 border rounded-lg bg-white shadow-sm overflow-hidden"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="bg-primary p-3 flex justify-between items-center text-white">
+        <div className="flex items-center gap-2">
+          <Badge className="bg-white text-primary">{lines.length}</Badge>
+          <span className="text-sm font-medium">{title}</span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full table-auto">
-            <thead></thead>
-            <tbody>
-              <AnimatePresence>
-                {lines.map((line, idx) => (
-                  <motion.tr
-                    key={`${prefix}-${idx}`}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className={`border-b hover:bg-gray-50 ${
-                      selectedRows.includes(`${prefix}-${idx}`)
-                        ? "bg-primary"
-                        : ""
-                    }`}
-                  >
-                    <td className="p-2 text-center">
-                      <input
-                        type="checkbox"
-                        checked={selectedRows.includes(`${prefix}-${idx}`)}
-                        onChange={() => toggleRowSelection(idx, isMain)}
-                        disabled={loading.submit}
-                        className="cursor-pointer"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </td>
-                    <td className="p-2 text-center text-sm">{idx + 1}</td>
-                    {fields.map((f) => (
-                      <td key={f.name} className="p-2 min-w-[180px]">
-                        {renderInputField(line, f, idx, isMain)}
-                      </td>
-                    ))}
-                    <td className="p-2 text-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeLine(idx, isMain)}
-                        disabled={loading.submit || lines.length <= 1}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </td>
-                  </motion.tr>
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </table>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            type="button"
+            size="sm"
+            onClick={() => deleteSelectedRows(isMain)}
+            disabled={
+              !selectedRows.some((k) => k.startsWith(prefix)) ||
+              loading.submit
+            }
+            className="bg-white text-primary hover:bg-primary"
+          >
+            <Trash2 className="h-4 w-4 mr-1" /> Delete
+          </Button>
+          <Button
+            variant="outline"
+            type="button"
+            size="sm"
+            onClick={() => addLine(isMain)}
+            disabled={loading.submit}
+            className="bg-white text-primary hover:bg-primary"
+          >
+            <PlusCircle className="h-4 w-4 mr-1" /> Add
+          </Button>
         </div>
-        {voucherConfig.totals && (
-          <div className="bg-gray-50 p-3 flex justify-end gap-6 border-t">
-            {Object.entries(voucherConfig.totals)
-              .filter(
-                ([k]) =>
-                  (isMain && k !== "deductionTotal") ||
-                  (!isMain && k === "deductionTotal")
-              )
-              .map(([k, config], index) => (
-                <div key={index} className="text-right">
-                  <span className="text-xs text-gray-700">
-                    {config.label}:{" "}
-                  </span>
-                  <span className="text-primary font-bold">
-                    {totals[k]?.toFixed(2) || "0.00"}
-                  </span>
-                </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full table-auto">
+          <thead></thead>
+          <tbody>
+            <AnimatePresence>
+              {lines.map((line, idx) => (
+                <motion.tr
+                  key={`${prefix}-${idx}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className={`border-b hover:bg-gray-50 ${
+                    selectedRows.includes(`${prefix}-${idx}`)
+                      ? "bg-primary"
+                      : ""
+                  }`}
+                >
+                  <td className="p-2 text-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedRows.includes(`${prefix}-${idx}`)}
+                      onChange={() => toggleRowSelection(idx, isMain)}
+                      disabled={loading.submit}
+                      className="cursor-pointer"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </td>
+                  <td className="p-2 text-center text-sm">{idx + 1}</td>
+                  {fields.map((f) => (
+                    <td key={f.name} className="p-2 min-w-[180px]">
+                      {renderInputField(line, f, idx, isMain)}
+                    </td>
+                  ))}
+                  <td className="p-2 text-center">
+                    <Button
+                      variant="ghost"
+                      type="button"
+                      size="sm"
+                      onClick={() => removeLine(idx, isMain)}
+                      disabled={loading.submit || lines.length <= 1}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </td>
+                </motion.tr>
               ))}
-          </div>
-        )}
-      </motion.div>
-    );
-  };
+            </AnimatePresence>
+          </tbody>
+        </table>
+      </div>
+      {voucherConfig.totals && (
+        <div className="bg-gray-50 p-3 flex justify-end gap-6 border-t">
+          {Object.entries(voucherConfig.totals)
+            .filter(
+              ([k]) =>
+                (isMain && k !== "deductionTotal" && k !== "netTotal") ||
+                (!isMain && k === "deductionTotal")
+            )
+            .map(([k, config], index) => (
+              <div key={index} className="text-right">
+                <span className="text-xs text-gray-700">
+                  {config.label}:{" "}
+                </span>
+                <span className="text-primary font-bold">
+                  {totals[k]?.toFixed(2) || "0.00"}
+                </span>
+              </div>
+            ))}
+        </div>
+      )}
+    </motion.div>
+  );
+};
 
   const AddEntityModal = ({ onClose, onSave, entityType, fieldConfig }) => {
     const [entityData, setEntityData] = useState({});
@@ -1456,6 +1491,35 @@ export default function VoucherForm({
     );
   };
 
+  // New function to render net total in a separate box
+const renderNetTotal = () => {
+  if (!voucherConfig.totals || !totals.netTotal) return null;
+
+  return (
+    <motion.div
+      className="mt-6 flex justify-end"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card>
+        <CardHeader className="bg-primary text-white">
+          <CardTitle className="text-md">
+            {voucherConfig.totals.netTotal.label}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <span className="text-2xl font-bold text-primary ">
+              {totals.netTotal.toFixed(2)}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+};
+
   // Render Logic
   if (!voucherConfig || !Object.keys(voucherConfig).length) {
     return (
@@ -1476,7 +1540,7 @@ export default function VoucherForm({
   }
 
   return (
-    <div className="min-w-[320px] max-w-full min-h-screen p-4 bg-gray-100">
+    <div className="min-w-[320px] max-w-full min-h-screen p-1">
       <Toaster richColors />
       {(loading.options || loading.vrNo) && (
         <div className="flex justify-center mb-4">
@@ -1514,6 +1578,7 @@ export default function VoucherForm({
         </Card>
         {renderTable(true)}
         {voucherConfig.hasDeductionBlock && renderTable(false)}
+        {renderNetTotal()}
         <div className="mt-6 flex justify-end gap-3">
           <Button
             type="button"

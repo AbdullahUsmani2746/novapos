@@ -597,7 +597,8 @@ export const REPORT_CONFIG = {
   },
   tradingMargin: {
     title: "Trading Margin Report",
-    description: "Profitability analysis by item",
+    description:
+      "Profitability analysis by item (Purchase, Sales, Returns, POS)",
     apiEndpoint: "/api/reports/tradingMargin",
     filters: [
       {
@@ -646,10 +647,12 @@ export const REPORT_CONFIG = {
         valueGetter: (params) =>
           params.row.itemDetails?.itemCategories?.ic_name || "",
       },
+
+      // --- Purchases ---
       {
         field: "purchase_qty",
         headerName: "Purchase Qty",
-        width: 120,
+        width: 130,
         type: "number",
       },
       {
@@ -659,15 +662,52 @@ export const REPORT_CONFIG = {
         type: "currency",
       },
       {
-        field: "avg_purchase_rate",
-        headerName: "Avg Purchase Rate",
-        width: 150,
+        field: "purchase_return_qty",
+        headerName: "Purchase Return Qty",
+        width: 160,
+        type: "number",
+      },
+      {
+        field: "purchase_return_amount",
+        headerName: "Purchase Return Amt",
+        width: 170,
         type: "currency",
       },
+
+      // --- Sales ---
       { field: "sale_qty", headerName: "Sale Qty", width: 120, type: "number" },
       {
         field: "sale_amount",
         headerName: "Sale Amount",
+        width: 150,
+        type: "currency",
+      },
+      {
+        field: "sale_return_qty",
+        headerName: "Sale Return Qty",
+        width: 150,
+        type: "number",
+      },
+      {
+        field: "sale_return_amount",
+        headerName: "Sale Return Amt",
+        width: 160,
+        type: "currency",
+      },
+
+      // --- POS ---
+      { field: "pos_qty", headerName: "POS Qty", width: 110, type: "number" },
+      {
+        field: "pos_amount",
+        headerName: "POS Amount",
+        width: 140,
+        type: "currency",
+      },
+
+      // --- Averages and Margins ---
+      {
+        field: "avg_purchase_rate",
+        headerName: "Avg Purchase Rate",
         width: 150,
         type: "currency",
       },
@@ -696,12 +736,41 @@ export const REPORT_CONFIG = {
         label: "Total Purchase Amount",
         type: "currency",
       },
+      {
+        field: "total_purchase_return_qty",
+        label: "Total Purchase Return Qty",
+        type: "number",
+      },
+      {
+        field: "total_purchase_return_amount",
+        label: "Total Purchase Return Amt",
+        type: "currency",
+      },
+
       { field: "total_sale_qty", label: "Total Sale Qty", type: "number" },
       {
         field: "total_sale_amount",
         label: "Total Sale Amount",
         type: "currency",
       },
+      {
+        field: "total_sale_return_qty",
+        label: "Total Sale Return Qty",
+        type: "number",
+      },
+      {
+        field: "total_sale_return_amount",
+        label: "Total Sale Return Amt",
+        type: "currency",
+      },
+
+      { field: "total_pos_qty", label: "Total POS Qty", type: "number" },
+      {
+        field: "total_pos_amount",
+        label: "Total POS Amount",
+        type: "currency",
+      },
+
       { field: "total_margin", label: "Total Margin", type: "currency" },
       { field: "avg_margin_percent", label: "Avg Margin %", type: "percent" },
     ],
@@ -711,6 +780,7 @@ export const REPORT_CONFIG = {
       csv: true,
     },
   },
+
   stockLedger: {
     title: "Stock Ledger Report",
     description: "Detailed movement of stock items over time",
@@ -865,7 +935,12 @@ export const REPORT_CONFIG = {
       },
       { field: "qty", headerName: "Qty", width: 100, type: "number" },
       { field: "rate", headerName: "Rate", width: 100, type: "currency" },
-      { field: "amount", headerName: "Amount", width: 150, type: "currency" },
+      {
+        field: "gross_amount",
+        headerName: "Amount",
+        width: 150,
+        type: "currency",
+      },
       {
         field: "discount",
         headerName: "Line Discount",

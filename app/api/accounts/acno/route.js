@@ -1,24 +1,32 @@
 import prisma from '@/lib/prisma'; 
 import { NextResponse } from 'next/server';
 
-
 export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const macnoParam = searchParams.get('macno') || "";
+    const acno = searchParams.get('acno') || "";
+    const excludeMacnoParam = searchParams.get('excludeMacno') || "";
 
-      // Get the mbscd query parameter from the URL
-      const { searchParams } = new URL(request.url);
-      const macno = searchParams.get('macno') || "";
-      const acno = searchParams.get('acno') || "";
+    const where = {};
 
-  
-      const where = macno!=="" ? { macno: macno } : acno!=="" ? { acno: acno } : {};
-  
-    const acnos = await prisma.aCNO.findMany({
-      where
-    });
-    
-    return NextResponse.json({data:acnos, status: 200 });
+    // Case 1 or 2: If macno is provided
+    if (macnoParam) {
+      const macnos = macnoParam.split(',').map(m => m.trim());
+      where.macno = macnos.length === 1 ? macnos[0] : { in: macnos };
+    }
+
+    // Case 3: Exclude by macno (e.g., get all acnos except where macno is 003 or 004)
+    if (excludeMacnoParam) {
+      const excludeMacnos = excludeMacnoParam.split(',').map(m => m.trim());
+      where.macno = { notIn: excludeMacnos };
+    }
+
+    const acnos = await prisma.aCNO.findMany({ where });
+
+    return NextResponse.json({ data: acnos, status: 200 });
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: 'Failed to fetch ACNO data' },
       { status: 500 }
