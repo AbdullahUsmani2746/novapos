@@ -218,7 +218,7 @@ const OrderDetail = ({ orderId }) => {
   const itemCount = order.transactions.reduce((sum, t) => sum + t.qty, 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-200">
         <div className="max-w-full mx-auto px-4 py-6">

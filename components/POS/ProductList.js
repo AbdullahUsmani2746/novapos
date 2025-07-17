@@ -16,212 +16,122 @@ import {
   Barcode,
   Grid3X3,
   List,
-  SortAsc,
-  SortDesc,
+  ChevronDown,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
   AlertTriangle,
   CheckCircle,
   X,
-  ChevronDown,
-  RefreshCw,
-  ShoppingCart,
 } from "lucide-react";
 import React from "react";
 import Link from "next/link";
 import axios from "axios";
 
-// Mock data for demonstration
-const mockProducts = [
-  {
-    itcd: "001",
-    item: "Premium Coffee Beans 1kg",
-    sku: "COF-001-1KG",
-    price: 24.99,
-    stock: 45,
-    category: "Beverages",
-    status: "active",
-    image: "https://via.placeholder.com/150x150/4F46E5/FFFFFF?text=Coffee",
-  },
-  {
-    itcd: "002",
-    item: "Wireless Bluetooth Headphones",
-    sku: "ELE-002-WBH",
-    price: 89.99,
-    stock: 12,
-    category: "Electronics",
-    status: "low_stock",
-    image: "https://via.placeholder.com/150x150/059669/FFFFFF?text=Audio",
-  },
-  {
-    itcd: "003",
-    item: "Organic Honey 500ml",
-    sku: "FOD-003-HON",
-    price: 15.5,
-    stock: 0,
-    category: "Food",
-    status: "out_of_stock",
-    image: "https://via.placeholder.com/150x150/DC2626/FFFFFF?text=Honey",
-  },
-  {
-    itcd: "004",
-    item: "Yoga Mat Premium",
-    sku: "FIT-004-YOG",
-    price: 32.0,
-    stock: 28,
-    category: "Fitness",
-    status: "active",
-    image: "https://via.placeholder.com/150x150/7C3AED/FFFFFF?text=Yoga",
-  },
-  {
-    itcd: "005",
-    item: "Smart Water Bottle",
-    sku: "GAD-005-SWB",
-    price: 45.99,
-    stock: 8,
-    category: "Gadgets",
-    status: "low_stock",
-    image: "https://via.placeholder.com/150x150/0891B2/FFFFFF?text=Bottle",
-  },
-  {
-    itcd: "006",
-    item: "Artisan Chocolate Box",
-    sku: "FOD-006-CHO",
-    price: 28.75,
-    stock: 35,
-    category: "Food",
-    status: "active",
-    image: "https://via.placeholder.com/150x150/92400E/FFFFFF?text=Choco",
-  },
-];
-
 const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    limit: 8,
+    hasNext: false,
+    hasPrev: false,
+    startItem: 0,
+    endItem: 0,
+  });
+
+  // Filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [sortBy, setSortBy] = useState("name");
   const [sortOrder, setSortOrder] = useState("asc");
-  const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState("grid");
   const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+
   const router = useRouter();
-
-
   const statuses = ["All", "active", "low_stock", "out_of_stock"];
 
-  const fetchProducts = () => {
-axios
-      .get("/api/pos/products")
-      .then((res) => {
-        setProducts(res.data);
-        setFilteredProducts(res.data); // use res.data, not products
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching products:", err);
-        setIsLoading(false); // Ensure loading state is reset on error too
+  // Fetch products with pagination
+  const fetchProducts = async (page = 1) => {
+    try {
+      setIsLoading(true);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: pagination.limit.toString(),
+        search: searchTerm,
+        category: selectedCategory,
+        status: selectedStatus,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
       });
-  }
 
-    const fetchCategories = () => {
-axios
-      .get("/api/pos/categories")
-      .then((res) => {
-        setCategories(res.data);
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching products:", err);
-        setIsLoading(false); // Ensure loading state is reset on error too
-      });
-  }
+      const response = await axios.get(`/api/pos/products?${params}`);
+      setProducts(response.data.products);
+      setPagination(response.data.pagination);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setIsLoading(false);
+    }
+  };
 
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get("/api/pos/categories");
+      setCategories(response.data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
+
+  // Initial load
   useEffect(() => {
-    setIsLoading(true);
-    fetchProducts();
     fetchCategories();
-    
+    fetchProducts(1);
   }, []);
 
-  // Filter and sort products
+  // Refetch when filters change
   useEffect(() => {
-    let filtered = products.filter((product) => {
-      const matchesSearch =
-        product.item.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.sku.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory =
-        selectedCategory === "All" ||
-        product.ic_id === parseInt(selectedCategory);
-      const matchesStatus =
-        selectedStatus === "All" || product.status === selectedStatus;
+    const timeoutId = setTimeout(() => {
+      fetchProducts(1);
+    }, 500); // Debounce search
 
-      return matchesSearch && matchesCategory && matchesStatus;
-    });
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder]);
 
-    // Sort products
-    filtered.sort((a, b) => {
-      let aValue, bValue;
-
-      switch (sortBy) {
-        case "name":
-          aValue = a.item.toLowerCase();
-          bValue = b.item.toLowerCase();
-          break;
-        case "price":
-          aValue = a.price;
-          bValue = b.price;
-          break;
-        case "stock":
-          aValue = a.stock;
-          bValue = b.stock;
-          break;
-        default:
-          aValue = a.item.toLowerCase();
-          bValue = b.item.toLowerCase();
-      }
-
-      if (sortOrder === "asc") {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-    setFilteredProducts(filtered);
-  }, [
-    products,
-    searchTerm,
-    selectedCategory,
-    selectedStatus,
-    sortBy,
-    sortOrder,
-  ]);
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    fetchProducts(newPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleDelete = async (id) => {
     try {
       await axios.delete(`/api/pos/products/${id}`);
-      setProducts((prev) => prev.filter((p) => p.itcd !== id));
+      fetchProducts(pagination.currentPage); // Refresh current page
+      setDeleteConfirm(null);
       toast.success("Product deleted successfully");
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("Failed to delete product");
     }
   };
+
   const handleView = (id) => {
     router.push(`/pos/products/${id}`);
-    // console.log('View product:', id);
   };
 
   const handleEdit = (id) => {
     router.push(`/pos/products/${id}`);
-    console.log("Edit product:", id);
   };
 
   const addNewProduct = () => {
-    // router.push('/pos/products/new');
-    console.log("Add new product");
+    router.push("/pos/products/create");
   };
 
   const getStatusColor = (status) => {
@@ -250,6 +160,118 @@ axios
     }
   };
 
+  // Pagination component
+  const PaginationComponent = () => {
+    const {
+      currentPage,
+      totalPages,
+      hasNext,
+      hasPrev,
+      startItem,
+      endItem,
+      totalCount,
+    } = pagination;
+
+    // Generate page numbers array
+    const getPageNumbers = () => {
+      const pages = [];
+      const delta = 2; // Number of pages to show on each side of current page
+
+      // Always include first page
+      if (currentPage - delta > 1) {
+        pages.push(1);
+        if (currentPage - delta > 2) {
+          pages.push("...");
+        }
+      }
+
+      // Add pages around current page
+      for (
+        let i = Math.max(1, currentPage - delta);
+        i <= Math.min(totalPages, currentPage + delta);
+        i++
+      ) {
+        pages.push(i);
+      }
+
+      // Always include last page
+      if (currentPage + delta < totalPages) {
+        if (currentPage + delta < totalPages - 1) {
+          pages.push("...");
+        }
+        pages.push(totalPages);
+      }
+
+      return pages;
+    };
+
+    if (totalPages <= 1) return null;
+
+    return (
+      <div className="bg-white rounded-2xl shadow-xl p-6">
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Showing {startItem} to {endItem} of {totalCount} products
+          </div>
+
+          <div className="flex items-center space-x-2">
+            {/* Previous button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={!hasPrev}
+              className={`p-2 rounded-lg transition-colors ${
+                hasPrev
+                  ? "bg-blue-50 hover:bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </motion.button>
+
+            {/* Page numbers */}
+            {getPageNumbers().map((page, index) => (
+              <React.Fragment key={index}>
+                {page === "..." ? (
+                  <span className="px-3 py-2">...</span>
+                ) : (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handlePageChange(page)}
+                    className={`px-3 py-2 rounded-lg transition-colors ${
+                      page === currentPage
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                    }`}
+                  >
+                    {page}
+                  </motion.button>
+                )}
+              </React.Fragment>
+            ))}
+
+            {/* Next button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={!hasNext}
+              className={`p-2 rounded-lg transition-colors ${
+                hasNext
+                  ? "bg-blue-50 hover:bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </motion.button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -272,7 +294,7 @@ axios
   }
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       <div className="max-w-full mx-auto">
         {/* Header */}
         <motion.div
@@ -295,15 +317,14 @@ axios
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <div className="text-2xl font-bold text-blue-600">
-                  {filteredProducts.length}
+                  {pagination.totalCount}
                 </div>
-                <div className="text-sm text-gray-500">Products</div>
+                <div className="text-sm text-gray-500">Total Products</div>
               </div>
               <Link href="/pos/products/create">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={addNewProduct}
                   className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all flex items-center space-x-2"
                 >
                   <Plus className="w-5 h-5" />
@@ -416,10 +437,7 @@ axios
                       onChange={(e) => setSelectedCategory(e.target.value)}
                       className="px-3 py-2 border border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
                     >
-                      <option key="All" value="All">
-                        All
-                      </option>
-
+                      <option value="All">All Categories</option>
                       {categories.map((category) => (
                         <option key={category.id} value={category.id}>
                           {category.ic_name}
@@ -458,14 +476,14 @@ axios
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className={
+          className={`mb-6 ${
             viewMode === "grid"
               ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
               : "space-y-4"
-          }
+          }`}
         >
           <AnimatePresence>
-            {filteredProducts.map((product, index) => (
+            {products.map((product, index) => (
               <motion.div
                 key={product.itcd}
                 initial={{ opacity: 0, y: 20 }}
@@ -498,10 +516,10 @@ axios
                       </div>
                       <div
                         className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${getStatusColor(
-                          product.status
+                          product.sync_status
                         )}`}
                       >
-                        {getStatusIcon(product.status)}
+                        {getStatusIcon(product.sync_status)}
                         <span>{product.sync_status.replace("_", " ")}</span>
                       </div>
                     </div>
@@ -521,12 +539,14 @@ axios
                         <div className="flex items-center space-x-1 text-green-600">
                           <DollarSign className="w-4 h-4" />
                           <span className="font-bold">
-                            {product.price.toFixed(2)}
+                            {product.price ? product.price.toFixed(2) : "0.00"}
                           </span>
                         </div>
                         <div className="flex items-center space-x-1 text-blue-600">
                           <Warehouse className="w-4 h-4" />
-                          <span className="font-medium">{product.stock}</span>
+                          <span className="font-medium">
+                            {product.stock || 0}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -539,7 +559,6 @@ axios
                         className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 py-2 px-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-1"
                       >
                         <Eye className="w-4 h-4" />
-                        <span>View</span>
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.05 }}
@@ -548,7 +567,6 @@ axios
                         className="flex-1 bg-green-50 hover:bg-green-100 text-green-600 py-2 px-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-1"
                       >
                         <Edit3 className="w-4 h-4" />
-                        <span>Edit</span>
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.05 }}
@@ -566,7 +584,7 @@ axios
                     <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden relative flex-shrink-0">
                       {product.image_url ? (
                         <Image
-                          src={product.image_url}
+                          src={`/api/pos/products/uploads${product.image_url}`}
                           alt={product.item}
                           fill
                           className="object-cover"
@@ -589,17 +607,14 @@ axios
                               <Barcode className="w-4 h-4" />
                               <span className="font-mono">{product.sku}</span>
                             </div>
-                            <span className="text-blue-600 font-medium">
-                              {product.category}
-                            </span>
                           </div>
                         </div>
                         <div
                           className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${getStatusColor(
-                            product.status
+                            product.sync_status
                           )}`}
                         >
-                          {getStatusIcon(product.status)}
+                          {getStatusIcon(product.sync_status)}
                           <span>{product.sync_status.replace("_", " ")}</span>
                         </div>
                       </div>
@@ -610,7 +625,7 @@ axios
                         <div className="flex items-center space-x-1 text-green-600">
                           <DollarSign className="w-4 h-4" />
                           <span className="font-bold text-lg">
-                            {product.price.toFixed(2)}
+                            {product.price ? product.price.toFixed(2) : "0.00"}
                           </span>
                         </div>
                         <div className="text-sm text-gray-500">Price</div>
@@ -619,7 +634,7 @@ axios
                         <div className="flex items-center space-x-1 text-blue-600">
                           <Warehouse className="w-4 h-4" />
                           <span className="font-bold text-lg">
-                            {product.stock}
+                            {product.stock || 0}
                           </span>
                         </div>
                         <div className="text-sm text-gray-500">Stock</div>
@@ -658,71 +673,44 @@ axios
           </AnimatePresence>
         </motion.div>
 
-        {/* Empty State */}
-        {filteredProducts.length === 0 && !isLoading && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl shadow-xl p-12 text-center"
-          >
-            <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">
-              No products found
-            </h3>
-            <p className="text-gray-600 mb-6">
-              {searchTerm ||
-              selectedCategory !== "All" ||
-              selectedStatus !== "All"
-                ? "Try adjusting your search or filters"
-                : "Get started by adding your first product"}
-            </p>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={addNewProduct}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center space-x-2 mx-auto"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Add Product</span>
-            </motion.button>
-          </motion.div>
-        )}
-      </div>
+        {/* Pagination */}
+        <PaginationComponent />
 
-      {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {deleteConfirm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={() => setDeleteConfirm(null)}
-          >
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {deleteConfirm && (
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl p-8 max-w-md w-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
             >
-              <div className="text-center">
-                <div className="bg-red-100 rounded-full p-3 w-16 h-16 mx-auto mb-4">
-                  <AlertTriangle className="w-10 h-10 text-red-600" />
+              <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-gray-800">
+                    Confirm Delete
+                  </h3>
+                  <button
+                    onClick={() => setDeleteConfirm(null)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  Delete Product
-                </h3>
                 <p className="text-gray-600 mb-6">
                   Are you sure you want to delete this product? This action
                   cannot be undone.
                 </p>
-                <div className="flex space-x-4">
+                <div className="flex justify-end space-x-3">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setDeleteConfirm(null)}
-                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 px-4 rounded-xl font-medium transition-colors"
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
                   >
                     Cancel
                   </motion.button>
@@ -730,16 +718,16 @@ axios
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handleDelete(deleteConfirm)}
-                    className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-xl font-medium transition-colors"
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
                   >
                     Delete
                   </motion.button>
                 </div>
-              </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 };
