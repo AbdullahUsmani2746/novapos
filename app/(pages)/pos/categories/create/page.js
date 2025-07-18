@@ -203,7 +203,7 @@ const CreateCategory = () => {
       <Label htmlFor={id} className="text-sm font-medium text-gray-700 flex items-center">
         {Icon && <Icon className="w-4 h-4 mr-2 text-gray-500" />}
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className="text-red-500 ml-1"></span>}
       </Label>
       <div className="relative">
         <Input
@@ -239,102 +239,103 @@ const CreateCategory = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
-      {/* Header */}
-      <motion.div 
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-10"
-      >
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                onClick={() => router.back()}
-                variant="ghost"
-                size="sm"
-                className="hover:bg-gray-100"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Create New Category</h1>
-                <p className="text-gray-600 mt-1">Add a new category to organize your products</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-500">
-                <FolderPlus className="w-4 h-4" />
-                <span>Category Management</span>
-              </div>
-            </div>
+  <div className="min-h-screen">
+  {/* Header */}
+  <motion.div
+    initial={{ y: -20, opacity: 0 }}
+    animate={{ y: 0, opacity: 1 }}
+    className="bg-white rounded-none sm:rounded-xl shadow-md sticky top-0 z-20"
+  >
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-start sm:items-center gap-3">
+          <Button
+            onClick={() => router.back()}
+            variant="ghost"
+            size="icon"
+            className="hover:bg-primary rounded-md"
+          >
+            <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+          </Button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Create New Category</h1>
+            <p className="text-gray-600 text-sm sm:text-base">
+              Add a new category to organize your products
+            </p>
           </div>
         </div>
-      </motion.div>
 
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-            <div className="p-8">
-              {/* Progress indicator */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-gray-600">Category Information</span>
-                  <span className="text-sm text-gray-500">Fill in the details below</span>
+        <div className="hidden sm:flex items-center gap-2 text-sm text-gray-500">
+          <FolderPlus className="w-4 h-4" />
+          <span>Category Management</span>
+        </div>
+      </div>
+    </div>
+  </motion.div>
+
+  {/* Main Content */}
+  <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 }}
+    >
+      <Card className="bg-white/90 backdrop-blur-md border-0 shadow-xl">
+        <div className="p-4 sm:p-8">
+          {/* Progress */}
+          <div className="mb-6 sm:mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+              <span className="text-sm font-medium text-gray-600">Category Information</span>
+              <span className="text-xs sm:text-sm text-gray-500">Fill in the details below</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <motion.div
+                className="bg-primary h-2 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 1, delay: 0.5 }}
+              />
+            </div>
+          </div>
+
+          {/* Form Fields */}
+          <div className="space-y-6">
+            <motion.div
+              variants={formVariants}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
+            >
+              {/* Category Name */}
+              <motion.div variants={itemVariants} className="md:col-span-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                  <Label className="text-sm font-medium text-gray-700 flex items-center">
+                    <Tag className="w-4 h-4 mr-2 text-gray-500" />
+                    Category Name
+                    <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={generateCategoryName}
+                    className="text-xs hover:bg-primary text-blue-600"
+                  >
+                    <Lightbulb className="w-3 h-3 mr-1" />
+                    Suggest
+                  </Button>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <motion.div 
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: "100%" }}
-                    transition={{ duration: 1, delay: 0.5 }}
-                  />
-                </div>
-              </div>
+                <InputField
+                  id="ic_name"
+                  value={form.ic_name}
+                  onChange={(e) => setForm({ ...form, ic_name: e.target.value })}
+                  placeholder="Enter category name (e.g., Electronics, Clothing)"
+                  error={errors.ic_name}
+                  required
+                />
+              </motion.div>
 
-              <div className="space-y-8">
-                <motion.div
-                  variants={formVariants}
-                  initial="hidden"
-                  animate="visible"
-                  className="grid grid-cols-1 md:grid-cols-2 gap-6"
-                >
-                  {/* Category Name */}
-                  <motion.div variants={itemVariants} className="md:col-span-2">
-                    <div className="flex items-center justify-between mb-2">
-                      <Label className="text-sm font-medium text-gray-700 flex items-center">
-                        <Tag className="w-4 h-4 mr-2 text-gray-500" />
-                        Category Name
-                        <span className="text-red-500 ml-1">*</span>
-                      </Label>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={generateCategoryName}
-                        className="text-xs hover:bg-blue-50 text-blue-600"
-                      >
-                        <Lightbulb className="w-3 h-3 mr-1" />
-                        Suggest
-                      </Button>
-                    </div>
-                    <InputField
-                      id="ic_name"
-                      value={form.ic_name}
-                      onChange={(e) => setForm({ ...form, ic_name: e.target.value })}
-                      placeholder="Enter category name (e.g., Electronics, Clothing)"
-                      error={errors.ic_name}
-                      required
-                    />
-                  </motion.div>
-
-                  {/* Main Category */}
+               {/* Main Category */}
                   {/* <motion.div variants={itemVariants} className="md:col-span-2">
                     <Label className="text-sm font-medium text-gray-700 flex items-center mb-2">
                       <Folder className="w-4 h-4 mr-2 text-gray-500" />
@@ -372,62 +373,62 @@ const CreateCategory = () => {
                     )}
                   </motion.div> */}
 
-                  {/* Description */}
-                  <motion.div variants={itemVariants} className="md:col-span-2 space-y-2">
-                    <Label className="text-sm font-medium text-gray-700 flex items-center">
-                      <Hash className="w-4 h-4 mr-2 text-gray-500" />
-                      Description (Optional)
-                    </Label>
-                    <textarea
-                      value={form.description}
-                      onChange={(e) => setForm({ ...form, description: e.target.value })}
-                      placeholder="Enter a brief description of this category..."
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 resize-none"
-                    />
-                  </motion.div>
-                </motion.div>
+              {/* Description */}
+              <motion.div variants={itemVariants} className="md:col-span-2">
+                <Label className="text-sm font-medium text-gray-700 flex items-center mb-2">
+                  <Hash className="w-4 h-4 mr-2 text-gray-500" />
+                  Description (Optional)
+                </Label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Enter a brief description..."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 resize-none text-sm"
+                />
+              </motion.div>
+            </motion.div>
 
-                {/* Action Buttons */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200"
-                >
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => router.back()}
-                    className="flex-1 sm:flex-none border-gray-300 hover:bg-gray-50"
-                    disabled={loading}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Creating Category...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-5 h-5 mr-2" />
-                        Create Category
-                      </>
-                    )}
-                  </Button>
-                </motion.div>
-              </div>
-            </div>
-          </Card>
+            {/* Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200"
+            >
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                className="w-full sm:w-auto border-gray-300 hover:bg-primary"
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading}
+                className="w-full sm:w-auto bg-primary text-white shadow-md hover:shadow-lg transition-all"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-5 h-5 mr-2" />
+                    Create Category
+                  </>
+                )}
+              </Button>
+            </motion.div>
+          </div>
+        </div>
+      </Card>
 
-          {/* Helper Cards */}
+      {/* Helper Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             {/* Tips Card */}
             <motion.div
@@ -438,12 +439,12 @@ const CreateCategory = () => {
               <Card className="bg-blue-50/50 backdrop-blur-sm border border-blue-200/50">
                 <div className="p-6">
                   <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                      <CheckCircle2 className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-blue-900 mb-2">Best Practices</h3>
-                      <ul className="text-sm text-blue-700 space-y-1">
+                      <h3 className="font-semibold text-primary mb-2">Best Practices</h3>
+                      <ul className="text-sm text-primary space-y-1">
                         <li>• Use clear, descriptive category names</li>
                         <li>• Keep categories organized and logical</li>
                         <li>• Avoid creating too many similar categories</li>
@@ -464,12 +465,12 @@ const CreateCategory = () => {
               <Card className="bg-purple-50/50 backdrop-blur-sm border border-purple-200/50">
                 <div className="p-6">
                   <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Lightbulb className="w-5 h-5 text-purple-600" />
+                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Lightbulb className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-purple-900 mb-2">Category Examples</h3>
-                      <div className="text-sm text-purple-700 space-y-1">
+                      <h3 className="font-semibold text-primary mb-2">Category Examples</h3>
+                      <div className="text-sm text-primary space-y-1">
                         <div><strong>Food & Drinks:</strong> Beverages, Snacks, Frozen</div>
                         <div><strong>Technology:</strong> Electronics, Accessories</div>
                         <div><strong>Fashion:</strong> Clothing, Shoes, Jewelry</div>
@@ -482,7 +483,8 @@ const CreateCategory = () => {
           </div>
         </motion.div>
       </div>
-    </div>
+</div>
+
   );
 };
 

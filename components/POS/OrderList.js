@@ -203,7 +203,7 @@ const OrderList = () => {
               disabled={!hasPrev}
               className={`p-2 rounded-lg transition-colors ${
                 hasPrev
-                  ? "bg-blue-50 hover:bg-blue-100 text-blue-600"
+                  ? "bg-blue-50 hover:bg-blue-100 text-primary"
                   : "bg-gray-100 text-gray-400 cursor-not-allowed"
               }`}
             >
@@ -221,7 +221,7 @@ const OrderList = () => {
                     onClick={() => handlePageChange(page)}
                     className={`px-3 py-2 rounded-lg transition-colors ${
                       page === currentPage
-                        ? "bg-blue-600 text-white"
+                        ? "bg-primary text-white"
                         : "bg-gray-100 hover:bg-gray-200 text-gray-700"
                     }`}
                   >
@@ -238,7 +238,7 @@ const OrderList = () => {
               disabled={!hasNext}
               className={`p-2 rounded-lg transition-colors ${
                 hasNext
-                  ? "bg-blue-50 hover:bg-blue-100 text-blue-600"
+                  ? "bg-blue-50 hover:bg-blue-100 text-primary"
                   : "bg-gray-100 text-gray-400 cursor-not-allowed"
               }`}
             >
@@ -278,16 +278,14 @@ const OrderList = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen">
       {/* Header Section */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md shadow-lg rounded-md">
+      <div className="sticky top-0 z-10 bg-white backdrop-blur-md shadow-lg rounded-md">
         <div className="max-w-full mx-auto px-4 py-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                Order Management
-              </h1>
-              <p className="text-gray-600 flex items-center gap-2">
+              <h1 className="text-3xl font-bold">Order Management</h1>
+              <p className="text-primary font-bold flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" />
                 {pagination.totalCount} total orders
               </p>
@@ -296,16 +294,17 @@ const OrderList = () => {
             {/* Search and Filters */}
             <div className="flex flex-col sm:flex-row gap-3 lg:w-auto w-full">
               <div className="relative flex-1 lg:w-80">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 z-10 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Search orders or customers..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/90 backdrop-blur-sm"
+                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/90 backdrop-blur-sm z-0 relative"
                 />
               </div>
-              <div className="relative">
+
+              <div className="relative mt-2">
                 <Button
                   variant="outline"
                   onClick={() => setShowDateFilter(!showDateFilter)}
@@ -382,7 +381,7 @@ const OrderList = () => {
                               fetchOrders(1, true);
                               setShowDateFilter(false);
                             }}
-                            className="bg-blue-600 hover:bg-primary text-white"
+                            className="bg-primary text-white"
                           >
                             Apply
                           </Button>
@@ -420,14 +419,14 @@ const OrderList = () => {
                   className="relative overflow-hidden bg-white/90 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-300 rounded-2xl"
                 >
                   {/* Gradient Accent */}
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-primary from-blue-500 via-purple-500 to-pink-500"></div>
 
                   <div className="p-6 space-y-4">
                     {/* Header - Improved layout with better spacing */}
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex items-center gap-2">
-                          <Receipt className="flex-shrink-0 w-5 h-5 text-blue-600" />
+                          <Receipt className="flex-shrink-0 w-5 h-5 text-primary" />
                           <h3 className="text-lg font-bold text-gray-900 truncate">
                             #{order.invoice_no.split("-").pop()}
                           </h3>
@@ -450,7 +449,7 @@ const OrderList = () => {
                     {/* Date and Items - Improved alignment */}
                     <div className="flex items-center justify-between text-sm text-gray-600">
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 flex-shrink-0" />
+                        <Calendar className="w-4 h-4 flex-shrink-0 text-primary" />
                         <span className="whitespace-nowrap">
                           {new Date(order.dateD).toLocaleDateString("en-US", {
                             month: "short",
@@ -476,7 +475,7 @@ const OrderList = () => {
 
                       <Button
                         size="sm"
-                        className="flex-shrink-0 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-xl transform transition-all duration-200 hover:scale-105 group-hover:shadow-lg"
+                        className="flex-shrink-0 bg-primary from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-xl transform transition-all duration-200 hover:scale-105 group-hover:shadow-lg"
                       >
                         <Eye className="w-4 h-4" />
                       </Button>

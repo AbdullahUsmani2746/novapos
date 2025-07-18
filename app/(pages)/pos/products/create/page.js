@@ -53,7 +53,7 @@ const CreateProduct = () => {
 
   useEffect(() => {
     const fetchCategories = async () => {
-      try{
+      try {
         const response = await axios.get("/api/pos/categories");
         setCategories(response.data);
       } catch (error) {
@@ -79,7 +79,9 @@ const CreateProduct = () => {
 
   const generateSKU = () => {
     const prefix = form.item.substring(0, 3).toUpperCase() || "PRD";
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, "0");
+    const random = Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(3, "0");
     const timestamp = Date.now().toString().slice(-4);
     return `${prefix}${random}${timestamp}`;
   };
@@ -90,11 +92,11 @@ const CreateProduct = () => {
     const file = event.target.files[0];
     if (file) {
       // Validate file type
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         toast.error("Please select a valid image file");
         return;
       }
-      
+
       // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
         toast.error("Image size should be less than 5MB");
@@ -102,16 +104,14 @@ const CreateProduct = () => {
       }
 
       setSelectedImage(file);
-      
+
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target.result);
         setImageUploading(false);
-
       };
       reader.readAsDataURL(file);
-
     }
   };
 
@@ -119,7 +119,7 @@ const CreateProduct = () => {
     setSelectedImage(null);
     setImagePreview(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -134,29 +134,29 @@ const CreateProduct = () => {
     try {
       // Create FormData to handle both data and image
       const formData = new FormData();
-      
+
       // Append form data
-      formData.append('item', form.item);
-      formData.append('ic_id', form.ic_id);
-      formData.append('sku', form.sku);
-      formData.append('price', form.price);
-      formData.append('stock', form.stock);
-      
+      formData.append("item", form.item);
+      formData.append("ic_id", form.ic_id);
+      formData.append("sku", form.sku);
+      formData.append("price", form.price);
+      formData.append("stock", form.stock);
+
       if (form.description) {
-        formData.append('description', form.description);
+        formData.append("description", form.description);
       }
-      
+
       // Append image if selected
       if (selectedImage) {
-        formData.append('image', selectedImage);
+        formData.append("image", selectedImage);
       }
 
       const response = await axios.post("/api/pos/products", formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
-      
+
       if (response.data.success) {
         toast.success(response.data.message || "Product created successfully!");
         router.push("/pos/products");
@@ -178,30 +178,29 @@ const CreateProduct = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
+    <div className="min-h-screen">
       {/* Header */}
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-10"
+        className="bg-white backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-10"
       >
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 shadow-lg rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button
                 onClick={() => router.back()}
                 variant="ghost"
                 size="sm"
-                className="hover:bg-gray-100"
+                className="hover:bg-primary"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
+                <ArrowLeft className="w-10 h-10" />
               </Button>
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   Create New Product
                 </h1>
-                <p className="text-gray-600 mt-1">
+                <p className="text-gray-600">
                   Add a new product to your inventory
                 </p>
               </div>
@@ -237,7 +236,7 @@ const CreateProduct = () => {
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <motion.div
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full"
+                    className="bg-primary h-2 rounded-full"
                     initial={{ width: 0 }}
                     animate={{ width: "100%" }}
                     transition={{ duration: 1, delay: 0.5 }}
@@ -252,7 +251,7 @@ const CreateProduct = () => {
                     <Image className="w-4 h-4 mr-2 text-gray-500" />
                     Product Image
                   </Label>
-                  
+
                   <div className="flex flex-col sm:flex-row gap-4">
                     {/* Image Preview */}
                     <div className="flex-1">
@@ -276,7 +275,7 @@ const CreateProduct = () => {
                           </Button>
                         </div>
                       ) : (
-                        <div 
+                        <div
                           className="aspect-square w-full max-w-xs mx-auto bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-colors duration-200"
                           onClick={() => fileInputRef.current?.click()}
                         >
@@ -300,18 +299,18 @@ const CreateProduct = () => {
                         onChange={handleImageSelect}
                         className="hidden"
                       />
-                      
+
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 hover:bg-primary"
                         disabled={loading}
                       >
                         <Upload className="w-4 h-4" />
-                        {selectedImage ? 'Change Image' : 'Upload Image'}
+                        {selectedImage ? "Change Image" : "Upload Image"}
                       </Button>
-                      
+
                       {selectedImage && (
                         <Button
                           type="button"
@@ -330,7 +329,10 @@ const CreateProduct = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Product Name */}
                   <div className="md:col-span-2 space-y-2">
-                    <Label htmlFor="item" className="text-sm font-medium text-gray-700 flex items-center">
+                    <Label
+                      htmlFor="item"
+                      className="text-sm font-medium text-gray-700 flex items-center"
+                    >
                       <Package className="w-4 h-4 mr-2 text-gray-500" />
                       Product Name
                       <span className="text-red-500 ml-1">*</span>
@@ -340,7 +342,9 @@ const CreateProduct = () => {
                         id="item"
                         type="text"
                         value={form.item}
-                        onChange={(e) => setForm({ ...form, item: e.target.value })}
+                        onChange={(e) =>
+                          setForm({ ...form, item: e.target.value })
+                        }
                         placeholder="Enter product name"
                         className={`pl-10 transition-all duration-200 ${
                           errors.item
@@ -365,11 +369,15 @@ const CreateProduct = () => {
                       Category
                       <span className="text-red-500 ml-1">*</span>
                     </Label>
-                    <Select onValueChange={(value) => setForm({ ...form, ic_id: value })}>
+                    <Select
+                      onValueChange={(value) =>
+                        setForm({ ...form, ic_id: value })
+                      }
+                    >
                       <SelectTrigger
                         className={`transition-all duration-200 ${
                           errors.ic_id
-                            ? "border-red-300 focus:border-red-500"
+                            ? "border-red-300 focus:border-primary-500 focus:ring-primary-200"
                             : "border-gray-200 focus:border-blue-500"
                         }`}
                       >
@@ -377,7 +385,10 @@ const CreateProduct = () => {
                       </SelectTrigger>
                       <SelectContent>
                         {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id.toString()}>
+                          <SelectItem
+                            key={category.id}
+                            value={category.id.toString()}
+                          >
                             {category.ic_name}
                           </SelectItem>
                         ))}
@@ -404,7 +415,7 @@ const CreateProduct = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => setForm({ ...form, sku: generateSKU() })}
-                        className="text-xs hover:bg-blue-50 text-blue-600"
+                        className="text-xs hover:bg-primary text-blue-600"
                       >
                         Generate
                       </Button>
@@ -413,7 +424,9 @@ const CreateProduct = () => {
                       id="sku"
                       type="text"
                       value={form.sku}
-                      onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                      onChange={(e) =>
+                        setForm({ ...form, sku: e.target.value })
+                      }
                       placeholder="Product SKU"
                       className={`transition-all duration-200 ${
                         errors.sku
@@ -431,7 +444,10 @@ const CreateProduct = () => {
 
                   {/* Price */}
                   <div className="space-y-2">
-                    <Label htmlFor="price" className="text-sm font-medium text-gray-700 flex items-center">
+                    <Label
+                      htmlFor="price"
+                      className="text-sm font-medium text-gray-700 flex items-center"
+                    >
                       <DollarSign className="w-4 h-4 mr-2 text-gray-500" />
                       Price
                       <span className="text-red-500 ml-1">*</span>
@@ -443,7 +459,9 @@ const CreateProduct = () => {
                         step="0.01"
                         min="0"
                         value={form.price}
-                        onChange={(e) => setForm({ ...form, price: e.target.value })}
+                        onChange={(e) =>
+                          setForm({ ...form, price: e.target.value })
+                        }
                         placeholder="0.00"
                         className={`pl-10 transition-all duration-200 ${
                           errors.price
@@ -463,7 +481,10 @@ const CreateProduct = () => {
 
                   {/* Stock */}
                   <div className="space-y-2">
-                    <Label htmlFor="stock" className="text-sm font-medium text-gray-700 flex items-center">
+                    <Label
+                      htmlFor="stock"
+                      className="text-sm font-medium text-gray-700 flex items-center"
+                    >
                       <Archive className="w-4 h-4 mr-2 text-gray-500" />
                       Initial Stock
                       <span className="text-red-500 ml-1">*</span>
@@ -474,7 +495,9 @@ const CreateProduct = () => {
                         type="number"
                         min="0"
                         value={form.stock}
-                        onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                        onChange={(e) =>
+                          setForm({ ...form, stock: e.target.value })
+                        }
                         placeholder="0"
                         className={`pl-10 transition-all duration-200 ${
                           errors.stock
@@ -499,7 +522,9 @@ const CreateProduct = () => {
                     </Label>
                     <textarea
                       value={form.description}
-                      onChange={(e) => setForm({ ...form, description: e.target.value })}
+                      onChange={(e) =>
+                        setForm({ ...form, description: e.target.value })
+                      }
                       placeholder="Enter product description..."
                       rows={4}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 resize-none"
@@ -508,12 +533,12 @@ const CreateProduct = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row gap-5">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => router.back()}
-                    className="flex-1 sm:flex-none border-gray-300 hover:bg-gray-50"
+                    className="flex-1 sm:flex-none border-gray-300 hover:bg-primary"
                     disabled={loading}
                   >
                     Cancel
@@ -521,7 +546,7 @@ const CreateProduct = () => {
                   <Button
                     type="submit"
                     disabled={loading || imageUploading}
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                    className="flex-1 bg-primary text-white shadow-lg hover:shadow-xl transition-all duration-200"
                   >
                     {loading ? (
                       <>
@@ -555,19 +580,27 @@ const CreateProduct = () => {
             <Card className="bg-blue-50/50 backdrop-blur-sm border border-blue-200/50">
               <div className="p-6">
                 <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                  <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                    <CheckCircle2 className="w-5 h-5 text-background" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-blue-900 mb-2">
+                    <h3 className="font-semibold text-primary mb-2">
                       Quick Tips
                     </h3>
-                    <ul className="text-sm text-blue-700 space-y-1">
-                      <li>• Use descriptive product names for better searchability</li>
-                      <li>• SKU should be unique across your entire inventory</li>
-                      <li>• Upload high-quality images (recommended: 800x800px)</li>
+                    <ul className="text-sm text-primary space-y-1">
+                      <li>
+                        • Use descriptive product names for better searchability
+                      </li>
+                      <li>
+                        • SKU should be unique across your entire inventory
+                      </li>
+                      <li>
+                        • Upload high-quality images (recommended: 800x800px)
+                      </li>
                       <li>• Set realistic initial stock levels</li>
-                      <li>• Double-check pricing before creating the product</li>
+                      <li>
+                        • Double-check pricing before creating the product
+                      </li>
                     </ul>
                   </div>
                 </div>
