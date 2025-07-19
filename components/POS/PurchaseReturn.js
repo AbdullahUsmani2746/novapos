@@ -21,19 +21,21 @@ import {
   Building,
   Hash,
   Eye,
-  ExternalLink
+  ExternalLink,
 } from "lucide-react";
 
 const PurchaseReturnReport = ({ onBack }) => {
   const [dateRange, setDateRange] = useState({
-    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0]
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
+    endDate: new Date().toISOString().split("T")[0],
   });
   const [filters, setFilters] = useState({
     supplierId: "",
     categoryId: "",
     status: "",
-    reason: ""
+    reason: "",
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -55,7 +57,7 @@ const PurchaseReturnReport = ({ onBack }) => {
       reason: "Defective Items",
       totalItems: 3,
       totalQuantity: 5,
-      totalAmount: 2500.00,
+      totalAmount: 2500.0,
       processedBy: "Stock Manager",
       approvedBy: "Purchase Manager",
       items: [
@@ -65,10 +67,10 @@ const PurchaseReturnReport = ({ onBack }) => {
           sku: "DELL-XPS-001",
           category: "Electronics",
           returnQty: 2,
-          unitPrice: 1000.00,
-          totalPrice: 2000.00,
+          unitPrice: 1000.0,
+          totalPrice: 2000.0,
           reason: "Screen flickering",
-          condition: "Defective"
+          condition: "Defective",
         },
         {
           id: 2,
@@ -76,15 +78,16 @@ const PurchaseReturnReport = ({ onBack }) => {
           sku: "MS-WIRE-002",
           category: "Accessories",
           returnQty: 3,
-          unitPrice: 25.00,
-          totalPrice: 75.00,
+          unitPrice: 25.0,
+          totalPrice: 75.0,
           reason: "Wrong model",
-          condition: "Good"
-        }
+          condition: "Good",
+        },
       ],
-      notes: "Items returned due to quality issues. Supplier agreed to replace.",
+      notes:
+        "Items returned due to quality issues. Supplier agreed to replace.",
       refundStatus: "Processed",
-      refundAmount: 2500.00
+      refundAmount: 2500.0,
     },
     {
       id: 2,
@@ -98,7 +101,7 @@ const PurchaseReturnReport = ({ onBack }) => {
       reason: "Wrong Items Delivered",
       totalItems: 2,
       totalQuantity: 10,
-      totalAmount: 150.00,
+      totalAmount: 150.0,
       processedBy: "Warehouse Clerk",
       approvedBy: "Pending",
       items: [
@@ -108,15 +111,15 @@ const PurchaseReturnReport = ({ onBack }) => {
           sku: "PAP-A4-001",
           category: "Stationery",
           returnQty: 10,
-          unitPrice: 15.00,
-          totalPrice: 150.00,
+          unitPrice: 15.0,
+          totalPrice: 150.0,
           reason: "Ordered A3, received A4",
-          condition: "Good"
-        }
+          condition: "Good",
+        },
       ],
       notes: "Waiting for supplier confirmation for exchange.",
       refundStatus: "Pending",
-      refundAmount: 0.00
+      refundAmount: 0.0,
     },
     {
       id: 3,
@@ -130,7 +133,7 @@ const PurchaseReturnReport = ({ onBack }) => {
       reason: "Supplier Rejected",
       totalItems: 1,
       totalQuantity: 1,
-      totalAmount: 500.00,
+      totalAmount: 500.0,
       processedBy: "Purchase Officer",
       approvedBy: "N/A",
       items: [
@@ -140,32 +143,44 @@ const PurchaseReturnReport = ({ onBack }) => {
           sku: "TAB-SAM-001",
           category: "Electronics",
           returnQty: 1,
-          unitPrice: 500.00,
-          totalPrice: 500.00,
+          unitPrice: 500.0,
+          totalPrice: 500.0,
           reason: "Beyond return period",
-          condition: "Good"
-        }
+          condition: "Good",
+        },
       ],
       notes: "Return rejected by supplier due to policy violations.",
       refundStatus: "Rejected",
-      refundAmount: 0.00
-    }
+      refundAmount: 0.0,
+    },
   ];
 
   const fetchReportData = async () => {
     setIsLoading(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       setReportData(mockPurchaseReturns);
       setSummaryData({
         totalReturns: mockPurchaseReturns.length,
-        totalValue: mockPurchaseReturns.reduce((sum, item) => sum + item.totalAmount, 0),
-        completedReturns: mockPurchaseReturns.filter(item => item.status === "Completed").length,
-        pendingReturns: mockPurchaseReturns.filter(item => item.status === "Pending").length,
-        totalRefunded: mockPurchaseReturns.reduce((sum, item) => sum + item.refundAmount, 0),
-        avgReturnValue: mockPurchaseReturns.reduce((sum, item) => sum + item.totalAmount, 0) / mockPurchaseReturns.length
+        totalValue: mockPurchaseReturns.reduce(
+          (sum, item) => sum + item.totalAmount,
+          0
+        ),
+        completedReturns: mockPurchaseReturns.filter(
+          (item) => item.status === "Completed"
+        ).length,
+        pendingReturns: mockPurchaseReturns.filter(
+          (item) => item.status === "Pending"
+        ).length,
+        totalRefunded: mockPurchaseReturns.reduce(
+          (sum, item) => sum + item.refundAmount,
+          0
+        ),
+        avgReturnValue:
+          mockPurchaseReturns.reduce((sum, item) => sum + item.totalAmount, 0) /
+          mockPurchaseReturns.length,
       });
     } catch (error) {
       console.error("Error fetching report data:", error);
@@ -190,28 +205,38 @@ const PurchaseReturnReport = ({ onBack }) => {
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case "completed": return "text-green-600 bg-green-100";
-      case "pending": return "text-yellow-600 bg-yellow-100";
-      case "cancelled": return "text-red-600 bg-red-100";
-      case "processing": return "text-blue-600 bg-blue-100";
-      default: return "text-gray-600 bg-gray-100";
+      case "completed":
+        return "text-green-600 bg-green-100";
+      case "pending":
+        return "text-yellow-600 bg-yellow-100";
+      case "cancelled":
+        return "text-red-600 bg-red-100";
+      case "processing":
+        return "text-blue-600 bg-blue-100";
+      default:
+        return "text-gray-600 bg-gray-100";
     }
   };
 
   const getReasonColor = (reason) => {
     switch (reason?.toLowerCase()) {
-      case "defective items": return "text-red-600 bg-red-100";
-      case "wrong items delivered": return "text-orange-600 bg-orange-100";
-      case "damaged in transit": return "text-red-600 bg-red-100";
-      case "supplier rejected": return "text-gray-600 bg-gray-100";
-      default: return "text-blue-600 bg-blue-100";
+      case "defective items":
+        return "text-red-600 bg-red-100";
+      case "wrong items delivered":
+        return "text-orange-600 bg-orange-100";
+      case "damaged in transit":
+        return "text-red-600 bg-red-100";
+      case "supplier rejected":
+        return "text-gray-600 bg-gray-100";
+      default:
+        return "text-blue-600 bg-blue-100";
     }
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(amount);
   };
 
@@ -231,7 +256,7 @@ const PurchaseReturnReport = ({ onBack }) => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={fetchReportData}
-            className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-xl transition-colors flex items-center space-x-2"
+            className="bg-primary text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
           >
             <RefreshCw className="w-4 h-4" />
             <span>Refresh</span>
@@ -239,7 +264,7 @@ const PurchaseReturnReport = ({ onBack }) => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-green-100 hover:bg-green-200 text-green-700 px-4 py-2 rounded-xl transition-colors flex items-center space-x-2"
+            className="bg-primary text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
           >
             <Download className="w-4 h-4" />
             <span>Export</span>
@@ -249,25 +274,35 @@ const PurchaseReturnReport = ({ onBack }) => {
 
       <div className="grid lg:grid-cols-5 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Start Date
+          </label>
           <input
             type="date"
             value={dateRange.startDate}
-            onChange={(e) => setDateRange({...dateRange, startDate: e.target.value})}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            onChange={(e) =>
+              setDateRange({ ...dateRange, startDate: e.target.value })
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            End Date
+          </label>
           <input
             type="date"
             value={dateRange.endDate}
-            onChange={(e) => setDateRange({...dateRange, endDate: e.target.value})}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            onChange={(e) =>
+              setDateRange({ ...dateRange, endDate: e.target.value })
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Search
+          </label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
@@ -275,16 +310,18 @@ const PurchaseReturnReport = ({ onBack }) => {
               placeholder="Return number, supplier..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
             />
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Status
+          </label>
           <select
             value={filters.status}
-            onChange={(e) => setFilters({...filters, status: e.target.value})}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
           >
             <option value="">All Status</option>
             <option value="completed">Completed</option>
@@ -293,11 +330,15 @@ const PurchaseReturnReport = ({ onBack }) => {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Supplier</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Supplier
+          </label>
           <select
             value={filters.supplierId}
-            onChange={(e) => setFilters({...filters, supplierId: e.target.value})}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            onChange={(e) =>
+              setFilters({ ...filters, supplierId: e.target.value })
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
           >
             <option value="">All Suppliers</option>
             <option value="SUP-001">Tech Solutions Ltd</option>
@@ -312,12 +353,42 @@ const PurchaseReturnReport = ({ onBack }) => {
   const SummaryCards = () => (
     <div className="grid lg:grid-cols-6 md:grid-cols-3 sm:grid-cols-2 gap-4 mb-6">
       {[
-        { label: "Total Returns", value: summaryData.totalReturns || 0, icon: RotateCcw, color: "blue" },
-        { label: "Total Value", value: formatCurrency(summaryData.totalValue || 0), icon: DollarSign, color: "purple" },
-        { label: "Completed", value: summaryData.completedReturns || 0, icon: CheckCircle, color: "green" },
-        { label: "Pending", value: summaryData.pendingReturns || 0, icon: Clock, color: "yellow" },
-        { label: "Total Refunded", value: formatCurrency(summaryData.totalRefunded || 0), icon: TrendingDown, color: "red" },
-        { label: "Avg Return Value", value: formatCurrency(summaryData.avgReturnValue || 0), icon: Package, color: "indigo" }
+        {
+          label: "Total Returns",
+          value: summaryData.totalReturns || 0,
+          icon: RotateCcw,
+          color: "blue",
+        },
+        {
+          label: "Total Value",
+          value: formatCurrency(summaryData.totalValue || 0),
+          icon: DollarSign,
+          color: "purple",
+        },
+        {
+          label: "Completed",
+          value: summaryData.completedReturns || 0,
+          icon: CheckCircle,
+          color: "green",
+        },
+        {
+          label: "Pending",
+          value: summaryData.pendingReturns || 0,
+          icon: Clock,
+          color: "yellow",
+        },
+        {
+          label: "Total Refunded",
+          value: formatCurrency(summaryData.totalRefunded || 0),
+          icon: TrendingDown,
+          color: "red",
+        },
+        {
+          label: "Avg Return Value",
+          value: formatCurrency(summaryData.avgReturnValue || 0),
+          icon: Package,
+          color: "indigo",
+        },
       ].map((stat, index) => (
         <motion.div
           key={index}
@@ -326,14 +397,12 @@ const PurchaseReturnReport = ({ onBack }) => {
           transition={{ delay: index * 0.1 }}
           className="bg-white rounded-xl shadow-lg p-6"
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">{stat.label}</p>
-              <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
+          <div className="flex flex-col items-center gap-1">
+            <div className={`bg-secondary p-3 rounded-lg`}>
+              <stat.icon className={`w-6 h-6 text-primary`} />
             </div>
-            <div className={`bg-${stat.color}-100 p-3 rounded-lg`}>
-              <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
-            </div>
+            <p className="text-sm text-gray-600 truncate">{stat.label}</p>
+            <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
           </div>
         </motion.div>
       ))}
@@ -344,24 +413,42 @@ const PurchaseReturnReport = ({ onBack }) => {
     <motion.div
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="bg-white rounded-2xl shadow-xl overflow-hidden"
+      className="bg-white rounded-2xl shadow-xl overflow-x-auto"
     >
       <div className="p-6 border-b border-gray-200">
-        <h3 className="text-xl font-semibold text-gray-800">Purchase Returns Details</h3>
+        <h3 className="text-xl font-semibold text-gray-800">
+          Purchase Returns Details
+        </h3>
       </div>
-      
+
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Return Info</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Supplier</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Status</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Reason</th>
-              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Items/Qty</th>
-              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Amount</th>
-              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Refund Status</th>
-              <th className="px-6 py-4 text-center text-sm font-semibold text-gray-600">Actions</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                Return Info
+              </th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                Supplier
+              </th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                Status
+              </th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                Reason
+              </th>
+              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">
+                Items/Qty
+              </th>
+              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">
+                Amount
+              </th>
+              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">
+                Refund Status
+              </th>
+              <th className="px-6 py-4 text-center text-sm font-semibold text-gray-600">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -374,34 +461,62 @@ const PurchaseReturnReport = ({ onBack }) => {
                   className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                 >
                   <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-blue-600">{returnItem.returnNumber}</div>
-                    <div className="text-xs text-gray-500">{returnItem.date} {returnItem.time}</div>
-                    <div className="text-xs text-gray-500">PO: {returnItem.originalPO}</div>
+                    <div className="text-sm font-medium text-blue-600">
+                      {returnItem.returnNumber}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {returnItem.date} {returnItem.time}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      PO: {returnItem.originalPO}
+                    </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-800">{returnItem.supplier}</div>
-                    <div className="text-xs text-gray-500">{returnItem.supplierId}</div>
+                    <div className="text-sm font-medium text-gray-800">
+                      {returnItem.supplier}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {returnItem.supplierId}
+                    </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(returnItem.status)}`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                        returnItem.status
+                      )}`}
+                    >
                       {returnItem.status}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${getReasonColor(returnItem.reason)}`}>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${getReasonColor(
+                        returnItem.reason
+                      )}`}
+                    >
                       {returnItem.reason}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="text-sm font-medium text-gray-800">{returnItem.totalItems} items</div>
-                    <div className="text-xs text-gray-500">{returnItem.totalQuantity} qty</div>
+                    <div className="text-sm font-medium text-gray-800">
+                      {returnItem.totalItems} items
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {returnItem.totalQuantity} qty
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="text-sm font-bold text-gray-800">{formatCurrency(returnItem.totalAmount)}</div>
+                    <div className="text-sm font-bold text-gray-800">
+                      {formatCurrency(returnItem.totalAmount)}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="text-sm font-medium text-gray-800">{returnItem.refundStatus}</div>
-                    <div className="text-xs text-gray-500">{formatCurrency(returnItem.refundAmount)}</div>
+                    <div className="text-sm font-medium text-gray-800">
+                      {returnItem.refundStatus}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {formatCurrency(returnItem.refundAmount)}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex justify-center space-x-2">
@@ -411,10 +526,11 @@ const PurchaseReturnReport = ({ onBack }) => {
                         onClick={() => toggleRowExpansion(returnItem.id)}
                         className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg transition-colors"
                       >
-                        {expandedRows.has(returnItem.id) ? 
-                          <ChevronUp className="w-4 h-4" /> : 
+                        {expandedRows.has(returnItem.id) ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
                           <ChevronDown className="w-4 h-4" />
-                        }
+                        )}
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.1 }}
@@ -426,7 +542,7 @@ const PurchaseReturnReport = ({ onBack }) => {
                     </div>
                   </td>
                 </motion.tr>
-                
+
                 <AnimatePresence>
                   {expandedRows.has(returnItem.id) && (
                     <motion.tr
@@ -446,16 +562,26 @@ const PurchaseReturnReport = ({ onBack }) => {
                               </h4>
                               <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
-                                  <span className="text-gray-600">Processed By:</span>
-                                  <span className="text-gray-800">{returnItem.processedBy}</span>
+                                  <span className="text-gray-600">
+                                    Processed By:
+                                  </span>
+                                  <span className="text-gray-800">
+                                    {returnItem.processedBy}
+                                  </span>
                                 </div>
                                 <div className="flex justify-between">
-                                  <span className="text-gray-600">Approved By:</span>
-                                  <span className="text-gray-800">{returnItem.approvedBy}</span>
+                                  <span className="text-gray-600">
+                                    Approved By:
+                                  </span>
+                                  <span className="text-gray-800">
+                                    {returnItem.approvedBy}
+                                  </span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-gray-600">Notes:</span>
-                                  <span className="text-gray-800 text-right max-w-xs">{returnItem.notes}</span>
+                                  <span className="text-gray-800 text-right max-w-xs">
+                                    {returnItem.notes}
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -468,25 +594,48 @@ const PurchaseReturnReport = ({ onBack }) => {
                               </h4>
                               <div className="space-y-3">
                                 {returnItem.items.map((item, idx) => (
-                                  <div key={idx} className="bg-gray-50 rounded-lg p-3">
+                                  <div
+                                    key={idx}
+                                    className="bg-gray-50 rounded-lg p-3"
+                                  >
                                     <div className="flex justify-between items-start mb-2">
                                       <div>
-                                        <div className="font-medium text-gray-800">{item.item}</div>
-                                        <div className="text-xs text-gray-500">SKU: {item.sku}</div>
+                                        <div className="font-medium text-gray-800">
+                                          {item.item}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          SKU: {item.sku}
+                                        </div>
                                       </div>
                                       <div className="text-right">
-                                        <div className="font-medium text-gray-800">{formatCurrency(item.totalPrice)}</div>
-                                        <div className="text-xs text-gray-500">Qty: {item.returnQty}</div>
+                                        <div className="font-medium text-gray-800">
+                                          {formatCurrency(item.totalPrice)}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          Qty: {item.returnQty}
+                                        </div>
                                       </div>
                                     </div>
                                     <div className="text-xs space-y-1">
                                       <div className="flex justify-between">
-                                        <span className="text-gray-600">Reason:</span>
-                                        <span className="text-gray-800">{item.reason}</span>
+                                        <span className="text-gray-600">
+                                          Reason:
+                                        </span>
+                                        <span className="text-gray-800">
+                                          {item.reason}
+                                        </span>
                                       </div>
                                       <div className="flex justify-between">
-                                        <span className="text-gray-600">Condition:</span>
-                                        <span className={`${item.condition === 'Defective' ? 'text-red-600' : 'text-green-600'}`}>
+                                        <span className="text-gray-600">
+                                          Condition:
+                                        </span>
+                                        <span
+                                          className={`${
+                                            item.condition === "Defective"
+                                              ? "text-red-600"
+                                              : "text-green-600"
+                                          }`}
+                                        >
                                           {item.condition}
                                         </span>
                                       </div>
@@ -521,13 +670,17 @@ const PurchaseReturnReport = ({ onBack }) => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onBack}
-            className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 rounded-xl transition-colors"
+            className="bg-primary text-white p-2 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </motion.button>
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">Purchase Return Report</h2>
-            <p className="text-gray-600">Track and manage all purchase returns</p>
+            <h2 className="text-2xl font-bold text-gray-800">
+              Purchase Return Report
+            </h2>
+            <p className="text-gray-600">
+              Track and manage all purchase returns
+            </p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
@@ -541,25 +694,29 @@ const PurchaseReturnReport = ({ onBack }) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white rounded-2xl shadow-xl p-12 text-center"
         >
-          <div className="bg-gradient-to-r from-purple-600 to-pink-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">
+          <div className="bg-primary from-purple-600 to-pink-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <RotateCcw className="text-white w-8 h-8 animate-spin" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">Loading Purchase Returns</h3>
-          <p className="text-gray-600">Please wait while we fetch your return data...</p>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">
+            Loading Purchase Returns
+          </h3>
+          <p className="text-gray-600">
+            Please wait while we fetch your return data...
+          </p>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen px-4 sm:px-6 lg:px-0 py-4">
+      <div className="max-w-[800px] mx-auto">
         <ReportHeader />
         <ReportFilters />
         <SummaryCards />

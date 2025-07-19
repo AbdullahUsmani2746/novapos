@@ -297,233 +297,246 @@ const ReportViewer = ({ reportType }) => {
     }
   };
 
-const exportToExcel = async () => {
-  const workbook = XLSX.utils.book_new();
-  
-  // Main data sheet
-  const mainData = data.map((item) => {
-    const row = {};
-    config.columns.forEach((col) => {
-      if (col.valueGetter) {
-        row[col.headerName] = col.valueGetter({ row: item });
-      } else {
-        row[col.headerName] = item[col.field];
-      }
-    });
-    return row;
-  });
-  
-  const mainWorksheet = XLSX.utils.json_to_sheet(mainData);
-  XLSX.utils.book_append_sheet(workbook, mainWorksheet, "Summary");
+  const exportToExcel = async () => {
+    const workbook = XLSX.utils.book_new();
 
-  // Detail sheets if available
-  if (config.detailColumns && data.some(item => item.transactions)) {
-    const detailData = [];
-    
-    data.forEach((item, index) => {
-      if (item.transactions && item.transactions.length > 0) {
-        item.transactions.forEach((detail) => {
-          const detailRow = {
-            "Parent ID": item.id || index + 1,
-            "Parent Date": item.dateD || '',
-            "Parent Voucher": item.vr_no || ''
-          };
-          
-          config.detailColumns.forEach((col) => {
-            if (col.valueGetter) {
-              detailRow[col.headerName] = col.valueGetter({ row: detail });
-            } else {
-              detailRow[col.headerName] = detail[col.field];
-            }
-          });
-          detailData.push(detailRow);
-        });
-      }
-    });
-    
-    if (detailData.length > 0) {
-      const detailWorksheet = XLSX.utils.json_to_sheet(detailData);
-      XLSX.utils.book_append_sheet(workbook, detailWorksheet, "Details");
-    }
-  }
-
-  // Add styling
-  const wscols = config.columns.map(col => ({ width: col.width ? col.width/5 : 20 }));
-  mainWorksheet["!cols"] = wscols;
-
-  XLSX.writeFile(
-    workbook,
-    `${config.title}_${format(new Date(), "yyyy-MM-dd")}.xlsx`
-  );
-};
-
-const exportToPDF = async () => {
-  const doc = new jsPDF({
-    orientation: "landscape",
-    unit: "mm"
-  });
-  
-  // Title and header
-  doc.setFontSize(16);
-  doc.setTextColor(40);
-  doc.setFont("helvetica", "bold");
-  doc.text(config.title, 14, 20);
-  
-  doc.setFontSize(10);
-  doc.setTextColor(100);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Generated on ${format(new Date(), "PPP")}`, 14, 28);
-  
-  // Main table
-  const headers = config.columns.map(col => ({
-    title: col.headerName,
-    dataKey: col.field
-  }));
-  
-  const rows = data.map(item => {
-    const row = {};
-    config.columns.forEach(col => {
-      row[col.field] = col.valueGetter 
-        ? String(col.valueGetter({ row: item }))
-        : String(item[col.field] || "");
-    });
-    return row;
-  });
-  
-  doc.autoTable({
-    head: [headers.map(h => h.title)],
-    body: rows.map(row => headers.map(header => row[header.dataKey])),
-    startY: 35,
-    margin: { left: 10, right: 10 },
-    styles: { 
-      fontSize: 8, 
-      cellPadding: 2,
-      font: "helvetica",
-      textColor: 40
-    },
-    headStyles: { 
-      fillColor: [59, 130, 246], 
-      textColor: 255,
-      fontStyle: 'bold'
-    },
-    alternateRowStyles: { fillColor: [249, 250, 251] },
-    columnStyles: {
-      // Apply currency formatting to currency columns
-      ...config.columns.reduce((acc, col) => {
-        if (col.type === "currency") {
-          acc[col.field] = { cellWidth: 15 };
+    // Main data sheet
+    const mainData = data.map((item) => {
+      const row = {};
+      config.columns.forEach((col) => {
+        if (col.valueGetter) {
+          row[col.headerName] = col.valueGetter({ row: item });
+        } else {
+          row[col.headerName] = item[col.field];
         }
-        return acc;
-      }, {})
-    }
-  });
-  
-  // Add details if available
-  if (config.detailColumns && data.some(item => item.transactions)) {
-    const detailHeaders = [
-      { title: "Parent ID", dataKey: "parentId" },
-      { title: "Parent Voucher", dataKey: "parentVoucher" },
-      ...config.detailColumns.map(col => ({
-        title: col.headerName,
-        dataKey: col.field
-      }))
-    ];
-    
-    const detailRows = [];
-    data.forEach(item => {
-      if (item.transactions && item.transactions.length > 0) {
-        item.transactions.forEach(detail => {
-          detailRows.push({
-            parentId: item.id || '',
-            parentVoucher: item.vr_no || '',
-            ...config.detailColumns.reduce((acc, col) => {
-              acc[col.field] = col.valueGetter 
-                ? String(col.valueGetter({ row: detail })) 
-                : String(detail[col.field] || "");
-              return acc;
-            }, {})
+      });
+      return row;
+    });
+
+    const mainWorksheet = XLSX.utils.json_to_sheet(mainData);
+    XLSX.utils.book_append_sheet(workbook, mainWorksheet, "Summary");
+
+    // Detail sheets if available
+    if (config.detailColumns && data.some((item) => item.transactions)) {
+      const detailData = [];
+
+      data.forEach((item, index) => {
+        if (item.transactions && item.transactions.length > 0) {
+          item.transactions.forEach((detail) => {
+            const detailRow = {
+              "Parent ID": item.id || index + 1,
+              "Parent Date": item.dateD || "",
+              "Parent Voucher": item.vr_no || "",
+            };
+
+            config.detailColumns.forEach((col) => {
+              if (col.valueGetter) {
+                detailRow[col.headerName] = col.valueGetter({ row: detail });
+              } else {
+                detailRow[col.headerName] = detail[col.field];
+              }
+            });
+            detailData.push(detailRow);
           });
+        }
+      });
+
+      if (detailData.length > 0) {
+        const detailWorksheet = XLSX.utils.json_to_sheet(detailData);
+        XLSX.utils.book_append_sheet(workbook, detailWorksheet, "Details");
+      }
+    }
+
+    // Add styling
+    const wscols = config.columns.map((col) => ({
+      width: col.width ? col.width / 5 : 20,
+    }));
+    mainWorksheet["!cols"] = wscols;
+
+    XLSX.writeFile(
+      workbook,
+      `${config.title}_${format(new Date(), "yyyy-MM-dd")}.xlsx`
+    );
+  };
+
+  const exportToPDF = async () => {
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+    });
+
+    // Title and header
+    doc.setFontSize(16);
+    doc.setTextColor(40);
+    doc.setFont("helvetica", "bold");
+    doc.text(config.title, 14, 20);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Generated on ${format(new Date(), "PPP")}`, 14, 28);
+
+    // Main table
+    const headers = config.columns.map((col) => ({
+      title: col.headerName,
+      dataKey: col.field,
+    }));
+
+    const rows = data.map((item) => {
+      const row = {};
+      config.columns.forEach((col) => {
+        row[col.field] = col.valueGetter
+          ? String(col.valueGetter({ row: item }))
+          : String(item[col.field] || "");
+      });
+      return row;
+    });
+
+    doc.autoTable({
+      head: [headers.map((h) => h.title)],
+      body: rows.map((row) => headers.map((header) => row[header.dataKey])),
+      startY: 35,
+      margin: { left: 10, right: 10 },
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+        font: "helvetica",
+        textColor: 40,
+      },
+      headStyles: {
+        fillColor: [59, 130, 246],
+        textColor: 255,
+        fontStyle: "bold",
+      },
+      alternateRowStyles: { fillColor: [249, 250, 251] },
+      columnStyles: {
+        // Apply currency formatting to currency columns
+        ...config.columns.reduce((acc, col) => {
+          if (col.type === "currency") {
+            acc[col.field] = { cellWidth: 15 };
+          }
+          return acc;
+        }, {}),
+      },
+    });
+
+    // Add details if available
+    if (config.detailColumns && data.some((item) => item.transactions)) {
+      const detailHeaders = [
+        { title: "Parent ID", dataKey: "parentId" },
+        { title: "Parent Voucher", dataKey: "parentVoucher" },
+        ...config.detailColumns.map((col) => ({
+          title: col.headerName,
+          dataKey: col.field,
+        })),
+      ];
+
+      const detailRows = [];
+      data.forEach((item) => {
+        if (item.transactions && item.transactions.length > 0) {
+          item.transactions.forEach((detail) => {
+            detailRows.push({
+              parentId: item.id || "",
+              parentVoucher: item.vr_no || "",
+              ...config.detailColumns.reduce((acc, col) => {
+                acc[col.field] = col.valueGetter
+                  ? String(col.valueGetter({ row: detail }))
+                  : String(detail[col.field] || "");
+                return acc;
+              }, {}),
+            });
+          });
+        }
+      });
+
+      if (detailRows.length > 0) {
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.text("Transaction Details", 14, 20);
+
+        doc.autoTable({
+          head: [detailHeaders.map((h) => h.title)],
+          body: detailRows.map((row) =>
+            detailHeaders.map((header) => row[header.dataKey])
+          ),
+          startY: 30,
+          margin: { left: 10, right: 10 },
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+            font: "helvetica",
+            textColor: 40,
+          },
+          headStyles: {
+            fillColor: [79, 70, 229],
+            textColor: 255,
+            fontStyle: "bold",
+          },
+          alternateRowStyles: { fillColor: [249, 250, 251] },
         });
       }
-    });
-    
-    if (detailRows.length > 0) {
-      doc.addPage();
-      doc.setFontSize(14);
-      doc.text("Transaction Details", 14, 20);
-      
-      doc.autoTable({
-        head: [detailHeaders.map(h => h.title)],
-        body: detailRows.map(row => detailHeaders.map(header => row[header.dataKey])),
-        startY: 30,
-        margin: { left: 10, right: 10 },
-        styles: { 
-          fontSize: 8, 
-          cellPadding: 2,
-          font: "helvetica",
-          textColor: 40
-        },
-        headStyles: { 
-          fillColor: [79, 70, 229], 
-          textColor: 255,
-          fontStyle: 'bold'
-        },
-        alternateRowStyles: { fillColor: [249, 250, 251] }
-      });
     }
-  }
-  
-  doc.save(`${config.title}_${format(new Date(), "yyyy-MM-dd")}.pdf`);
-};
 
-const exportToCSV = async () => {
-  let csvContent = "";
-  
-  // Main headers
-  const mainHeaders = config.columns.map(col => `"${col.headerName.replace(/"/g, '""')}"`);
-  csvContent += mainHeaders.join(",") + "\n";
-  
-  // Main data
-  data.forEach(item => {
-    const row = config.columns.map(col => {
-      let value = col.valueGetter 
-        ? col.valueGetter({ row: item }) 
-        : item[col.field] || "";
-      return `"${String(value).replace(/"/g, '""')}"`;
-    });
-    csvContent += row.join(",") + "\n";
-    
-    // Details if available
-    if (config.detailColumns && item.transactions && item.transactions.length > 0) {
-      csvContent += "\nDetails for " + (item.vr_no || item.id) + "\n";
-      
-      const detailHeaders = [
-        "Parent ID", "Parent Voucher", 
-        ...config.detailColumns.map(col => col.headerName)
-      ];
-      csvContent += detailHeaders.map(h => `"${h.replace(/"/g, '""')}"`).join(",") + "\n";
-      
-      item.transactions.forEach(detail => {
-        const detailRow = [
-          item.id || '',
-          item.vr_no || '',
-          ...config.detailColumns.map(col => {
-            const value = col.valueGetter 
-              ? col.valueGetter({ row: detail }) 
-              : detail[col.field] || "";
-            return `"${String(value).replace(/"/g, '""')}"`;
-          })
-        ];
-        csvContent += detailRow.join(",") + "\n";
+    doc.save(`${config.title}_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+  };
+
+  const exportToCSV = async () => {
+    let csvContent = "";
+
+    // Main headers
+    const mainHeaders = config.columns.map(
+      (col) => `"${col.headerName.replace(/"/g, '""')}"`
+    );
+    csvContent += mainHeaders.join(",") + "\n";
+
+    // Main data
+    data.forEach((item) => {
+      const row = config.columns.map((col) => {
+        let value = col.valueGetter
+          ? col.valueGetter({ row: item })
+          : item[col.field] || "";
+        return `"${String(value).replace(/"/g, '""')}"`;
       });
-      
-      csvContent += "\n";
-    }
-  });
-  
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  saveAs(blob, `${config.title}_${format(new Date(), "yyyy-MM-dd")}.csv`);
-};
+      csvContent += row.join(",") + "\n";
+
+      // Details if available
+      if (
+        config.detailColumns &&
+        item.transactions &&
+        item.transactions.length > 0
+      ) {
+        csvContent += "\nDetails for " + (item.vr_no || item.id) + "\n";
+
+        const detailHeaders = [
+          "Parent ID",
+          "Parent Voucher",
+          ...config.detailColumns.map((col) => col.headerName),
+        ];
+        csvContent +=
+          detailHeaders.map((h) => `"${h.replace(/"/g, '""')}"`).join(",") +
+          "\n";
+
+        item.transactions.forEach((detail) => {
+          const detailRow = [
+            item.id || "",
+            item.vr_no || "",
+            ...config.detailColumns.map((col) => {
+              const value = col.valueGetter
+                ? col.valueGetter({ row: detail })
+                : detail[col.field] || "";
+              return `"${String(value).replace(/"/g, '""')}"`;
+            }),
+          ];
+          csvContent += detailRow.join(",") + "\n";
+        });
+
+        csvContent += "\n";
+      }
+    });
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    saveAs(blob, `${config.title}_${format(new Date(), "yyyy-MM-dd")}.csv`);
+  };
 
   // Sorted data
   const sortedData = useMemo(() => {
@@ -553,7 +566,7 @@ const exportToCSV = async () => {
 
         return (
           <div className="space-y-3 group">
-            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2 group-hover:text-blue-600 transition-colors duration-200">
+            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2 transition-colors duration-200">
               <CalendarIcon className="w-4 h-4" />
               {filter.label}
             </Label>
@@ -561,7 +574,7 @@ const exportToCSV = async () => {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal border-slate-200 hover:border-s300 hover:bg-blue-50/50 transition-all duration-200 shadow-sm hover:shadow-md"
+                  className="w-full justify-start text-left font-normal bg-white border-slate-200 hover:border-s300 hover:text-primary transition-all duration-200 shadow-sm hover:shadow-md"
                 >
                   {dateValue ? (
                     <span className="text-slate-900 font-medium">
@@ -572,7 +585,7 @@ const exportToCSV = async () => {
                       Select {filter.label.toLowerCase()}
                     </span>
                   )}
-                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50 " />
                 </Button>
               </PopoverTrigger>
               <PopoverContent
@@ -594,7 +607,7 @@ const exportToCSV = async () => {
       case "select":
         return (
           <div className="space-y-3 group">
-            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2 group-hover:text-blue-600 transition-colors duration-200">
+            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2  transition-colors duration-200">
               <FilterIcon className="w-4 h-4" />
               {filter.label}
             </Label>
@@ -602,7 +615,7 @@ const exportToCSV = async () => {
               value={filters[filter.name] || ""}
               onValueChange={(value) => handleFilterChange(filter.name, value)}
             >
-              <SelectTrigger className="border-slate-200 hover:border-blue-300 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md">
+              <SelectTrigger className="border-slate-200 focus:primary transition-all duration-200 shadow-sm hover:shadow-md">
                 <SelectValue
                   placeholder={`Select ${filter.label.toLowerCase()}`}
                 />
@@ -690,7 +703,7 @@ const exportToCSV = async () => {
 
     return (
       <div
-        className="bg-gradient-to-br from-white via-slate-50/50 to-blue-50/30 p-6 rounded-2xl border border-slate-200/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-500 transform hover:scale-[1.02] group"
+        className="bg-white p-6 rounded-2xl border border-slate-200/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-500 transform hover:scale-[1.02] group"
         style={{
           animationDelay: `${summaryAnimationDelay + index * 100}ms`,
         }}
@@ -702,19 +715,19 @@ const exportToCSV = async () => {
           <div
             className={`p-3 rounded-xl transition-all duration-300 ${
               field.type === "currency"
-                ? "bg-green-100 group-hover:bg-green-200"
+                ? "bg-secondary "
                 : field.type === "percent"
-                ? "bg-blue-100 group-hover:bg-blue-200"
-                : "bg-purple-100 group-hover:bg-purple-200"
+                ? "bg-secondary "
+                : "bg-secondary "
             }`}
           >
             <Icon
               className={`w-5 h-5 ${
                 field.type === "currency"
-                  ? "text-green-600"
+                  ? "text-primary"
                   : field.type === "percent"
-                  ? "text-blue-600"
-                  : "text-purple-600"
+                  ? "text-primary"
+                  : "text-primary"
               }`}
             />
           </div>
@@ -778,26 +791,26 @@ const exportToCSV = async () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 p-6">
+    <div className="min-h-screen  p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/90 to-purple-600/90" />
+        <div className="bg-primary rounded-3xl p-8 text-primary shadow-lg relative overflow-hidden">
+          <div className="absolute inset-0 bg-secondary/90 from-blue-600/90 to-purple-600/90" />
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full translate-y-24 -translate-x-24" />
 
           <div className="relative flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold mb-3 flex items-center gap-3">
+              <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
                 <SparklesIcon className="w-8 h-8" />
                 {config.title}
               </h1>
-              <p className="text-blue-100 text-lg max-w-2xl leading-relaxed">
+              <p className="text-primary text-lg max-w-2xl leading-relaxed">
                 {config.description}
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+              <div className="bg-primary text-white backdrop-blur-sm rounded-xl p-4">
                 <BarChart3Icon className="w-10 h-10" />
               </div>
             </div>
@@ -805,12 +818,12 @@ const exportToCSV = async () => {
         </div>
 
         {/* Filters Card */}
-        <Card className="shadow-xl border-slate-200/50 overflow-hidden backdrop-blur-sm bg-white/80">
+        <Card className="shadow-lg border-slate-200/50 overflow-hidden backdrop-blur-sm bg-white/80">
           <CardHeader className="bg-gradient-to-r from-white to-slate-50/80 border-b border-slate-200/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-100 rounded-xl">
-                  <FilterIcon className="w-6 h-6 text-blue-600" />
+                <div className="p-3 bg-primary rounded-xl">
+                  <FilterIcon className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <CardTitle className="text-xl font-bold text-slate-900">
@@ -825,7 +838,7 @@ const exportToCSV = async () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowFilters(!showFilters)}
-                className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200"
+                className="text-slate-600 hover:text-primary hover:bg-slate-100 transition-all duration-200"
               >
                 <ChevronDownIcon
                   className={`w-5 h-5 transition-transform duration-300 ${
@@ -862,7 +875,7 @@ const exportToCSV = async () => {
                   <Button
                     onClick={loadReportData}
                     disabled={loading}
-                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                    className="bg-primary from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-3 py-2 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-lg"
                   >
                     {loading ? (
                       <>
@@ -871,7 +884,7 @@ const exportToCSV = async () => {
                       </>
                     ) : (
                       <>
-                        <RefreshCwIcon className="w-5 h-5 mr-3" />
+                        <RefreshCwIcon className="w-5 h-5 mr-1" />
                         Apply Filters
                       </>
                     )}
@@ -883,9 +896,9 @@ const exportToCSV = async () => {
                         variant="outline"
                         onClick={() => handleExport("excel")}
                         disabled={isExporting || data.length === 0}
-                        className="border-green-200 hover:bg-green-50 hover:border-green-300 transition-all duration-200 transform hover:scale-105"
+                        className="border-primary hover:bg-primary hover:border-primary transition-all duration-200 transform hover:scale-105"
                       >
-                        <FileSpreadsheetIcon className="w-4 h-4 mr-2 text-green-600" />
+                        <FileSpreadsheetIcon className="w-4 h-4 mr-2  hover:text-white" />
                         Excel
                       </Button>
                     )}
@@ -895,9 +908,9 @@ const exportToCSV = async () => {
                         variant="outline"
                         onClick={() => handleExport("pdf")}
                         disabled={isExporting || data.length === 0}
-                        className="border-red-200 hover:bg-red-50 hover:border-red-300 transition-all duration-200 transform hover:scale-105"
+                        className="border-primary hover:bg-primary hover:border-primary transition-all duration-200 transform hover:scale-105"
                       >
-                        <FileTextIcon className="w-4 h-4 mr-2 text-red-600" />
+                        <FileTextIcon className="w-4 h-4 mr-2  " />
                         PDF
                       </Button>
                     )}
@@ -907,9 +920,9 @@ const exportToCSV = async () => {
                         variant="outline"
                         onClick={() => handleExport("csv")}
                         disabled={isExporting || data.length === 0}
-                        className="border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 transform hover:scale-105"
+                        className="border-primary hover:bg-primary hover:border-primary transition-all duration-200 transform hover:scale-105"
                       >
-                        <FileIcon className="w-4 h-4 mr-2 text-blue-600" />
+                        <FileIcon className="w-4 h-4 mr-2 " />
                         CSV
                       </Button>
                     )}
@@ -947,12 +960,12 @@ const exportToCSV = async () => {
         )}
 
         {/* Data Table */}
-        <Card className="shadow-2xl border-slate-200/50 overflow-hidden backdrop-blur-sm bg-white/90">
+        <Card className="shadow-xl border-slate-200/50 overflow-hidden backdrop-blur-sm bg-white/90">
           <CardHeader className="bg-gradient-to-r from-white to-slate-50/80 border-b border-slate-200/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-indigo-100 rounded-xl">
-                  <DatabaseIcon className="w-6 h-6 text-indigo-600" />
+                <div className="p-3 bg-primary rounded-xl">
+                  <DatabaseIcon className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <CardTitle className="text-xl font-bold text-slate-900">
@@ -971,7 +984,7 @@ const exportToCSV = async () => {
                 <div className="flex items-center gap-2">
                   <Badge
                     variant="secondary"
-                    className="bg-blue-100 text-blue-700 hover:bg-blue-200"
+                    className="bg-primary text-white hover:bg-primary"
                   >
                     <Clock className="w-3 h-3 mr-1" />
                     Live Data

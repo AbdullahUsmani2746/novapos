@@ -300,7 +300,7 @@ const ProductList = () => {
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             className="w-10 h-10 lg:w-12 lg:h-12 mx-auto mb-4"
           >
-            <RefreshCw className="w-full h-full text-blue-600" />
+            <RefreshCw className="w-full h-full text-primary" />
           </motion.div>
           <p className="text-gray-600 text-base lg:text-lg">
             Loading products...
