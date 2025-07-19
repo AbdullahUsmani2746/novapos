@@ -339,6 +339,102 @@ export const REPORT_CONFIG = {
       csv: true,
     },
   },
+  payment: {
+    title: "Payment Report",
+    description: "Detailed report of all payment transactions",
+    apiEndpoint: "/api/reports/payment",
+    filters: [
+      { name: "dateFrom", label: "From Date", type: "date", required: true },
+      { name: "dateTo", label: "To Date", type: "date", required: true },
+      {
+        name: "paidfrom",
+        label: "Paid From",
+        type: "select",
+        nameKey: "acname",
+        valueKey: "acno",
+        options: "vendors",
+        apiEndpoint: "/api/accounts/acno?macno=003,004",
+        clearable: true,
+      },
+    ],
+    columns: [
+      { field: "date", headerName: "Date", width: 120, type: "date" },
+      { field: "vr_no", headerName: "Voucher No", width: 120 },
+      {
+        field: "account",
+        headerName: "Paid From",
+        width: 200,
+        // valueGetter: (params) => params.row.acno?.acname || "",
+      },
+      { field: "amount", headerName: "Amount", width: 150, type: "currency"
+       },
+      { field: "narration", headerName: "Remarks", width: 200 },
+    ],
+    summaryFields: [
+      { field: "total_transactions", label: "Total Transactions", type: "number" },
+      { field: "total_net", label: "Total Net Amount", type: "currency" },
+    ],
+    exportOptions: { pdf: true, excel: true, csv: true },
+  },
+  receipt: {
+    title: "Receipt Report",
+    description: "Detailed report of all receipt transactions",
+    apiEndpoint: "/api/reports/receipt",
+    filters: [
+      { name: "dateFrom", label: "From Date", type: "date", required: true },
+      { name: "dateTo", label: "To Date", type: "date", required: true },
+      {
+        name: "receivedat",
+        label: "Recieved At",
+        type: "select",
+        nameKey: "acname",
+        valueKey: "acno",
+        options: "customers",
+        apiEndpoint: "/api/accounts/acno?macno=003,004",
+        clearable: true,
+      },
+    ],
+    columns: [
+      { field: "date", headerName: "Date", width: 120, type: "date" },
+      { field: "vr_no", headerName: "Voucher No", width: 120 },
+      {
+        field: "account",
+        headerName: "Received At",
+        width: 200,
+        // valueGetter: (params) => params.row.acno?.acname || "",
+      },
+      { field: "amount", headerName: "Amount", width: 150, type: "currency" },
+      { field: "narration", headerName: "Remarks", width: 200 },
+    ],
+    summaryFields: [
+      { field: "total_transactions", label: "Total Transactions", type: "number" },
+      { field: "total_net", label: "Total Net Amount", type: "currency" },
+    ],
+    exportOptions: { pdf: true, excel: true, csv: true },
+  },
+  journal: {
+    title: "Journal Voucher Report",
+    description: "Detailed report of all journal vouchers",
+    apiEndpoint: "/api/reports/journal",
+    filters: [
+      { name: "dateFrom", label: "From Date", type: "date", required: true },
+      { name: "dateTo", label: "To Date", type: "date", required: true },
+    ],
+    columns: [
+      { field: "date", headerName: "Date", width: 120, type: "date" },
+      { field: "vr_no", headerName: "Voucher No", width: 120 },
+      { field: "damt", headerName: "Debit", width: 150, type: "currency" },
+      { field: "camt", headerName: "Credit", width: 150, type: "currency" },
+      { field: "narration", headerName: "Narration", width: 200 },
+    ],
+    summaryFields: [
+      { field: "total_transactions", label: "Total Transactions", type: "number" },
+      { field: "total_damt", label: "Total Debit", type: "currency" },
+      { field: "total_camt", label: "Total Credit", type: "currency" },
+
+    ],
+    exportOptions: { pdf: true, excel: true, csv: true },
+  },
   saleReturn: {
     title: "Sales Return Report",
     description: "Detailed report of all sales return transactions",
@@ -780,7 +876,6 @@ export const REPORT_CONFIG = {
       csv: true,
     },
   },
-
   stockLedger: {
     title: "Stock Ledger Report",
     description: "Detailed movement of stock items over time",
@@ -969,4 +1064,68 @@ export const REPORT_CONFIG = {
       csv: true,
     },
   },
+  accountLedger: {
+    title: "Account Ledger",
+    description: "Detailed ledger entries for a specific account showing running balance",
+    apiEndpoint: "/api/reports/accountLedger",
+    filters: [
+      { name: "dateFrom", label: "From Date", type: "date", required: true },
+      { name: "dateTo", label: "To Date", type: "date", required: true },
+      {
+        name: "account",
+        label: "Account",
+        type: "select",
+        nameKey: "acname",
+        valueKey: "acno",
+        options: "accounts",
+        apiEndpoint: "/api/accounts/acno?excludeMacno=003,004",
+        required: true,
+      },
+    ],
+    columns: [
+      { field: "date", headerName: "Date", width: 120, type: "date" },
+      { field: "vr_no", headerName: "Voucher No", width: 120 },
+      { field: "tran_type", headerName: "Type", width: 200 },
+      { field: "narration", headerName: "Narration", width: 200 },
+      { field: "debit", headerName: "Debit", width: 150, type: "currency" },
+      { field: "credit", headerName: "Credit", width: 150, type: "currency" },
+      { field: "balance", headerName: "Balance", width: 150, type: "currency" },
+    ],
+    exportOptions: { pdf: true, excel: true, csv: true },
+  },
+
+  accountsActivity: {
+    title: "Accounts Activity Report",
+    description: "Summarized activity for all accounts showing opening, transactions, and closing",
+    apiEndpoint: "/api/reports/accountsActivity",
+    filters: [
+      { name: "dateFrom", label: "From Date", type: "date", required: true },
+      { name: "dateTo", label: "To Date", type: "date", required: true },
+    ],
+    columns: [
+      { field: "account", headerName: "Account", width: 200 },
+      { field: "opening_balance", headerName: "Opening Balance", width: 150, type: "currency" },
+      { field: "debit", headerName: "Debit", width: 150, type: "currency" },
+      { field: "credit", headerName: "Credit", width: 150, type: "currency" },
+      { field: "closing_balance", headerName: "Closing Balance", width: 150, type: "currency" },
+    ],
+    exportOptions: { pdf: true, excel: true, csv: true },
+  },
+
+  trialBalance: {
+    title: "Trial Balance",
+    description: "A summary of all ledger accounts with debit and credit totals to verify ledger integrity",
+    apiEndpoint: "/api/reports/trialBalance",
+    filters: [
+      { name: "dateTo", label: "As of Date", type: "date", required: true },
+    ],
+    columns: [
+      { field: "account", headerName: "Account", width: 200 },
+      { field: "debit", headerName: "Debit", width: 150, type: "currency" },
+      { field: "credit", headerName: "Credit", width: 150, type: "currency" },
+      { field: "balance", headerName: "Balance", width: 150, type: "currency" },
+    ],
+    exportOptions: { pdf: true, excel: true, csv: true },
+  },
+
 };

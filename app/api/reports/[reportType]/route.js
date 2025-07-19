@@ -68,6 +68,30 @@ export async function GET(request, { params }) {
         data = await getTradingMarginReport(filters);
         summary = calculateTradingMarginSummary(data);
         break;
+      case "payment":
+        data = await getTransactionReport(2, filters);
+        summary = calculateTransactionSummary(data);
+        break;
+      case "receipt":
+        data = await getTransactionReport(1, filters);
+        summary = calculateTransactionSummary(data);
+        break;
+      case "journal":
+        data = await getTransactionReport(3, filters);
+        summary = calculateTransactionSummary(data);
+        break;
+      case "accountLedger":
+        data = await getAccountLedger(filters);
+        summary = calculateAccountLedgerSummary(data);
+        break;
+      case "accountsActivity":
+        data = await getAccountActivity(filters);
+        summary = calculateAccountActivitySummary(data);
+        break;
+      case "trialBalance":
+        data = await getTrialBalance(filters);
+        summary = calculateTrialBalanceSummary(data);
+        break;
       default:
         return NextResponse.json(
           { error: "Invalid report type" },
@@ -443,19 +467,11 @@ async function getStockActivityReport(filters) {
             ...(filters.dateFrom && { gte: new Date(filters.dateFrom) }),
             ...(filters.dateTo && { lte: new Date(filters.dateTo) }),
           },
-          NOT: [
-            { tran_code: 1 },
-             { tran_code: 2 },
-              { tran_code: 3 },
-          ],
+          NOT: [{ tran_code: 1 }, { tran_code: 2 }, { tran_code: 3 }],
         }
       : {
-        NOT: [
-            { tran_code: 1 },
-             { tran_code: 2 },
-              { tran_code: 3 },
-          ],
-      }),
+          NOT: [{ tran_code: 1 }, { tran_code: 2 }, { tran_code: 3 }],
+        }),
     ...(filters.godown && { godown: parseInt(filters.godown) }),
     ...(filters.product && {
       transactions: {
@@ -603,7 +619,7 @@ async function getTradingMarginReport(filters) {
       },
     };
   }
-console.log("Filters for Trading Margin Report:");
+  console.log("Filters for Trading Margin Report:");
   // Fetch all relevant transactions (4, 5, 6, 9, 10)
   const allTransactions = await prisma.transactionsMaster.findMany({
     where,
@@ -681,14 +697,12 @@ console.log("Filters for Trading Margin Report:");
   });
 
   const marginData = Array.from(itemMap.values()).map((item) => {
-    const total_purchase_qty =
-      item.purchase_qty - item.purchase_return_qty;
+    const total_purchase_qty = item.purchase_qty - item.purchase_return_qty;
 
     const total_purchase_amount =
       item.purchase_amount - item.purchase_return_amount;
 
-    const total_sale_qty =
-      item.sale_qty + item.pos_qty - item.sale_return_qty;
+    const total_sale_qty = item.sale_qty + item.pos_qty - item.sale_return_qty;
 
     const total_sale_amount =
       item.sale_amount + item.pos_amount - item.sale_return_amount;
@@ -723,7 +737,6 @@ console.log("Filters for Trading Margin Report:");
   return marginData;
 }
 
-
 function calculateTradingMarginSummary(data) {
   const total_purchase_qty = data.reduce(
     (sum, item) => sum + item.purchase_qty,
@@ -739,20 +752,20 @@ function calculateTradingMarginSummary(data) {
     0
   );
 
-  const total_pos_qty = data.reduce(
-    (sum, item) => sum + item.pos_qty,
+  const total_pos_qty = data.reduce((sum, item) => sum + item.pos_qty, 0);
+  const total_pos_amount = data.reduce((sum, item) => sum + item.pos_amount, 0);
+  const total_sale_return_qty = data.reduce(
+    (sum, item) => sum + item.sale_return_qty,
     0
   );
-  const total_pos_amount = data.reduce(
-    (sum, item) => sum + item.pos_amount,
-    0
-  );
-  const total_sale_return_qty = data.reduce((sum, item) => sum + item.sale_return_qty, 0);
   const total_sale_return_amount = data.reduce(
     (sum, item) => sum + item.sale_return_amount,
     0
   );
-   const total_purchase_return_qty = data.reduce((sum, item) => sum + item.purchase_return_qty, 0);
+  const total_purchase_return_qty = data.reduce(
+    (sum, item) => sum + item.purchase_return_qty,
+    0
+  );
   const total_purchase_return_amount = data.reduce(
     (sum, item) => sum + item.purchase_return_amount,
     0
@@ -772,7 +785,7 @@ function calculateTradingMarginSummary(data) {
     total_sale_return_amount,
     total_purchase_return_qty,
     total_purchase_return_amount,
-    
+
     total_sale_qty,
     total_sale_amount,
     total_margin,
@@ -1035,6 +1048,12 @@ function getTransactionCodesForType(type) {
 
 function getTransactionTypeLabel(tran_code) {
   switch (tran_code) {
+    case 1:
+      return "Receipt";
+    case 2:
+      return "Payment";
+    case 3:
+      return "Journal";
     case 4:
       return "Purchase";
     case 5:
@@ -1122,3 +1141,422 @@ async function getOpeningStock(productId, godownId, dateFrom) {
     return stockMap;
   }
 }
+
+async function getTransactionReport(tran_code, filters) {
+  const where = {
+    tran_code,
+    dateD: {
+      ...(filters.dateFrom && { gte: new Date(filters.dateFrom) }),
+      ...(filters.dateTo && { lte: new Date(filters.dateTo) }),
+    },
+  };
+
+  if (filters.account) {
+    where.acno_code = filters.account;
+  }
+
+  const transactions = await prisma.transactionsMaster.findMany({
+    where,
+    include: {
+      acno: true,
+      transactions: true,
+    },
+    orderBy: {
+      dateD: "desc",
+    },
+  });
+
+  return transactions.map((t) => {
+  let totalDamt = 0;
+  let totalCamt = 0;
+
+  // Loop through child transactions
+  t.transactions?.filter(t=>t.sub_tran_id!==3).forEach((tran) => {
+   
+      totalDamt += tran.damt || 0;
+      totalCamt += tran.camt || 0;
+    
+  });
+
+  // Optionally calculate net amount
+  let netAmount;
+  if (t.tran_code === 1){
+
+    netAmount = totalCamt - totalDamt; // For receipts, net is credit - debit
+  }
+  else if (t.tran_code === 2) {
+    netAmount = totalDamt - totalCamt; // For payments, net is debit - credit
+  } 
+
+  return {
+    date: new Date(t.dateD).toLocaleDateString(),
+    vr_no: t.vr_no || "",
+    account: t.acno?.acname || "",
+    amount: netAmount || 0,
+    damt: totalDamt,
+    camt: totalCamt,
+    narration: t.rmk || t.rmk1 ||"",
+  };
+});
+
+}
+
+function calculateTransactionSummary(data) {
+  console.log("Calculating transaction summary for", data.length, "transactions");
+
+  const totalDamt = data.reduce((sum, t) => sum + (t.damt || 0), 0);
+  const totalCamt = data.reduce((sum, t) => sum + (t.camt || 0), 0);
+  const totalNet = data.reduce((sum, t) => sum + (t.amount || 0), 0);
+
+  return {
+    total_transactions: data.length,
+    total_damt: totalDamt,
+    total_camt: totalCamt,
+    total_net: totalNet,
+  };
+}
+
+
+export async function getAccountLedger(filters) {
+  const { dateFrom, dateTo, account } = filters;
+
+  if (!dateFrom || !dateTo || !account) {
+    throw new Error("Missing required filters: dateFrom, dateTo, account");
+  }
+
+  const accountNo = account;
+
+  // 1. Get opening balance before dateFrom
+  const openingTransactions = await prisma.transactions.findMany({
+    where: {
+      transactionsMaster: {
+        dateD: {
+          lt: new Date(dateFrom)
+        },
+        tran_code: {
+          in: [1, 2, 3]
+        }
+      },
+      acno: accountNo
+    },
+    select: {
+      damt: true,
+      camt: true,
+      sub_tran_id: true,
+      transactionsMaster: {
+        select: {
+          tran_code: true
+        }
+      }
+    }
+  });
+
+  // Calculate opening balance
+  const openingBalance = openingTransactions.reduce((balance, txn) => {
+    let debitAmount = 0;
+    let creditAmount = 0;
+
+    if (txn.transactionsMaster.tran_code === 1) { // Receipt Voucher
+      if (txn.sub_tran_id === 1) { // Main entry
+        creditAmount = txn.camt || 0;
+      } else if (txn.sub_tran_id === 2) { // Deduction entry
+        debitAmount = txn.damt || 0;
+      }
+    } else if (txn.transactionsMaster.tran_code === 2) { // Payment Voucher
+      if (txn.sub_tran_id === 1) { // Main entry
+        debitAmount = txn.damt || 0;
+      } else if (txn.sub_tran_id === 2) { // Deduction entry
+        creditAmount = txn.camt || 0;
+      }
+    } else if (txn.transactionsMaster.tran_code === 3) { // Journal Voucher
+      debitAmount = txn.damt || 0;
+      creditAmount = txn.camt || 0;
+    }
+
+    return balance + debitAmount - creditAmount;
+  }, 0);
+
+  // 2. Get transactions in the date range
+  const transactions = await prisma.transactions.findMany({
+    where: {
+      transactionsMaster: {
+        dateD: {
+          gte: new Date(dateFrom),
+          lte: new Date(dateTo)
+        },
+        tran_code: {
+          in: [1, 2, 3]
+        }
+      },
+      acno: accountNo
+    },
+    include: {
+      transactionsMaster: {
+        select: {
+          dateD: true,
+          vr_no: true,
+          tran_code: true,
+          rmk: true
+        }
+      }
+    },
+    orderBy: [
+      {
+        transactionsMaster: {
+          dateD: 'asc'
+        }
+      },
+      {
+        transactionsMaster: {
+          vr_no: 'asc'
+        }
+      }
+    ]
+  });
+
+  // 3. Add running balance
+  let runningBalance = openingBalance;
+  const ledgerEntries = [];
+
+  // Push opening balance row
+  ledgerEntries.push({
+    date: new Date(dateFrom),
+    vr_no: "Opening",
+    tran_type: "Opening Balance",
+    narration: "",
+    debit: null,
+    credit: null,
+    balance: runningBalance,
+  });
+
+  // Process transactions and calculate running balance
+  for (const txn of transactions) {
+    // Determine if this is main entry or deduction based on sub_tran_id and tran_code
+    let debitAmount = 0;
+    let creditAmount = 0;
+    let entryType = "";
+
+    if (txn.transactionsMaster.tran_code === 1) { // Receipt Voucher
+      if (txn.sub_tran_id === 1) { // Main entry
+        creditAmount = txn.camt || 0;
+        entryType = "Receipt";
+      } else if (txn.sub_tran_id === 2) { // Deduction entry
+        debitAmount = txn.damt || 0;
+        entryType = "Receipt Deduction";
+      }
+    } else if (txn.transactionsMaster.tran_code === 2) { // Payment Voucher
+      if (txn.sub_tran_id === 1) { // Main entry
+        debitAmount = txn.damt || 0;
+        entryType = "Payment";
+      } else if (txn.sub_tran_id === 2) { // Deduction entry
+        creditAmount = txn.camt || 0;
+        entryType = "Payment Deduction";
+      }
+    } else if (txn.transactionsMaster.tran_code === 3) { // Journal Voucher
+      debitAmount = txn.damt || 0;
+      creditAmount = txn.camt || 0;
+      entryType = getTransactionTypeLabel(txn.transactionsMaster.tran_code);
+    }
+
+    runningBalance += debitAmount - creditAmount;
+    
+    ledgerEntries.push({
+      date: new Date(txn.transactionsMaster.dateD).toLocaleDateString(),
+      vr_no: txn.transactionsMaster.vr_no,
+      tran_type: entryType,
+      narration: txn.narration1 || txn.transactionsMaster.rmk || "",
+      debit: debitAmount > 0 ? debitAmount : null,
+      credit: creditAmount > 0 ? creditAmount : null,
+      balance: runningBalance,
+      sub_tran_id: txn.sub_tran_id, // Optional: to show if it's main or deduction
+    });
+  }
+
+  return ledgerEntries;
+}
+
+
+function calculateAccountLedgerSummary(data) {
+  const debit = data.reduce((sum, t) => sum + (t.debit || 0), 0);
+  const credit = data.reduce((sum, t) => sum + (t.credit || 0), 0);
+  const closing = data.length > 0 ? data[data.length - 1].balance : 0;
+
+  return { debit, credit, closing };
+}
+
+// Helper function to calculate proper debit/credit amounts based on voucher type
+function calculateAmounts(transaction) {
+  const { damt, camt, sub_tran_id, transactionsMaster } = transaction;
+  let debitAmount = 0;
+  let creditAmount = 0;
+
+  if (transactionsMaster.tran_code === 1) { // Receipt Voucher
+    if (sub_tran_id === 1) { // Main entry
+      creditAmount = camt || 0;
+    } else if (sub_tran_id === 2) { // Deduction entry
+      debitAmount = damt || 0;
+    }
+  } else if (transactionsMaster.tran_code === 2) { // Payment Voucher
+    if (sub_tran_id === 1) { // Main entry
+      debitAmount = damt || 0;
+    } else if (sub_tran_id === 2) { // Deduction entry
+      creditAmount = camt || 0;
+    }
+  } else if (transactionsMaster.tran_code === 3) { // Journal Voucher
+    debitAmount = damt || 0;
+    creditAmount = camt || 0;
+  }
+
+  return { debitAmount, creditAmount };
+}
+
+async function getAccountActivity(filters) {
+  const { dateFrom, dateTo } = filters;
+  
+  const accounts = await prisma.aCNO.findMany({
+    select: {
+      acno: true,
+      acname: true
+    }
+  });
+  
+  const activityData = [];
+  
+  for (const acc of accounts) {
+    const acno = acc.acno;
+    
+    // Opening balance BEFORE dateFrom
+    const openingEntries = await prisma.transactions.findMany({
+      where: {
+        acno,
+        transactionsMaster: {
+          dateD: { lt: new Date(dateFrom) },
+          tran_code: { in: [1, 2, 3] },
+        },
+      },
+      include: { 
+        transactionsMaster: {
+          select: {
+            tran_code: true
+          }
+        }
+      },
+    });
+    
+    let openingDebit = 0;
+    let openingCredit = 0;
+    
+    openingEntries.forEach((t) => {
+      const { debitAmount, creditAmount } = calculateAmounts(t);
+      openingDebit += debitAmount;
+      openingCredit += creditAmount;
+    });
+    
+    let openingBalance = openingDebit - openingCredit;
+    
+    // Transactions within range
+    const periodEntries = await prisma.transactions.findMany({
+      where: {
+        acno,
+        transactionsMaster: {
+          dateD: {
+            gte: new Date(dateFrom),
+            lte: new Date(dateTo),
+          },
+          tran_code: { in: [1, 2, 3] },
+        },
+      },
+      include: { 
+        transactionsMaster: {
+          select: {
+            tran_code: true
+          }
+        }
+      },
+    });
+    
+    let debit = 0;
+    let credit = 0;
+    
+    periodEntries.forEach((t) => {
+      const { debitAmount, creditAmount } = calculateAmounts(t);
+      debit += debitAmount;
+      credit += creditAmount;
+    });
+    
+    const closingBalance = openingBalance + (debit - credit);
+    
+    // Only include accounts with activity or non-zero balances
+    if (debit !== 0 || credit !== 0 || openingBalance !== 0 || closingBalance !== 0) {
+      activityData.push({
+        account: acc.acname,
+        opening_balance: openingBalance,
+        debit,
+        credit,
+        closing_balance: closingBalance,
+      });
+    }
+  }
+  
+  return activityData;
+}
+
+function calculateAccountActivitySummary(data) {
+  return {
+    total_accounts: new Set(data.map((t) => t.account)).size,
+    total_amount: data.reduce((sum, t) => sum + t.amount, 0),
+  };
+}
+
+async function getTrialBalance(filters) {
+  const { dateTo } = filters;
+
+  const entries = await prisma.transactions.findMany({
+    where: {
+      transactionsMaster: {
+        dateD: {
+          lte: new Date(dateTo),
+        },
+        tran_code: { in: [1, 2, 3] },
+      },
+    },
+    include: {
+      transactionsMaster: {
+        select: {
+          tran_code: true
+        }
+      },
+      acnoDetails: {
+        select: {
+          acname: true
+        }
+      }
+    },
+  });
+
+  const accountMap = {};
+  for (const t of entries) {
+    const account = t.acnoDetails?.acname || "Unknown";
+    if (!accountMap[account]) {
+      accountMap[account] = { debit: 0, credit: 0 };
+    }
+    
+    const { debitAmount, creditAmount } = calculateAmounts(t);
+    accountMap[account].debit += debitAmount;
+    accountMap[account].credit += creditAmount;
+  }
+
+  return Object.entries(accountMap).map(([account, { debit, credit }]) => ({
+    account,
+    debit,
+    credit,
+    balance: debit - credit,
+  }));
+}
+
+function calculateTrialBalanceSummary(data) {
+  const total_debit = data.reduce((sum, a) => sum + a.debit, 0);
+  const total_credit = data.reduce((sum, a) => sum + a.credit, 0);
+  return { total_debit, total_credit, diff: total_debit - total_credit };
+}
+
