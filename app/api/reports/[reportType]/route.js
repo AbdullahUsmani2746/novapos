@@ -670,7 +670,7 @@ async function getTradingMarginReport(filters) {
       switch (t.tran_code) {
         case 4: // Purchase
           itemData.purchase_qty += line.qty || 0;
-          itemData.purchase_amount += line.camt || 0;
+          itemData.purchase_amount += line.damt || 0;
           break;
 
         case 9: // Purchase Return
@@ -680,7 +680,7 @@ async function getTradingMarginReport(filters) {
 
         case 6: // Sale
           itemData.sale_qty += line.qty || 0;
-          itemData.sale_amount += line.damt || 0;
+          itemData.sale_amount += line.camt || 0;
           break;
 
         case 10: // Sale Return
