@@ -1046,28 +1046,20 @@ function getTransactionCodesForType(type) {
   }
 }
 
-function getTransactionTypeLabel(tran_code) {
-  switch (tran_code) {
-    case 1:
-      return "Receipt";
-    case 2:
-      return "Payment";
-    case 3:
-      return "Journal";
-    case 4:
-      return "Purchase";
-    case 5:
-      return "POS";
-    case 6:
-      return "Sale";
-    case 9:
-      return "Purchase Return";
-    case 10:
-      return "Sale Return";
-    default:
-      return "Other";
+// Helper function to get transaction type label
+  function getTransactionTypeLabel(tranCode, subTranId = null) {
+    const tranTypes = {
+      1: subTranId === 2 ? "Receipt Deduction" : "Receipt",
+      2: subTranId === 2 ? "Payment Deduction" : "Payment", 
+      3: "Journal",
+      4: "Purchase Invoice",
+      5: "POS",
+      6: "Sale Invoice",
+      9: "Purchase Return",
+      10: "Sale Return"
+    };
+    return tranTypes[tranCode] || "Unknown";
   }
-}
 
 async function getOpeningStock(productId, godownId, dateFrom) {
   console.log("Getting opening stock...");
@@ -1216,7 +1208,6 @@ function calculateTransactionSummary(data) {
   };
 }
 
-
 export async function getAccountLedger(filters) {
   const { dateFrom, dateTo, account } = filters;
 
@@ -1234,7 +1225,7 @@ export async function getAccountLedger(filters) {
           lt: new Date(dateFrom)
         },
         tran_code: {
-          in: [1, 2, 3,4,5,6,9,10]
+          in: [1, 2, 3, 4, 5, 6, 9, 10] // Added new transaction codes
         }
       },
       acno: accountNo
@@ -1271,6 +1262,21 @@ export async function getAccountLedger(filters) {
     } else if (txn.transactionsMaster.tran_code === 3) { // Journal Voucher
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
+    } else if (txn.transactionsMaster.tran_code === 4) { // Purchase Invoice
+      debitAmount = txn.damt || 0;
+      creditAmount = txn.camt || 0;
+    } else if (txn.transactionsMaster.tran_code === 5) { // POS
+      debitAmount = txn.damt || 0;
+      creditAmount = txn.camt || 0;
+    } else if (txn.transactionsMaster.tran_code === 6) { // Sale Invoice
+      debitAmount = txn.damt || 0;
+      creditAmount = txn.camt || 0;
+    } else if (txn.transactionsMaster.tran_code === 9) { // Purchase Return
+      debitAmount = txn.damt || 0;
+      creditAmount = txn.camt || 0;
+    } else if (txn.transactionsMaster.tran_code === 10) { // Sale Return
+      debitAmount = txn.damt || 0;
+      creditAmount = txn.camt || 0;
     }
 
     return balance + debitAmount - creditAmount;
@@ -1285,7 +1291,7 @@ export async function getAccountLedger(filters) {
           lte: new Date(dateTo)
         },
         tran_code: {
-          in: [1, 2, 3]
+          in: [1, 2, 3, 4, 5, 6, 9, 10] // Added new transaction codes
         }
       },
       acno: accountNo
@@ -1355,7 +1361,27 @@ export async function getAccountLedger(filters) {
     } else if (txn.transactionsMaster.tran_code === 3) { // Journal Voucher
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
-      entryType = getTransactionTypeLabel(txn.transactionsMaster.tran_code);
+      entryType = "Journal";
+    } else if (txn.transactionsMaster.tran_code === 4) { // Purchase Invoice
+      debitAmount = txn.damt || 0;
+      creditAmount = txn.camt || 0;
+      entryType = "Purchase Invoice";
+    } else if (txn.transactionsMaster.tran_code === 5) { // POS
+      debitAmount = txn.damt || 0;
+      creditAmount = txn.camt || 0;
+      entryType = "POS";
+    } else if (txn.transactionsMaster.tran_code === 6) { // Sale Invoice
+      debitAmount = txn.damt || 0;
+      creditAmount = txn.camt || 0;
+      entryType = "Sale Invoice";
+    } else if (txn.transactionsMaster.tran_code === 9) { // Purchase Return
+      debitAmount = txn.damt || 0;
+      creditAmount = txn.camt || 0;
+      entryType = "Purchase Return";
+    } else if (txn.transactionsMaster.tran_code === 10) { // Sale Return
+      debitAmount = txn.damt || 0;
+      creditAmount = txn.camt || 0;
+      entryType = "Sale Return";
     }
 
     runningBalance += debitAmount - creditAmount;
@@ -1374,7 +1400,6 @@ export async function getAccountLedger(filters) {
 
   return ledgerEntries;
 }
-
 
 function calculateAccountLedgerSummary(data) {
   const debit = data.reduce((sum, t) => sum + (t.debit || 0), 0);
@@ -1405,6 +1430,21 @@ function calculateAmounts(transaction) {
   } else if (transactionsMaster.tran_code === 3) { // Journal Voucher
     debitAmount = damt || 0;
     creditAmount = camt || 0;
+  } else if (transactionsMaster.tran_code === 4) { // Purchase Invoice
+    debitAmount = damt || 0;
+    creditAmount = camt || 0;
+  } else if (transactionsMaster.tran_code === 5) { // POS
+    debitAmount = damt || 0;
+    creditAmount = camt || 0;
+  } else if (transactionsMaster.tran_code === 6) { // Sale Invoice
+    debitAmount = damt || 0;
+    creditAmount = camt || 0;
+  } else if (transactionsMaster.tran_code === 9) { // Purchase Return
+    debitAmount = damt || 0;
+    creditAmount = camt || 0;
+  } else if (transactionsMaster.tran_code === 10) { // Sale Return
+    debitAmount = damt || 0;
+    creditAmount = camt || 0;
   }
 
   return { debitAmount, creditAmount };
@@ -1431,7 +1471,9 @@ async function getAccountActivity(filters) {
         acno,
         transactionsMaster: {
           dateD: { lt: new Date(dateFrom) },
-          in: [1, 2, 3,4,5,6,9,10]
+          tran_code: {
+            in: [1, 2, 3, 4, 5, 6, 9, 10] // Added new transaction codes
+          }
         },
       },
       include: { 
@@ -1463,7 +1505,9 @@ async function getAccountActivity(filters) {
             gte: new Date(dateFrom),
             lte: new Date(dateTo),
           },
-          in: [1, 2, 3,4,5,6,9,10]
+          tran_code: {
+            in: [1, 2, 3, 4, 5, 6, 9, 10] // Added new transaction codes
+          }
         },
       },
       include: { 
@@ -1517,7 +1561,7 @@ async function getTrialBalance(filters) {
         dateD: {
           lte: new Date(dateTo),
         },
-        tran_code: { in: [1, 2, 3,4,5,6,9,10]},
+        tran_code: { in: [1, 2, 3, 4, 5, 6, 9, 10] }, // All transaction codes
       },
     },
     include: {
