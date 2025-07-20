@@ -191,9 +191,9 @@ export async function POST(req, { params }) {
         if ([4, 9].includes(tran_code)) {
           acnoValue = category?.stock_acno;
         } else if (tran_code === 6) {
-          acnoValue = category?.cogs_acno;
+          acnoValue = category?.stock_acno;
         } else if (tran_code === 10) {
-          acnoValue = category?.sale_acno;
+          acnoValue = category?.stock_acno;
         }
 
         if (acnoValue !== null && acnoValue !== undefined) {
@@ -326,9 +326,9 @@ export async function POST(req, { params }) {
         camt = totalCamt - totalDamt ;
       } else if (tran_code === 2) {
         damt = totalDamt - totalCamt ;
-      } else if (tran_code === 9) {
+      } else if (tran_code === 6 || tran_code === 9) {
         damt = totalCamt; // mirror camt as damt
-      } else if (tran_code === 6 || tran_code === 10 || tran_code === 4) {
+      } else if ( tran_code === 10 || tran_code === 4) {
         camt = totalDamt; // mirror damt as camt
       }
 

@@ -1039,7 +1039,7 @@ export const VOUCHER_CONFIG = {
       },
       { name: "additional_tax", label: "Additional Tax", type: "number" },
       {
-        name: "damt",
+        name: "camt",
         label: "Amount",
         required: true,
         type: "number",
@@ -1082,7 +1082,7 @@ export const VOUCHER_CONFIG = {
       },
       netTotal: {
         label: "Total Amount",
-        calculate: (lines) => lines.reduce((sum, l) => sum + (l.damt || 0), 0),
+        calculate: (lines) => lines.reduce((sum, l) => sum + (l.camt || 0), 0),
       },
     },
     tableFields: [
