@@ -617,6 +617,7 @@ export async function DELETE(req) {
     const tran_code = master.tran_code;
 
     // 🛠️ Revert stock before deleting if applicable
+     // 🛠️ Revert stock before deleting if applicable
     if ([4, 6, 9, 10].includes(tran_code)) {
       const lines = await prisma.transactions.findMany({
         where: {
@@ -633,18 +634,34 @@ export async function DELETE(req) {
           const isIncrement = [4, 10].includes(tran_code);
           const revertQty = isIncrement ? -qty : qty;
 
-          await prisma.item.update({
+          // 🔍 Get current stock first
+          const item = await prisma.item.findUnique({
             where: { itcd: itemId },
-            data: {
-              stock: {
-                increment: revertQty,
-              },
-            },
+            select: { stock: true },
           });
+
+          if (!item) continue;
+
+          const newStock = item.stock + revertQty;
+
+          // ✅ Only update stock if it won't go below zero
+          if (newStock >= 0) {
+            await prisma.item.update({
+              where: { itcd: itemId },
+              data: {
+                stock: {
+                  increment: revertQty,
+                },
+              },
+            });
+          } else {
+            console.warn(
+              `Skipped stock update for item ${itemId}: stock would go negative.`
+            );
+          }
         }
       }
     }
-
     // Delete child and master records
     await prisma.transactions.deleteMany({ where: { tran_id } });
     await prisma.transactionsMaster.delete({ where: { tran_id } });

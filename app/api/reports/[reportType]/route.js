@@ -1234,7 +1234,7 @@ export async function getAccountLedger(filters) {
           lt: new Date(dateFrom)
         },
         tran_code: {
-          in: [1, 2, 3]
+          in: [1, 2, 3,4,5,6,9,10]
         }
       },
       acno: accountNo
@@ -1431,7 +1431,7 @@ async function getAccountActivity(filters) {
         acno,
         transactionsMaster: {
           dateD: { lt: new Date(dateFrom) },
-          tran_code: { in: [1, 2, 3] },
+          in: [1, 2, 3,4,5,6,9,10]
         },
       },
       include: { 
@@ -1463,7 +1463,7 @@ async function getAccountActivity(filters) {
             gte: new Date(dateFrom),
             lte: new Date(dateTo),
           },
-          tran_code: { in: [1, 2, 3] },
+          in: [1, 2, 3,4,5,6,9,10]
         },
       },
       include: { 
@@ -1517,7 +1517,7 @@ async function getTrialBalance(filters) {
         dateD: {
           lte: new Date(dateTo),
         },
-        tran_code: { in: [1, 2, 3] },
+        tran_code: { in: [1, 2, 3,4,5,6,9,10]},
       },
     },
     include: {
