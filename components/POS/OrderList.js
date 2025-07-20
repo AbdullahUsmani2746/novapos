@@ -297,7 +297,7 @@ const OrderList = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 z-10 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Search orders or customers..."
+                  placeholder="Search orders by Invoice No..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/90 backdrop-blur-sm z-0 relative"
@@ -498,7 +498,7 @@ const OrderList = () => {
                   </div>
 
                   {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-secondary to-secondary opacity-0 group-hover:opacity-15 transition-opacity duration-300 rounded-2xl"></div>
                 </Card>
               </div>
             );

@@ -200,7 +200,7 @@ const ModernPOSDashboard = () => {
 
       {/* Welcome Message */}
       <Card
-        className={`p-8 mb-8 bg-primary/75 border-0 shadow-lg transform transition-all duration-1000 ease-out ${
+        className={`p-8 mb-8 bg-primary border-0 shadow-lg transform transition-all duration-1000 ease-out ${
           isLoaded ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
         }`}
         style={{ transitionDelay: "0.6s" }}

@@ -24,8 +24,7 @@ export async function GET(request) {
     // Search filter
     if (search) {
       whereClause.OR = [
-        { invoice_no: { contains: search, mode: "insensitive" } },
-        { customer: { contains: search, mode: "insensitive" } },
+        { invoice_no: { contains: search, mode: "insensitive" } }
       ];
     }
 

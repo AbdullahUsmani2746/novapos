@@ -111,7 +111,7 @@ const CategoryManager = () => {
       whileTap={{ scale: 0.98 }}
       className="group"
     >
-      <Card className="w-full h-full relative overflow-hidden bg-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl backdrop-blur-sm ">
+      <Card className="w-full min-w-[200px] h-full relative overflow-hidden bg-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl backdrop-blur-sm ">
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-secondary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
@@ -123,10 +123,10 @@ const CategoryManager = () => {
               <Package className="w-5 h-5 text-primary" />
             </div> */}
               <div>
-                <h3 className="text-base font-semibold text-gray-900 group-hover:text-primary transition-colors line-clamp-1">
+                <h3 className="text-base font-semibold text-gray-900 group-hover:text-primary transition-colors ">
                   {category.ic_name}
                 </h3>
-                <p className="text-sm text-gray-500 flex items-center mt-1 line-clamp-1">
+                <p className="text-sm text-gray-500 flex items-center mt-1">
                   <span className="w-2 h-2 bg-blue-400 rounded-full mr-2" />
                   {category.mainCategory.mc_name}
                 </p>
@@ -157,7 +157,7 @@ const CategoryManager = () => {
           <div className="flex gap-2">
             <Button
               onClick={() => router.push(`/pos/categories/${category.id}`)}
-              className="flex-1 bg-blue-600 hover:bg-primary text-white shadow-md hover:shadow-lg transition-all duration-200"
+              className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 hover:shadow-lg transition-all duration-200"
               size="sm"
             >
               <Eye className="w-4 h-4" />
@@ -165,19 +165,19 @@ const CategoryManager = () => {
             <Button
               onClick={() => router.push(`/pos/categories/${category.id}/edit`)}
               variant="outline"
-              className="flex-1 border-gray-200  hover:bg-primary transition-all duration-200"
+              className="flex-1 bg-green-50 hover:bg-green-100 text-green-600 border-0 transition-all duration-200"
               size="sm"
             >
-              <Edit3 className="w-4 h-4" />
+              <Edit3 className="w-4 h-4 text-green-600" />
             </Button>
             <Button
               onClick={() => handleDelete(category.id, category.ic_name)}
               variant="outline"
-              className="border-red-200 text-red-600 hover:bg-primary  transition-all duration-200"
+              className="bg-red-50 hover:bg-red-100 text-red-600 border-0 transition-all duration-200"
               size="sm"
               disabled={loading}
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-4 h-4 text-red-600" />
             </Button>
           </div>
         </div>
@@ -240,7 +240,7 @@ const CategoryManager = () => {
   );
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen ">
       {/* Header */}
       <motion.div
         initial={{ y: -20, opacity: 0 }}
@@ -325,7 +325,9 @@ const CategoryManager = () => {
             {filteredCategories.length > 0 &&
               filteredCategories.map((category) =>
                 viewMode === "grid" ? (
+                  
                   <CategoryCard key={category.id} category={category} />
+                 
                 ) : (
                   <CategoryListItem key={category.id} category={category} />
                 )

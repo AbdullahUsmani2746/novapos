@@ -896,9 +896,9 @@ const ReportViewer = ({ reportType }) => {
                         variant="outline"
                         onClick={() => handleExport("excel")}
                         disabled={isExporting || data.length === 0}
-                        className="border-primary hover:bg-primary hover:border-primary transition-all duration-200 transform hover:scale-105"
+                        className="border-0 bg-primary text-white hover:text-primary  transition-all duration-200 transform hover:scale-105"
                       >
-                        <FileSpreadsheetIcon className="w-4 h-4 mr-2  hover:text-white" />
+                        <FileSpreadsheetIcon className="w-4 h-4 mr-2 hover:text-primary" />
                         Excel
                       </Button>
                     )}
@@ -908,9 +908,9 @@ const ReportViewer = ({ reportType }) => {
                         variant="outline"
                         onClick={() => handleExport("pdf")}
                         disabled={isExporting || data.length === 0}
-                        className="border-primary hover:bg-primary hover:border-primary transition-all duration-200 transform hover:scale-105"
+                        className="border-0 bg-primary text-white hover:text-primary transition-all duration-200 transform hover:scale-105"
                       >
-                        <FileTextIcon className="w-4 h-4 mr-2  " />
+                        <FileTextIcon className="w-4 h-4 mr-2 hover:text-primary " />
                         PDF
                       </Button>
                     )}
@@ -920,9 +920,9 @@ const ReportViewer = ({ reportType }) => {
                         variant="outline"
                         onClick={() => handleExport("csv")}
                         disabled={isExporting || data.length === 0}
-                        className="border-primary hover:bg-primary hover:border-primary transition-all duration-200 transform hover:scale-105"
+                        className="border-0 bg-primary text-white hover:text-primary transition-all duration-200 transform hover:scale-105"
                       >
-                        <FileIcon className="w-4 h-4 mr-2 " />
+                        <FileIcon className="w-4 h-4 mr-2 hover:text-primary " />
                         CSV
                       </Button>
                     )}
@@ -934,7 +934,7 @@ const ReportViewer = ({ reportType }) => {
                   <div className="w-full mt-4">
                     <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
                       <div
-                        className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                        className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
                         style={{ width: `${dataLoadingProgress}%` }}
                       />
                     </div>
@@ -1014,8 +1014,8 @@ const ReportViewer = ({ reportType }) => {
               </div>
             ) : sortedData.length === 0 ? (
               <div className="p-12 text-center space-y-4">
-                <div className="p-4 bg-slate-100 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
-                  <DatabaseIcon className="w-8 h-8 text-slate-400" />
+                <div className="p-4 bg-primary rounded-full w-16 h-16 mx-auto flex items-center justify-center">
+                  <DatabaseIcon className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900">
                   No Data Found
@@ -1027,7 +1027,7 @@ const ReportViewer = ({ reportType }) => {
                 <Button
                   onClick={loadReportData}
                   variant="outline"
-                  className="mt-4"
+                  className="mt-4 bg-primary text-white hover:bg-primary"
                 >
                   <RefreshCwIcon className="w-4 h-4 mr-2" />
                   Refresh Data
@@ -1107,7 +1107,7 @@ const ReportViewer = ({ reportType }) => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="hover:bg-blue-50 hover:text-blue-600"
+                              className="bg-primary text-white hover:text-primary"
                             >
                               <EyeIcon className="w-4 h-4" />
                             </Button>
@@ -1126,13 +1126,13 @@ const ReportViewer = ({ reportType }) => {
         {showDetails && detailRow && config.detailColumns && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl">
-              <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+              <CardHeader className="bg-primary text-white">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-2xl font-bold">
                       Record Details
                     </CardTitle>
-                    <CardDescription className="text-blue-100">
+                    <CardDescription className="text-white">
                       Detailed view of selected record
                     </CardDescription>
                   </div>
@@ -1140,7 +1140,7 @@ const ReportViewer = ({ reportType }) => {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowDetails(false)}
-                    className="text-white hover:bg-white/20"
+                    className="text-primary bg-secondary hover:text-primary"
                   >
                     <XIcon className="w-5 h-5" />
                   </Button>
@@ -1207,7 +1207,7 @@ const ReportViewer = ({ reportType }) => {
                 </div>
               </CardContent>
 
-              <CardFooter className="bg-slate-50 border-t">
+              {/* <CardFooter className="bg-slate-50 border-t">
                 <Button
                   onClick={() => setShowDetails(false)}
                   className="ml-auto"
@@ -1215,7 +1215,7 @@ const ReportViewer = ({ reportType }) => {
                 >
                   Close
                 </Button>
-              </CardFooter>
+              </CardFooter> */}
             </Card>
           </div>
         )}
