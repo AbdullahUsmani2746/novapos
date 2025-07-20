@@ -168,6 +168,42 @@ export async function POST(req, { params }) {
 
     console.log("masterData:", masterData.tran_id);
 
+        let itemAccountMap = {};
+
+
+      // 🔁 Build item account map based on item category accounts
+    if ([4, 6, 9, 10].includes(tran_code)) {
+      const itemIds = lines
+        .map((line) => parseOptionalInt(line.itcd))
+        .filter((itcd) => itcd !== undefined);
+
+      const items = await prisma.item.findMany({
+        where: { itcd: { in: itemIds } },
+        include: {
+          itemCategories: true,
+        },
+      });
+
+      for (const item of items) {
+        const category = item.itemCategories;
+
+        let acnoValue = null;
+        if ([4, 9].includes(tran_code)) {
+          acnoValue = category?.stock_acno;
+        } else if (tran_code === 6) {
+          acnoValue = category?.cogs_acno;
+        } else if (tran_code === 10) {
+          acnoValue = category?.sale_acno;
+        }
+
+        if (acnoValue !== null && acnoValue !== undefined) {
+          itemAccountMap[item.itcd] = acnoValue.toString().padStart(4, "0");
+        }
+      }
+
+      console.log("Item Account Map:", itemAccountMap);
+    }
+
     const linesss = await prisma.transactions.createMany({
       data: lines.map((line) => {
         const base = {
@@ -193,15 +229,16 @@ export async function POST(req, { params }) {
         }
         // Handle item code for tran_code 4 or 6
         if ([4, 6, 9, 10].includes(tran_code)) {
-          if ([4, 9].includes(tran_code)) {
-            base.acno = "0004";
-          } else if ([6, 10].includes(tran_code)) {
-            base.acno = "0014";
-          }
+          // if ([4, 9].includes(tran_code)) {
+          //   base.acno = masterData.pycd;
+          // } else if ([6, 10].includes(tran_code)) {
+          //   base.acno = masterData.pycd;
+          // }
 
           const itemValue = parseOptionalInt(line.itcd);
           if (itemValue !== undefined) {
             base.itcd = itemValue;
+            base.acno = itemAccountMap[itemValue] || null;
           }
 
           // Add original_qty for returns (tran_code 9 and 10)
@@ -289,9 +326,9 @@ export async function POST(req, { params }) {
         camt = totalCamt - totalDamt ;
       } else if (tran_code === 2) {
         damt = totalDamt - totalCamt ;
-      } else if (tran_code === 4 || tran_code === 9) {
+      } else if (tran_code === 9) {
         damt = totalCamt; // mirror camt as damt
-      } else if (tran_code === 6 || tran_code === 10) {
+      } else if (tran_code === 6 || tran_code === 10 || tran_code === 4) {
         camt = totalDamt; // mirror damt as camt
       }
 
@@ -301,7 +338,7 @@ export async function POST(req, { params }) {
         narration1: "Auto Entry",
         damt: damt || 0,
         camt: camt || 0,
-        acno: master.acno || null,
+        acno: masterData.pycd || null,
       };
 
       await prisma.transactions.create({ data: autoEntry });

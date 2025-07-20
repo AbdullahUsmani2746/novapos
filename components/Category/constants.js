@@ -784,7 +784,7 @@ export const VOUCHER_CONFIG = {
       },
       { name: "additional_tax", label: "Additional Tax", type: "number" },
       {
-        name: "camt",
+        name: "damt",
         label: "Amount",
         required: true,
         type: "number",
@@ -829,7 +829,7 @@ export const VOUCHER_CONFIG = {
         label: "Total Amount",
         calculate: (lines) => {
           console.log("Chajge:", lines);
-          return lines.reduce((sum, l) => sum + (l.camt || 0), 0);
+          return lines.reduce((sum, l) => sum + (l.damt || 0), 0);
         },
       },
     },

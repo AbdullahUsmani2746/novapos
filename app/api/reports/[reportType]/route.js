@@ -1326,7 +1326,7 @@ export async function getAccountLedger(filters) {
 
   // Push opening balance row
   ledgerEntries.push({
-    date: new Date(dateFrom),
+    date: new Date(dateFrom).toLocaleDateString(),
     vr_no: "Opening",
     tran_type: "Opening Balance",
     narration: "",
