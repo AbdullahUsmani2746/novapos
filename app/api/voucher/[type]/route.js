@@ -191,9 +191,9 @@ export async function POST(req, { params }) {
         if ([4, 9].includes(tran_code)) {
           acnoValue = category?.stock_acno;
         } else if (tran_code === 6) {
-          acnoValue = category?.stock_acno;
+          acnoValue = category?.sale_acno;
         } else if (tran_code === 10) {
-          acnoValue = category?.stock_acno;
+          acnoValue = category?.sale_acno;
         }
 
         if (acnoValue !== null && acnoValue !== undefined) {
