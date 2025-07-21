@@ -214,7 +214,8 @@ model ItemCategory {
   mc_id         Int
   wc_category_id Int?         @unique
   stock_acno     Int?        @default(4) // New field for stock account number
-  sale_acno      Int?        
+  sale_acno      Int?        @default(14)
+  pos_acno       Int?        @default(15)
   cogs_acno      Int?        
   sync_status   String?       @default("synced") @db.VarChar(20)
   last_sync     DateTime?     @default(now())

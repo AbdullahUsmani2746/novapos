@@ -89,6 +89,20 @@ export async function POST(request) {
   try {
     const { cartItems, customer, total, id } = await request.json();
 
+     // First, get all items with their categories to fetch acno
+    const itemsWithCategory = await Promise.all(
+      cartItems.map(async (item) => {
+        const itemData = await prisma.item.findUnique({
+          where: { itcd: item.itcd },
+          include: { itemCategories: true } // Assuming you have a category relation
+        });
+        return {
+          ...item,
+          categoryAcno: itemData?.itemCategories?.pos_acno || 15 // Fallback to customer if no category acno
+        };
+      })
+    );
+
     const order = await prisma.transactionsMaster.create({
       data: {
         dateD: new Date(),
@@ -100,13 +114,13 @@ export async function POST(request) {
         invoice_no: `POS-${Date.now()}`,
         sync_status: "pending",
         transactions: {
-          create: cartItems.map((item) => ({
+          create: itemsWithCategory.map((item) => ({
             itcd: item.itcd,
             qty: item.quantity,
             rate: item.price,
-            acno: customer,
+            acno: String(item.categoryAcno).padStart(4, '0'),
             gross_amount: item.quantity * item.price,
-            damt:item.quantity * item.price,
+            camt:item.quantity * item.price,
             narration1: `POS Sale: ${item.item}`,
           })),
         },
@@ -121,6 +135,20 @@ export async function POST(request) {
       });
     }
 
+    const totalAmount = cartItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+
+
+    const autoEntry = {
+        tran_id: order.tran_id,
+        sub_tran_id: 3,
+        narration1: "Auto Entry",
+        damt: totalAmount || 0,
+        camt: 0,
+        acno: order.pycd || null,
+      };
+
+      await prisma.transactions.create({ data: autoEntry });
+      console.log("Auto transaction entry created:", autoEntry);
     // Uncomment this if syncing is needed
     // await syncOrderToWooCommerce(order);
 
