@@ -170,7 +170,7 @@ async function getPurchaseReport(filters) {
         0
       ),
       total_amount: filteredTransactions.reduce(
-        (sum, line) => sum + (line.camt || 0),
+        (sum, line) => sum + (line.damt || 0),
         0
       ),
     };
@@ -320,7 +320,7 @@ async function getSaleReport(filters) {
         0
       ),
       total_amount: filteredTransactions.reduce(
-        (sum, line) => sum + (line.damt || 0),
+        (sum, line) => sum + (line.camt || 0),
         0
       ),
     };
@@ -436,14 +436,244 @@ async function getStockReport(filters) {
     where,
     include: {
       itemCategories: true,
+      Transactions: {
+        include: {
+          transactionsMaster: true
+        },
+        where: {
+          transactionsMaster: {
+            tran_code: {
+              in: [4, 5, 6, 9, 10] // Purchase, POS, Sale, Purchase Return, Sale Return
+            }
+          }
+        }
+      }
     },
     orderBy: {
       item: "asc",
     },
   });
 
-  return items;
+  // Process each item to calculate stock values
+  const processedItems = items.map(item => {
+    let totalPurchaseQty = 0;
+    let totalPurchaseValue = 0;
+    let totalSaleQty = 0;
+    let totalSaleValue = 0;
+    let avgPurchaseRate = 0;
+    let avgSaleRate = 0;
+
+    // Process transactions for each item
+    item.Transactions.forEach(transaction => {
+      const tranCode = transaction.transactionsMaster.tran_code;
+      const qty = transaction.qty || 0;
+      const rate = transaction.rate || 0;
+      const amount = qty * rate;
+      const damt = transaction.damt || 0
+      const camt = transaction.camt || 0
+
+      switch (tranCode) {
+        case 4: // Purchase
+          totalPurchaseQty += qty;
+          totalPurchaseValue += damt;
+          break;
+        
+        case 5: // POS (treating as sale)
+        case 6: // Sale
+          totalSaleQty += qty;
+          totalSaleValue += camt;
+          break;
+        
+        case 9: // Purchase Return (subtract from purchase)
+          totalPurchaseQty -= qty;
+          totalPurchaseValue -= camt;
+          break;
+        
+        case 10: // Sale Return (subtract from sale)
+          totalSaleQty -= qty;
+          totalSaleValue -= damt;
+          break;
+      }
+    });
+
+    // Calculate average rates
+    if (totalPurchaseQty > 0) {
+      avgPurchaseRate = totalPurchaseValue / totalPurchaseQty;
+    }
+    
+    if (totalSaleQty > 0) {
+      avgSaleRate = totalSaleValue / totalSaleQty;
+    }
+
+    // Calculate current stock value based on purchase rate
+    const currentStockValue = item.stock * avgPurchaseRate;
+    
+    // Calculate potential sale value of current stock
+    const potentialSaleValue = item.stock * avgSaleRate;
+    
+    // Calculate profit margin
+    const profitMargin = avgSaleRate > 0 && avgPurchaseRate > 0 
+      ? ((avgSaleRate - avgPurchaseRate) / avgPurchaseRate) * 100 
+      : 0;
+
+    return {
+      ...item,
+      stockAnalysis: {
+        currentStock: item.stock,
+        currentStockValue: parseFloat(currentStockValue.toFixed(2)),
+        potentialSaleValue: parseFloat(potentialSaleValue.toFixed(2)),
+        
+        // Purchase data
+        totalPurchased: parseFloat(totalPurchaseQty.toFixed(2)),
+        totalPurchaseValue: parseFloat(totalPurchaseValue.toFixed(2)),
+        avgPurchaseRate: parseFloat(avgPurchaseRate.toFixed(2)),
+        
+        // Sale data
+        totalSold: parseFloat(totalSaleQty.toFixed(2)),
+        totalSaleValue: parseFloat(totalSaleValue.toFixed(2)),
+        avgSaleRate: parseFloat(avgSaleRate.toFixed(2)),
+        
+        // Analysis
+        profitMargin: parseFloat(profitMargin.toFixed(2)),
+        stockTurnover: totalPurchaseQty > 0 ? parseFloat((totalSaleQty / totalPurchaseQty * 100).toFixed(2)) : 0,
+        
+        // Transaction summary
+        transactionSummary: {
+          purchases: item.Transactions.filter(t => t.transactionsMaster.tran_code === 4).length,
+          sales: item.Transactions.filter(t => [5, 6].includes(t.transactionsMaster.tran_code)).length,
+          purchaseReturns: item.Transactions.filter(t => t.transactionsMaster.tran_code === 9).length,
+          saleReturns: item.Transactions.filter(t => t.transactionsMaster.tran_code === 10).length
+        }
+      }
+    };
+  });
+
+  return processedItems;
 }
+
+// async function getStockReport(filters) {
+//   const where = {};
+
+//   if (filters.category) {
+//     where.ic_id = parseInt(filters.category);
+//   }
+
+//   if (filters.showZero === "false") {
+//     where.stock = { gt: 0 };
+//   }
+
+//   const items = await prisma.item.findMany({
+//     where,
+//     include: {
+//       itemCategories: true,
+//     },
+//     orderBy: {
+//       item: "asc",
+//     },
+//   });
+
+//   return items;
+// }
+
+// Alternative version with aggregated SQL queries for better performance with large datasets
+// async function getStockReportOptimized(filters) {
+//   const where = {};
+
+//   if (filters.category) {
+//     where.ic_id = parseInt(filters.category);
+//   }
+
+//   if (filters.showZero === "false") {
+//     where.stock = { gt: 0 };
+//   }
+
+//   const items = await prisma.item.findMany({
+//     where,
+//     include: {
+//       itemCategories: true,
+//     },
+//     orderBy: {
+//       item: "asc",
+//     },
+//   });
+
+//   // Get aggregated transaction data for all items
+//   const itemIds = items.map(item => item.itcd);
+  
+//   const transactionSummary = await prisma.$queryRaw`
+//     SELECT 
+//       t.itcd,
+//       tm.tran_code,
+//       SUM(CASE WHEN tm.tran_code IN (4) THEN t.qty ELSE 0 END) as total_purchase_qty,
+//       SUM(CASE WHEN tm.tran_code IN (4) THEN (t.qty * t.rate) ELSE 0 END) as total_purchase_value,
+//       SUM(CASE WHEN tm.tran_code IN (5, 6) THEN t.qty ELSE 0 END) as total_sale_qty,
+//       SUM(CASE WHEN tm.tran_code IN (5, 6) THEN (t.qty * t.rate) ELSE 0 END) as total_sale_value,
+//       SUM(CASE WHEN tm.tran_code IN (9) THEN t.qty ELSE 0 END) as total_purchase_return_qty,
+//       SUM(CASE WHEN tm.tran_code IN (9) THEN (t.qty * t.rate) ELSE 0 END) as total_purchase_return_value,
+//       SUM(CASE WHEN tm.tran_code IN (10) THEN t.qty ELSE 0 END) as total_sale_return_qty,
+//       SUM(CASE WHEN tm.tran_code IN (10) THEN (t.qty * t.rate) ELSE 0 END) as total_sale_return_value,
+//       COUNT(CASE WHEN tm.tran_code = 4 THEN 1 END) as purchase_count,
+//       COUNT(CASE WHEN tm.tran_code IN (5, 6) THEN 1 END) as sale_count,
+//       COUNT(CASE WHEN tm.tran_code = 9 THEN 1 END) as purchase_return_count,
+//       COUNT(CASE WHEN tm.tran_code = 10 THEN 1 END) as sale_return_count
+//     FROM "Transactions" t
+//     JOIN "TRANSACTIONS_MASTER" tm ON t.tran_id = tm.tran_id
+//     WHERE t.itcd IN (${itemIds.join(',')}) 
+//       AND tm.tran_code IN (4, 5, 6, 9, 10)
+//     GROUP BY t.itcd
+//   `;
+
+//   console.log("transactionSummary: ",transactionSummary)
+
+//   // Process items with transaction data
+//   const processedItems = items.map(item => {
+//     const itemTransactions = transactionSummary.find(ts => ts.itcd === item.itcd) || {};
+    
+//     const netPurchaseQty = (itemTransactions.total_purchase_qty || 0) - (itemTransactions.total_purchase_return_qty || 0);
+//     const netPurchaseValue = (itemTransactions.total_purchase_value || 0) - (itemTransactions.total_purchase_return_value || 0);
+//     const netSaleQty = (itemTransactions.total_sale_qty || 0) - (itemTransactions.total_sale_return_qty || 0);
+//     const netSaleValue = (itemTransactions.total_sale_value || 0) - (itemTransactions.total_sale_return_value || 0);
+    
+//     const avgPurchaseRate = netPurchaseQty > 0 ? netPurchaseValue / netPurchaseQty : 0;
+//     const avgSaleRate = netSaleQty > 0 ? netSaleValue / netSaleQty : 0;
+    
+//     const currentStockValue = item.stock * avgPurchaseRate;
+//     const potentialSaleValue = item.stock * avgSaleRate;
+//     const profitMargin = avgSaleRate > 0 && avgPurchaseRate > 0 
+//       ? ((avgSaleRate - avgPurchaseRate) / avgPurchaseRate) * 100 
+//       : 0;
+
+//     return {
+//       ...item,
+//       stockAnalysis: {
+//         currentStock: item.stock,
+//         currentStockValue: parseFloat(currentStockValue.toFixed(2)),
+//         potentialSaleValue: parseFloat(potentialSaleValue.toFixed(2)),
+        
+//         // Net figures after returns
+//         netPurchased: parseFloat(netPurchaseQty.toFixed(2)),
+//         netPurchaseValue: parseFloat(netPurchaseValue.toFixed(2)),
+//         avgPurchaseRate: parseFloat(avgPurchaseRate.toFixed(2)),
+        
+//         netSold: parseFloat(netSaleQty.toFixed(2)),
+//         netSaleValue: parseFloat(netSaleValue.toFixed(2)),
+//         avgSaleRate: parseFloat(avgSaleRate.toFixed(2)),
+        
+//         profitMargin: parseFloat(profitMargin.toFixed(2)),
+//         stockTurnover: netPurchaseQty > 0 ? parseFloat((netSaleQty / netPurchaseQty * 100).toFixed(2)) : 0,
+        
+//         transactionCounts: {
+//           purchases: itemTransactions.purchase_count || 0,
+//           sales: itemTransactions.sale_count || 0,
+//           purchaseReturns: itemTransactions.purchase_return_count || 0,
+//           saleReturns: itemTransactions.sale_return_count || 0
+//         }
+//       }
+//     };
+//   });
+
+//   return processedItems;
+// }
 
 function calculateStockSummary(data) {
   return {

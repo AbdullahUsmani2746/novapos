@@ -548,63 +548,301 @@ export const REPORT_CONFIG = {
       csv: true,
     },
   },
+  // stock: {
+  //   title: "Stock Report",
+  //   description: "Current stock levels for all items",
+  //   apiEndpoint: "/api/reports/stock",
+  //   filters: [
+  //     {
+  //       name: "category",
+  //       label: "Category",
+  //       nameKey: "ic_name",
+  //       type: "select",
+  //       options: "itemCategories",
+  //       apiEndpoint: "/api/setup/item_categories",
+  //       clearable: true,
+  //     },
+  //     {
+  //       name: "showZero",
+  //       label: "Show Zero Stock",
+  //       type: "checkbox",
+  //       default: false,
+  //     },
+  //   ],
+  //   columns: [
+  //     { field: "item", headerName: "Item", width: 250 },
+  //     { field: "sku", headerName: "SKU", width: 150 },
+  //     {
+  //       field: "category",
+  //       headerName: "Category",
+  //       width: 200,
+  //       valueGetter: (params) => params.row.itemCategories?.ic_name || "",
+  //     },
+  //     {
+  //       field: "stock",
+  //       headerName: "Current Stock",
+  //       width: 150,
+  //       type: "number",
+  //     },
+  //     { field: "price", headerName: "Price", width: 120, type: "currency" },
+  //     {
+  //       field: "value",
+  //       headerName: "Stock Value",
+  //       width: 150,
+  //       type: "currency",
+  //       valueGetter: (params) =>
+  //         (params.row.stock || 0) * (params.row.price || 0),
+  //     },
+  //   ],
+  //   summaryFields: [
+  //     { field: "total_items", label: "Total Items", type: "number" },
+  //     { field: "total_stock", label: "Total Stock", type: "number" },
+  //     { field: "total_value", label: "Total Stock Value", type: "currency" },
+  //   ],
+  //   exportOptions: {
+  //     pdf: true,
+  //     excel: true,
+  //     csv: true,
+  //   },
+  // },
+
   stock: {
-    title: "Stock Report",
-    description: "Current stock levels for all items",
-    apiEndpoint: "/api/reports/stock",
-    filters: [
-      {
-        name: "category",
-        label: "Category",
-        nameKey: "ic_name",
-        type: "select",
-        options: "itemCategories",
-        apiEndpoint: "/api/setup/item_categories",
-        clearable: true,
+  title: "Stock Report",
+  description: "Comprehensive stock analysis with purchase/sale data",
+  apiEndpoint: "/api/reports/stock",
+  filters: [
+    {
+      name: "category",
+      label: "Category",
+      nameKey: "ic_name",
+      type: "select",
+      options: "itemCategories",
+      apiEndpoint: "/api/setup/item_categories",
+      clearable: true,
+    },
+    {
+      name: "showZero",
+      label: "Show Zero Stock",
+      type: "checkbox",
+      default: false,
+    },
+  ],
+  columns: [
+    { field: "item", headerName: "Item", width: 200 },
+    { field: "sku", headerName: "SKU", width: 120 },
+    {
+      field: "category",
+      headerName: "Category",
+      width: 150,
+      valueGetter: (params) => params.row.itemCategories?.ic_name || "",
+    },
+    // Current Stock Information
+    {
+      field: "currentStock",
+      headerName: "Current Stock",
+      width: 120,
+      type: "number",
+      valueGetter: (params) => params.row.stockAnalysis?.currentStock || params.row.stock || 0,
+    },
+    {
+      field: "currentStockValue",
+      headerName: "Stock Value",
+      width: 140,
+      type: "currency",
+      valueGetter: (params) => params.row.stockAnalysis?.currentStockValue || 0,
+    },
+    {
+      field: "potentialSaleValue",
+      headerName: "Potential Sale Value",
+      width: 160,
+      type: "currency",
+      valueGetter: (params) => params.row.stockAnalysis?.potentialSaleValue || 0,
+    },
+    
+    // Purchase Analysis
+    {
+      field: "netPurchased",
+      headerName: "Net Purchased",
+      width: 130,
+      type: "number",
+      valueGetter: (params) => params.row.stockAnalysis?.totalPurchased || 0,
+    },
+    {
+      field: "avgPurchaseRate",
+      headerName: "Avg Purchase Rate",
+      width: 150,
+      type: "currency",
+      valueGetter: (params) => params.row.stockAnalysis?.avgPurchaseRate || 0,
+    },
+    {
+      field: "netPurchaseValue",
+      headerName: "Total Purchase Value",
+      width: 160,
+      type: "currency",
+      valueGetter: (params) => params.row.stockAnalysis?.totalPurchaseValue || 0,
+    },
+    
+    // Sales Analysis
+    {
+      field: "netSold",
+      headerName: "Net Sold",
+      width: 120,
+      type: "number",
+      valueGetter: (params) => params.row.stockAnalysis?.netSold || 0,
+    },
+    {
+      field: "avgSaleRate",
+      headerName: "Avg Sale Rate",
+      width: 140,
+      type: "currency",
+      valueGetter: (params) => params.row.stockAnalysis?.avgSaleRate || 0,
+    },
+    {
+      field: "netSaleValue",
+      headerName: "Total Sale Value",
+      width: 150,
+      type: "currency",
+      valueGetter: (params) => params.row.stockAnalysis?.netSaleValue || 0,
+    },
+    
+    // Performance Metrics
+    {
+      field: "profitMargin",
+      headerName: "Profit Margin (%)",
+      width: 140,
+      type: "number",
+      valueGetter: (params) => params.row.stockAnalysis?.profitMargin || 0,
+      cellRenderer: (params) => `${params.value}%`,
+    },
+    {
+      field: "stockTurnover",
+      headerName: "Stock Turnover (%)",
+      width: 150,
+      type: "number",
+      valueGetter: (params) => params.row.stockAnalysis?.stockTurnover || 0,
+      cellRenderer: (params) => `${params.value}%`,
+    },
+    
+    // Transaction Counts
+    {
+      field: "purchaseCount",
+      headerName: "Purchase Transactions",
+      width: 160,
+      type: "number",
+      valueGetter: (params) => params.row.stockAnalysis?.transactionCounts?.purchases || 0,
+    },
+    {
+      field: "saleCount",
+      headerName: "Sale Transactions",
+      width: 140,
+      type: "number",
+      valueGetter: (params) => params.row.stockAnalysis?.transactionCounts?.sales || 0,
+    },
+    {
+      field: "returnCount",
+      headerName: "Returns",
+      width: 100,
+      type: "number",
+      valueGetter: (params) => {
+        const analysis = params.row.stockAnalysis?.transactionCounts;
+        return (analysis?.purchaseReturns || 0) + (analysis?.saleReturns || 0);
       },
-      {
-        name: "showZero",
-        label: "Show Zero Stock",
-        type: "checkbox",
-        default: false,
-      },
-    ],
-    columns: [
-      { field: "item", headerName: "Item", width: 250 },
-      { field: "sku", headerName: "SKU", width: 150 },
-      {
-        field: "category",
-        headerName: "Category",
-        width: 200,
-        valueGetter: (params) => params.row.itemCategories?.ic_name || "",
-      },
-      {
-        field: "stock",
-        headerName: "Current Stock",
-        width: 150,
-        type: "number",
-      },
-      { field: "price", headerName: "Price", width: 120, type: "currency" },
-      {
-        field: "value",
-        headerName: "Stock Value",
-        width: 150,
-        type: "currency",
-        valueGetter: (params) =>
-          (params.row.stock || 0) * (params.row.price || 0),
-      },
-    ],
-    summaryFields: [
-      { field: "total_items", label: "Total Items", type: "number" },
-      { field: "total_stock", label: "Total Stock", type: "number" },
-      { field: "total_value", label: "Total Stock Value", type: "currency" },
-    ],
-    exportOptions: {
-      pdf: true,
-      excel: true,
-      csv: true,
+    },
+  ],
+  
+  // Column Groups for better organization
+  columnGroups: [
+    {
+      groupId: "basic",
+      headerName: "Basic Info",
+      children: ["item", "sku", "category"]
+    },
+    {
+      groupId: "stock",
+      headerName: "Current Stock",
+      children: ["currentStock", "currentStockValue", "potentialSaleValue"]
+    },
+    {
+      groupId: "purchase",
+      headerName: "Purchase Analysis",
+      children: ["netPurchased", "avgPurchaseRate", "netPurchaseValue"]
+    },
+    {
+      groupId: "sales",
+      headerName: "Sales Analysis", 
+      children: ["netSold", "avgSaleRate", "netSaleValue"]
+    },
+    {
+      groupId: "performance",
+      headerName: "Performance Metrics",
+      children: ["profitMargin", "stockTurnover"]
+    },
+    {
+      groupId: "transactions",
+      headerName: "Transaction Summary",
+      children: ["purchaseCount", "saleCount", "returnCount"]
+    }
+  ],
+
+  // Default visible columns (others can be toggled)
+  defaultVisibleColumns: [
+    "item", "sku", "category", "currentStock", "currentStockValue", 
+    "avgPurchaseRate", "avgSaleRate", "profitMargin"
+  ],
+  
+  summaryFields: [
+    { field: "total_items", label: "Total Items", type: "number" },
+    { field: "total_current_stock", label: "Total Current Stock", type: "number" },
+    { field: "total_stock_value", label: "Total Stock Value", type: "currency" },
+    { field: "total_potential_value", label: "Total Potential Sale Value", type: "currency" },
+    { field: "total_purchase_value", label: "Total Purchase Value", type: "currency" },
+    { field: "total_sale_value", label: "Total Sale Value", type: "currency" },
+    { field: "overall_profit_margin", label: "Overall Profit Margin (%)", type: "percentage" },
+    { field: "total_transactions", label: "Total Transactions", type: "number" },
+  ],
+  
+  // Enhanced export options
+  exportOptions: {
+    pdf: {
+      enabled: true,
+      orientation: "landscape", // Due to many columns
+      title: "Stock Analysis Report"
+    },
+    excel: {
+      enabled: true,
+      worksheets: [
+        {
+          name: "Stock Analysis",
+          includeAll: true
+        },
+        {
+          name: "Summary",
+          summaryOnly: true
+        }
+      ]
+    },
+    csv: {
+      enabled: true,
+      filename: "stock_analysis_report"
     },
   },
+
+  // Additional configuration for better UX
+  pagination: {
+    defaultPageSize: 50,
+    pageSizeOptions: [25, 50, 100, 200]
+  },
+  
+  sorting: {
+    defaultSort: [{ field: "item", sort: "asc" }],
+    multiSort: true
+  },
+  
+  filtering: {
+    enabled: true,
+    quickFilter: true
+  }
+},
   stockActivity: {
     title: "Stock Activity Report",
     description: "Product-wise stock movement analysis",
