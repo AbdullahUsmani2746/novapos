@@ -114,7 +114,7 @@ const data = {
       items: [
         {
           title: "Godown Transfer",
-          url: "/accounting/return/purchaseReturn",
+          url: "/accounting/godown/transfer",
         },
         
         
