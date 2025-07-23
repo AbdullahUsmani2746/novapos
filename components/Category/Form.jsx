@@ -618,7 +618,7 @@ export default function VoucherForm({
 
     if (!fieldConfig) return;
 
-    if (type === "sale" && isMain && fieldName === "itcd" && value) {
+    if (type === "sale" && isMain && fieldName === "itcd" && value || type === "transfer" && isMain && fieldName === "itcd" && value) {
       // Fetch stock for this product
       fetchStockLevels([value]);
     }
@@ -1041,7 +1041,7 @@ export default function VoucherForm({
       );
     }
     // Show stock info for product quantity in sale voucher
-    if (type === "sale" && isMain && fieldName === "qty" && line.itcd) {
+    if (type === "sale" && isMain && fieldName === "qty" && line.itcd || type === "transfer" && isMain && fieldName === "qty" && line.itcd)  {
       const stock = stockLevels[line.itcd] || 0;
       return (
         <div className="space-y-1">
@@ -1101,7 +1101,7 @@ export default function VoucherForm({
             />
             <div className="text-xs text-gray-500 flex items-center gap-1">
               <span>of {masterData.tran_code }</span>
-              <span className="font-medium">{masterData.tran_code === 9 ? (line.stock || 0) : (line.original_qty || 0)}</span>
+              <span className="font-medium">{(masterData.tran_code === 9 || masterData.tran_code === 11)  ? (line.stock || 0) : (line.original_qty || 0)}</span>
             </div>
           </div>
           {errors.validation[
