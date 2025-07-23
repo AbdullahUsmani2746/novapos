@@ -121,7 +121,7 @@ export default function SelectOriginalModal({
                     <TableRow key={txn.tran_id}>
                       <TableCell>{txn.vr_no}</TableCell>
                       <TableCell>{txn.invoice_no}</TableCell>
-                      <TableCell>{txn.pycd}</TableCell>
+                      <TableCell>{txn.acno.acname}</TableCell>
                       <TableCell>{new Date(txn.dateD).toLocaleDateString()}</TableCell>
                       <TableCell>
                         {txn.transactions?.reduce((sum, t) => sum + (t.damt || t.camt || 0), 0)}

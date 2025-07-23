@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { VOUCHER_CONFIG } from "./constants";
+import TransferConfirmation from "./TransferConfirmation";
 
 // Icon mapping for field types
 const ICON_MAP = {
@@ -220,6 +221,7 @@ export default function VoucherForm({
   originalData, // Add this prop
 }) {
   const voucherConfig = VOUCHER_CONFIG[type] || {};
+  const [transferConfirmOpen, setTransferConfirmOpen] = useState(false);
   const [masterData, setMasterData] = useState({});
   const [mainLines, setMainLines] = useState([{}]);
   const [deductionLines, setDeductionLines] = useState([{}]);
@@ -261,6 +263,7 @@ export default function VoucherForm({
     sale: "/api/voucher/sale",
     purchaseReturn: "/api/voucher/purchaseReturn",
     saleReturn: "/api/voucher/saleReturn",
+    transfer: "/api/voucher/transfer"
   };
 
   // Fetch options for select fields
@@ -283,6 +286,7 @@ export default function VoucherForm({
     try {
       const response = await axios.post("/api/voucher/check-stock", {
         productIds,
+        godown:1
       });
       setStockLevels((prev) => ({ ...prev, ...response.data }));
     } catch (error) {
@@ -290,62 +294,63 @@ export default function VoucherForm({
     }
   }, []);
 
-const fetchOptions = useCallback(async () => {
-  setLoading((prev) => ({ ...prev, options: true }));
+  const fetchOptions = useCallback(async () => {
+    setLoading((prev) => ({ ...prev, options: true }));
 
-  try {
-    const allFields = [
-      ...(voucherConfig.masterFields || []),
-      ...(voucherConfig.lineFields || []),
-      ...(voucherConfig.deductionFields || [])
-    ];
+    try {
+      const allFields = [
+        ...(voucherConfig.masterFields || []),
+        ...(voucherConfig.lineFields || []),
+        ...(voucherConfig.deductionFields || []),
+      ];
 
-    const endpoints = [];
+      const endpoints = [];
 
-    allFields.forEach(field => {
-      if (field.type === "select" && field.options && field.apiEndpoint) {
-        endpoints.push({ key: field.options, url: field.apiEndpoint });
-      }
-    });
+      allFields.forEach((field) => {
+        if (field.type === "select" && field.options && field.apiEndpoint) {
+          endpoints.push({ key: field.options, url: field.apiEndpoint });
+        }
+      });
 
-    // Add additional hardcoded ones if needed
-    const additionalEndpoints = [
-      { key: "mainAccounts", url: "/api/accounts/macno" },
-      { key: "itemCategories", url: "/api/setup/item_categories" }
-    ];
+      // Add additional hardcoded ones if needed
+      const additionalEndpoints = [
+        { key: "mainAccounts", url: "/api/accounts/macno" },
+        { key: "itemCategories", url: "/api/setup/item_categories" },
+      ];
 
-    const allEndpoints = [...endpoints, ...additionalEndpoints];
+      const allEndpoints = [...endpoints, ...additionalEndpoints];
 
-    // Remove duplicates based on key+url
-    const uniqueEndpoints = Array.from(
-      new Map(allEndpoints.map(item => [`${item.key}_${item.url}`, item])).values()
-    );
+      // Remove duplicates based on key+url
+      const uniqueEndpoints = Array.from(
+        new Map(
+          allEndpoints.map((item) => [`${item.key}_${item.url}`, item])
+        ).values()
+      );
 
-    const results = await Promise.all(
-      uniqueEndpoints.map(async ({ key, url }) => {
-        const res = await axios.get(url);
-        return { key, data: res.data.data || [] };
-      })
-    );
+      const results = await Promise.all(
+        uniqueEndpoints.map(async ({ key, url }) => {
+          const res = await axios.get(url);
+          return { key, data: res.data.data || [] };
+        })
+      );
 
-    const newOptionsData = results.reduce(
-      (acc, { key, data }) => ({ ...acc, [key]: data }),
-      {}
-    );
+      const newOptionsData = results.reduce(
+        (acc, { key, data }) => ({ ...acc, [key]: data }),
+        {}
+      );
 
-    setOptionsData(prev => ({ ...prev, ...newOptionsData }));
-  } catch (error) {
-    const errorMsg = error.message || "Unknown error";
-    setErrors(prev => ({
-      ...prev,
-      options: `Failed to load options: ${errorMsg}`,
-    }));
-    toast.error(`Failed to load options: ${errorMsg}`);
-  } finally {
-    setLoading(prev => ({ ...prev, options: false }));
-  }
-}, [voucherConfig]);
-
+      setOptionsData((prev) => ({ ...prev, ...newOptionsData }));
+    } catch (error) {
+      const errorMsg = error.message || "Unknown error";
+      setErrors((prev) => ({
+        ...prev,
+        options: `Failed to load options: ${errorMsg}`,
+      }));
+      toast.error(`Failed to load options: ${errorMsg}`);
+    } finally {
+      setLoading((prev) => ({ ...prev, options: false }));
+    }
+  }, [voucherConfig]);
 
   const formatDateToYYYYMMDD = (isoDate) => {
     if (!isoDate) return "";
@@ -459,6 +464,7 @@ const fetchOptions = useCallback(async () => {
           st_amount: 0, // Will be calculated
           additional_tax: Number(line.additional_tax) || 0,
           camt: 0, // Will be calculated
+          stock:Number(line.stock) || 0,
           original_qty: Number(line.qty) || 0, // Store original for validation
         })) || [{}];
 
@@ -601,68 +607,73 @@ const fetchOptions = useCallback(async () => {
     return fieldConfig.calculate(dependencies) || 0;
   };
 
-const handleLineChange = (index, fieldName, value, isMain) => {
-  const lines = isMain ? [...mainLines] : [...deductionLines];
-  const fieldConfigs = isMain
-    ? voucherConfig.lineFields
-    : voucherConfig.deductionFields;
-  const fieldConfig = fieldConfigs.find(
-    (f) => (f.formName || f.name) === fieldName
-  );
+  const handleLineChange = (index, fieldName, value, isMain) => {
+    const lines = isMain ? [...mainLines] : [...deductionLines];
+    const fieldConfigs = isMain
+      ? voucherConfig.lineFields
+      : voucherConfig.deductionFields;
+    const fieldConfig = fieldConfigs.find(
+      (f) => (f.formName || f.name) === fieldName
+    );
 
-  if (!fieldConfig) return;
+    if (!fieldConfig) return;
 
-  if (type === "sale" && isMain && fieldName === "itcd" && value) {
-    // Fetch stock for this product
-    fetchStockLevels([value]);
-  }
+    if (type === "sale" && isMain && fieldName === "itcd" && value) {
+      // Fetch stock for this product
+      fetchStockLevels([value]);
+    }
 
-  const processedValue =
-    fieldConfig.type === "number"
-      ? value === ""
-        ? 0
-        : parseFloat(value) || 0
-      : value;
-  const newLine = { ...lines[index], [fieldName]: processedValue };
+    const processedValue =
+      fieldConfig.type === "number"
+        ? value === ""
+          ? 0
+          : parseFloat(value) || 0
+        : value;
+    const newLine = { ...lines[index], [fieldName]: processedValue };
 
-  // For journal voucher, ensure damt and camt are mutually exclusive
-  if (type === "journal" && isMain && (fieldName === "damt" || fieldName === "camt")) {
-    newLine[fieldName === "damt" ? "camt" : "damt"] = 0;
-  }
+    // For journal voucher, ensure damt and camt are mutually exclusive
+    if (
+      type === "journal" &&
+      isMain &&
+      (fieldName === "damt" || fieldName === "camt")
+    ) {
+      newLine[fieldName === "damt" ? "camt" : "damt"] = 0;
+    }
 
-  fieldConfigs
-    .filter((f) => f.dependencies?.includes(fieldName))
-    .forEach((depField) => {
-      newLine[depField.formName || depField.name] = calculateFieldValue(
-        newLine,
-        depField
-      );
-    });
+    fieldConfigs
+      .filter((f) => f.dependencies?.includes(fieldName))
+      .forEach((depField) => {
+        newLine[depField.formName || depField.name] = calculateFieldValue(
+          newLine,
+          depField
+        );
+      });
 
-  lines[index] = newLine;
-  if (isMain) setMainLines(lines);
-  else setDeductionLines(lines);
+    lines[index] = newLine;
+    if (isMain) setMainLines(lines);
+    else setDeductionLines(lines);
 
-  // Validate the field
-  if (fieldConfig.validate) {
-    const validationError = fieldConfig.validate(processedValue, newLine);
-    setErrors((prev) => ({
-      ...prev,
-      validation: {
-        ...prev.validation,
-        [`${isMain ? "main" : "deduction"}-${index}-${fieldName}`]: validationError,
-      },
-    }));
-  } else {
-    setErrors((prev) => ({
-      ...prev,
-      validation: {
-        ...prev.validation,
-        [`${isMain ? "main" : "deduction"}-${index}-${fieldName}`]: null,
-      },
-    }));
-  }
-};
+    // Validate the field
+    if (fieldConfig.validate) {
+      const validationError = fieldConfig.validate(processedValue, newLine);
+      setErrors((prev) => ({
+        ...prev,
+        validation: {
+          ...prev.validation,
+          [`${isMain ? "main" : "deduction"}-${index}-${fieldName}`]:
+            validationError,
+        },
+      }));
+    } else {
+      setErrors((prev) => ({
+        ...prev,
+        validation: {
+          ...prev.validation,
+          [`${isMain ? "main" : "deduction"}-${index}-${fieldName}`]: null,
+        },
+      }));
+    }
+  };
 
   const addLine = (isMain) => {
     const newLine = {};
@@ -836,57 +847,68 @@ const handleLineChange = (index, fieldName, value, isMain) => {
     return Object.keys(newErrors).length === 0;
   };
 
- const prepareFormData = () => {
-  const formData = {
-    master: { ...masterData, tran_code: voucherConfig.tran_code },
-    lines: mainLines.filter((line) =>
-      Object.values(line).some((v) => v?.toString().trim())
-    ),
-    deductions: voucherConfig.hasDeductionBlock
-      ? deductionLines.filter((line) =>
-          Object.values(line).some((v) => v?.toString().trim())
-        )
-      : [],
-  };
+  const prepareFormData = () => {
+    const formData = {
+      master: {
+        ...masterData,
+        tran_code: voucherConfig.tran_code,
+        ...(type === "transfer" && { godown2: masterData.godown2 }),
+      },
+      lines: mainLines.filter((line) =>
+        Object.values(line).some((v) => v?.toString().trim())
+      ),
+      deductions: voucherConfig.hasDeductionBlock
+        ? deductionLines.filter((line) =>
+            Object.values(line).some((v) => v?.toString().trim())
+          )
+        : [],
+    };
 
-  // ✅ Validate stock for sale transactions
-  if (type === 'sale') {
-    const stockErrors = [];
+    // ✅ Validate stock for sale transactions
+    if (type === "sale") {
+      const stockErrors = [];
 
-    formData.lines.forEach((line, index) => {
-      const stock = stockLevels[line.itcd] || 0;
-      const qty = parseFloat(line.qty || 0);
+      formData.lines.forEach((line, index) => {
+        const stock = stockLevels[line.itcd] || 0;
+        const qty = parseFloat(line.qty || 0);
 
-      if (qty > stock) {
-        stockErrors.push({
-          index,
-          message: `Insufficient stock for item ${line.itcd}. Available: ${stock}, Requested: ${qty}`,
-        });
-      }
-    });
-
-    // ✅ If any stock errors, set them in state and abort submission
-    if (stockErrors.length > 0) {
-      const newValidationErrors = { ...errors.validation };
-
-      stockErrors.forEach((error) => {
-        newValidationErrors[`main-${error.index}-qty`] = error.message;
+        if (qty > stock) {
+          stockErrors.push({
+            index,
+            message: `Insufficient stock for item ${line.itcd}. Available: ${stock}, Requested: ${qty}`,
+          });
+        }
       });
 
-      setErrors((prev) => ({
-        ...prev,
-        validation: newValidationErrors,
-      }));
+      // ✅ If any stock errors, set them in state and abort submission
+      if (stockErrors.length > 0) {
+        const newValidationErrors = { ...errors.validation };
 
-      throw new Error('Stock validation failed');
+        stockErrors.forEach((error) => {
+          newValidationErrors[`main-${error.index}-qty`] = error.message;
+        });
+
+        setErrors((prev) => ({
+          ...prev,
+          validation: newValidationErrors,
+        }));
+
+        throw new Error("Stock validation failed");
+      }
     }
-  }
 
-  return formData;
-};
+    return formData;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // if (type === "transfer") {
+    //   // Show confirmation dialog for transfers
+    //   setTransferConfirmOpen(true);
+    //   return;
+    // }
+
     if (loading.options || loading.vrNo) {
       toast.error("Please wait for all operations to complete");
       return;
@@ -918,18 +940,45 @@ const handleLineChange = (index, fieldName, value, isMain) => {
       }
       onClose();
     } catch (error) {
-      let errorMsg ;
-      if (error.message.includes('Insufficient stock')) {
-      toast.error('Cannot proceed with sale due to insufficient stock');
+      let errorMsg;
+      if (error.message.includes("Insufficient stock")) {
+        toast.error("Cannot proceed with sale due to insufficient stock");
+      } else {
+        errorMsg = error.response?.data?.message || error.message;
+        toast.error(
+          `Failed to ${editMode ? "update" : "save"} voucher: ${errorMsg}`
+        );
       }
-      else{
-      errorMsg = error.response?.data?.message || error.message;
-      toast.error(
-       
-        `Failed to ${editMode ? "update" : "save"} voucher: ${errorMsg}`
-      );
-    }
       setErrors((prev) => ({ ...prev, submit: errorMsg }));
+    } finally {
+      setLoading((prev) => ({ ...prev, submit: false }));
+    }
+  };
+
+  const confirmTransfer = async () => {
+    setTransferConfirmOpen(false);
+    setLoading((prev) => ({ ...prev, submit: true }));
+
+    try {
+      // const formData = prepareFormData();
+      // const response = await axios.post(apiMap[type], formData);
+
+      // // Update stock levels after successful transfer
+      // await Promise.all(
+      //   formData.lines.map((line) =>
+      //     axios.post("/api/inventory/update-stock", {
+      //       itcd: line.itcd,
+      //       fromGodown: formData.master.godown,
+      //       toGodown: formData.master.godown2,
+      //       qty: line.qty,
+      //     })
+      //   )
+      // );
+
+      toast.success("Transfer completed successfully");
+      onClose();
+    } catch (error) {
+      toast.error(`Transfer failed: ${error.message}`);
     } finally {
       setLoading((prev) => ({ ...prev, submit: false }));
     }
@@ -1051,8 +1100,8 @@ const handleLineChange = (index, fieldName, value, isMain) => {
               className="h-9 text-sm w-full"
             />
             <div className="text-xs text-gray-500 flex items-center gap-1">
-              <span>of</span>
-              <span className="font-medium">{line.original_qty || 0}</span>
+              <span>of {masterData.tran_code }</span>
+              <span className="font-medium">{masterData.tran_code === 9 ? (line.stock || 0) : (line.original_qty || 0)}</span>
             </div>
           </div>
           {errors.validation[
@@ -1207,141 +1256,164 @@ const handleLineChange = (index, fieldName, value, isMain) => {
     </motion.div>
   );
 
-const renderTable = (isMain) => {
-  const fields =
-    (isMain
-      ? voucherConfig.lineFields
-      : voucherConfig.deductionFields
-    )?.filter((f) => !["tran_code", "ac_no", "ccno"].includes(f.name)) || [];
-  if (!fields.length) return null;
+  const renderTable = (isMain) => {
+    const fields =
+      (isMain
+        ? voucherConfig.lineFields
+        : voucherConfig.deductionFields
+      )?.filter((f) => !["tran_code", "ac_no", "ccno"].includes(f.name)) || [];
+    if (!fields.length) return null;
 
-  const lines = isMain ? mainLines : deductionLines;
-  const prefix = isMain ? "main" : "deduction";
-  const title = isMain
-    ? type === "payment"
-      ? "Payments"
-      : type === "receipt"
-      ? "Receipts"
-      : type === "journal"
-      ? "Journal Entries"
-      : type === "purchase"
-      ? "Purchases"
-      : "Sales"
-    : "Deductions";
+    const lines = isMain ? mainLines : deductionLines;
+    const prefix = isMain ? "main" : "deduction";
+    const title = isMain
+      ? type === "payment"
+        ? "Payments"
+        : type === "receipt"
+        ? "Receipts"
+        : type === "journal"
+        ? "Journal Entries"
+        : type === "purchase"
+        ? "Purchases"
+        : "Sales"
+      : "Deductions";
 
-  return (
-    <motion.div
-      className="mt-6 border rounded-lg bg-white shadow-sm overflow-hidden"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="bg-primary p-3 flex justify-between items-center text-white">
-        <div className="flex items-center gap-2">
-          <Badge className="bg-white text-primary">{lines.length}</Badge>
-          <span className="text-sm font-medium">{title}</span>
+    return (
+      <motion.div
+        className="mt-6 border rounded-lg bg-white shadow-sm overflow-hidden"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="bg-primary p-3 flex justify-between items-center text-white">
+          <div className="flex items-center gap-2">
+            <Badge className="bg-white text-primary">{lines.length}</Badge>
+            <span className="text-sm font-medium">{title}</span>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              type="button"
+              size="sm"
+              onClick={() => deleteSelectedRows(isMain)}
+              disabled={
+                !selectedRows.some((k) => k.startsWith(prefix)) ||
+                loading.submit
+              }
+              className="bg-white text-primary hover:bg-primary"
+            >
+              <Trash2 className="h-4 w-4 mr-1" /> Delete
+            </Button>
+            <Button
+              variant="outline"
+              type="button"
+              size="sm"
+              onClick={() => addLine(isMain)}
+              disabled={loading.submit}
+              className="bg-white text-primary hover:bg-primary"
+            >
+              <PlusCircle className="h-4 w-4 mr-1" /> Add
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            type="button"
-            size="sm"
-            onClick={() => deleteSelectedRows(isMain)}
-            disabled={
-              !selectedRows.some((k) => k.startsWith(prefix)) ||
-              loading.submit
-            }
-            className="bg-white text-primary hover:bg-primary"
-          >
-            <Trash2 className="h-4 w-4 mr-1" /> Delete
-          </Button>
-          <Button
-            variant="outline"
-            type="button"
-            size="sm"
-            onClick={() => addLine(isMain)}
-            disabled={loading.submit}
-            className="bg-white text-primary hover:bg-primary"
-          >
-            <PlusCircle className="h-4 w-4 mr-1" /> Add
-          </Button>
-        </div>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full table-auto">
-          <thead></thead>
-          <tbody>
-            <AnimatePresence>
-              {lines.map((line, idx) => (
-                <motion.tr
-                  key={`${prefix}-${idx}`}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className={`border-b hover:bg-gray-50 ${
-                    selectedRows.includes(`${prefix}-${idx}`)
-                      ? "bg-primary"
-                      : ""
-                  }`}
-                >
-                  <td className="p-2 text-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedRows.includes(`${prefix}-${idx}`)}
-                      onChange={() => toggleRowSelection(idx, isMain)}
-                      disabled={loading.submit}
-                      className="cursor-pointer"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </td>
-                  <td className="p-2 text-center text-sm">{idx + 1}</td>
-                  {fields.map((f) => (
-                    <td key={f.name} className="p-2 min-w-[180px]">
-                      {renderInputField(line, f, idx, isMain)}
+        <div className="overflow-x-auto">
+          <table className="w-full table-auto">
+            <thead></thead>
+            <tbody>
+              <AnimatePresence>
+                {lines.map((line, idx) => (
+                  <motion.tr
+                    key={`${prefix}-${idx}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className={`border-b hover:bg-gray-50 ${
+                      selectedRows.includes(`${prefix}-${idx}`)
+                        ? "bg-primary"
+                        : ""
+                    }`}
+                  >
+                    <td className="p-2 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedRows.includes(`${prefix}-${idx}`)}
+                        onChange={() => toggleRowSelection(idx, isMain)}
+                        disabled={loading.submit}
+                        className="cursor-pointer"
+                        onClick={(e) => e.stopPropagation()}
+                      />
                     </td>
-                  ))}
-                  <td className="p-2 text-center">
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      size="sm"
-                      onClick={() => removeLine(idx, isMain)}
-                      disabled={loading.submit || lines.length <= 1}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </td>
-                </motion.tr>
-              ))}
-            </AnimatePresence>
-          </tbody>
-        </table>
-      </div>
-      {voucherConfig.totals && (
-        <div className="bg-gray-50 p-3 flex justify-end gap-6 border-t">
-          {Object.entries(voucherConfig.totals)
-            .filter(
-              ([k]) =>
-                (isMain && k !== "deductionTotal" && k !== "netTotal") ||
-                (!isMain && k === "deductionTotal")
-            )
-            .map(([k, config], index) => (
-              <div key={index} className="text-right">
-                <span className="text-xs text-gray-700">
-                  {config.label}:{" "}
-                </span>
-                <span className="text-primary font-bold">
-                  {totals[k]?.toFixed(2) || "0.00"}
-                </span>
-              </div>
-            ))}
+                    <td className="p-2 text-center text-sm">{idx + 1}</td>
+                    {fields.map((f) => (
+                      <td key={f.name} className="p-2 min-w-[180px]">
+                        {renderInputField(line, f, idx, isMain)}
+                      </td>
+                    ))}
+                    <td className="p-2 text-center">
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        size="sm"
+                        onClick={() => removeLine(idx, isMain)}
+                        disabled={loading.submit || lines.length <= 1}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+            </tbody>
+          </table>
         </div>
-      )}
-    </motion.div>
-  );
-};
+        {voucherConfig.totals && (
+          <div className="bg-gray-50 p-3 flex justify-end gap-6 border-t">
+            {Object.entries(voucherConfig.totals)
+              .filter(
+                ([k]) =>
+                  (isMain && k !== "deductionTotal" && k !== "netTotal") ||
+                  (!isMain && k === "deductionTotal")
+              )
+              .map(([k, config], index) => (
+                <div key={index} className="text-right">
+                  <span className="text-xs text-gray-700">
+                    {config.label}:{" "}
+                  </span>
+                  <span className="text-primary font-bold">
+                    {totals[k]?.toFixed(2) || "0.00"}
+                  </span>
+                </div>
+              ))}
+          </div>
+        )}
+
+        {transferConfirmOpen && (
+          <TransferConfirmation
+            isOpen={transferConfirmOpen}
+            onConfirm={confirmTransfer}
+            onCancel={() => setTransferConfirmOpen(false)}
+            fromGodown={
+              optionsData.godowns.find((g) => g.id === masterData.godown)
+                ?.godown
+            }
+            toGodown={
+              optionsData.godowns.find((g) => g.id === masterData.godown2)
+                ?.godown
+            }
+            items={mainLines
+              .filter((line) => line.itcd)
+              .map((line) => ({
+                item: optionsData.products.find((p) => p.itcd === line.itcd)
+                  ?.item,
+                qty: line.qty,
+              }))}
+          />
+        )}
+      </motion.div>
+    );
+  };
 
   const AddEntityModal = ({ onClose, onSave, entityType, fieldConfig }) => {
     const [entityData, setEntityData] = useState({});
@@ -1492,33 +1564,33 @@ const renderTable = (isMain) => {
   };
 
   // New function to render net total in a separate box
-const renderNetTotal = () => {
-  if (!voucherConfig.totals || !totals.netTotal) return null;
+  const renderNetTotal = () => {
+    if (!voucherConfig.totals || !totals.netTotal) return null;
 
-  return (
-    <motion.div
-      className="mt-6 flex justify-end"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Card>
-        <CardHeader className="bg-primary text-white">
-          <CardTitle className="text-md">
-            {voucherConfig.totals.netTotal.label}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <span className="text-2xl font-bold text-primary ">
-              {totals.netTotal.toFixed(2)}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-};
+    return (
+      <motion.div
+        className="mt-6 flex justify-end"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Card>
+          <CardHeader className="bg-primary text-white">
+            <CardTitle className="text-md">
+              {voucherConfig.totals.netTotal.label}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="text-center">
+              <span className="text-2xl font-bold text-primary ">
+                {totals.netTotal.toFixed(2)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  };
 
   // Render Logic
   if (!voucherConfig || !Object.keys(voucherConfig).length) {

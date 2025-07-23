@@ -74,6 +74,16 @@ const CONFIG = {
       gradient: "from-primary to-primary",
     },
   },
+
+  godown: {
+    transfer: {
+      label: "Inter-Godown Transfer",
+      stats: ["total"],
+      apiPath: "purchase",
+      icon: TrendingUp,
+      gradient: "from-primary to-primary",
+    },
+  },
 };
 
 // Animation variants

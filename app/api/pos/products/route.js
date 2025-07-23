@@ -11,7 +11,6 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-
     // Get pagination parameters
     const page = parseInt(searchParams.get("page")) || 1;
     const limit = parseInt(searchParams.get("limit")) || 10000000;
@@ -20,6 +19,7 @@ export async function GET(request) {
     const status = searchParams.get("status") || "";
     const sortBy = searchParams.get("sortBy") || "item";
     const sortOrder = searchParams.get("sortOrder") || "asc";
+    const godown = searchParams.get("godown") || 1; // Add godown parameter
 
     // Calculate offset for pagination
     const offset = (page - 1) * limit;
@@ -93,6 +93,35 @@ export async function GET(request) {
       take: limit,
     });
 
+    // If godown is provided, get stock for each product using raw query
+    if (godown) {
+      for (let product of products) {
+        try {
+          const stockResult = await prisma.$queryRaw`
+            SELECT SUM(
+              CASE 
+                WHEN tm.tran_code IN (4, 10) AND tm.godown = ${Number(godown)} THEN t.qty  -- Purchase, Sale Return (add to stock)
+                WHEN tm.tran_code IN (6, 9, 5) AND tm.godown = ${Number(godown)} THEN -t.qty  -- Sale, Purchase Return (remove from stock)
+                WHEN tm.tran_code = 11 AND tm.godown = ${Number(godown)} THEN -t.qty  -- Transfer out
+                WHEN tm.tran_code = 11 AND tm.godown2 = ${Number(godown)} THEN t.qty   -- Transfer in
+                ELSE 0
+              END
+            ) as stock
+            FROM "Transactions" t
+            JOIN "TRANSACTIONS_MASTER" tm ON t.tran_id = tm.tran_id
+            WHERE t.itcd = ${product.itcd} 
+            AND (tm.godown = ${Number(godown)} OR tm.godown2 = ${Number(godown)})
+          `;
+          
+          // Add calculated stock to product object
+          product.stock = stockResult[0]?.stock || 0;
+        } catch (stockError) {
+          console.error(`Error calculating stock for item ${product.itcd}:`, stockError);
+          product.stock = 0;
+        }
+      }
+    }
+
     // Calculate pagination info
     const totalPages = Math.ceil(totalCount / limit);
     const hasNext = page < totalPages;
@@ -119,7 +148,6 @@ export async function GET(request) {
     );
   }
 }
-
 // Helper function to validate image file
 const validateImageFile = (file) => {
   const allowedTypes = [

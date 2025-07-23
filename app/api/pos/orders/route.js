@@ -108,6 +108,7 @@ export async function POST(request) {
         dateD: new Date(),
         time: new Date(),
         tran_code: 5,
+        godown: 1,
         pycd: customer,
         userId: id,
         vr_no: Math.floor(Math.random() * 1000000),

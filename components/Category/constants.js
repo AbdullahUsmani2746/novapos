@@ -267,7 +267,7 @@ export const VOUCHER_CONFIG = {
         formName: "pycd",
         label: "Received At",
         type: "select",
-        options: "accounts",
+        options: "masterAccounts", // This is the key to store and access
         apiEndpoint: "/api/accounts/acno?macno=003,004",
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
@@ -800,8 +800,8 @@ export const VOUCHER_CONFIG = {
           console.log("V: ", v);
           const gross_amount = v.qty * v.rate; // Calculate gross_amount
           const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
-          const addTax = ((gross_amount) * (v.additional_tax || 0) /100); // Calculate additional tax
-          return (gross_amount + st_amount) + (addTax|| 0); // Include additional_tax
+          const addTax = (gross_amount * (v.additional_tax || 0)) / 100; // Calculate additional tax
+          return gross_amount + st_amount + (addTax || 0); // Include additional_tax
         },
       },
     ],
@@ -1055,8 +1055,8 @@ export const VOUCHER_CONFIG = {
           console.log("V: ", v);
           const gross_amount = v.qty * v.rate; // Calculate gross_amount
           const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
-          const addTax = ((gross_amount) * (v.additional_tax || 0) /100); // Calculate additional tax
-          return (gross_amount + st_amount) + (addTax|| 0); // Include additional_tax
+          const addTax = (gross_amount * (v.additional_tax || 0)) / 100; // Calculate additional tax
+          return gross_amount + st_amount + (addTax || 0); // Include additional_tax
         },
       },
     ],
@@ -1255,12 +1255,12 @@ export const VOUCHER_CONFIG = {
           "st_rate",
           "additional_tax",
         ], // Updated dependencies
-       calculate: (v) => {
+        calculate: (v) => {
           console.log("V: ", v);
           const gross_amount = v.qty * v.rate; // Calculate gross_amount
           const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
-          const addTax = ((gross_amount) * (v.additional_tax || 0) /100); // Calculate additional tax
-          return (gross_amount + st_amount) + (addTax|| 0); // Include additional_tax
+          const addTax = (gross_amount * (v.additional_tax || 0)) / 100; // Calculate additional tax
+          return gross_amount + st_amount + (addTax || 0); // Include additional_tax
         },
       },
     ],
@@ -1460,12 +1460,12 @@ export const VOUCHER_CONFIG = {
           "st_rate",
           "additional_tax",
         ], // Updated dependencies
-       calculate: (v) => {
+        calculate: (v) => {
           console.log("V: ", v);
           const gross_amount = v.qty * v.rate; // Calculate gross_amount
           const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
-          const addTax = ((gross_amount) * (v.additional_tax || 0) /100); // Calculate additional tax
-          return (gross_amount + st_amount) + (addTax|| 0); // Include additional_tax
+          const addTax = (gross_amount * (v.additional_tax || 0)) / 100; // Calculate additional tax
+          return gross_amount + st_amount + (addTax || 0); // Include additional_tax
         },
       },
     ],
@@ -1508,6 +1508,118 @@ export const VOUCHER_CONFIG = {
       },
       { name: "rmk", label: "Narration", type: "text" },
       { name: "total", label: "Total Amount", type: "number", isTotal: true },
+    ],
+  },
+  // Add to VOUCHER_CONFIG in constants.js
+  transfer: {
+    tran_code: 11,
+    hasDeductionBlock: false,
+    masterFields: [
+      {
+        name: "dateD",
+        label: "Date",
+        type: "date",
+        required: true,
+      },
+      {
+        name: "vr_no",
+        label: "Vr No",
+        type: "text",
+        required: true,
+        autoGenerate: true,
+      },
+      {
+        name: "godown",
+        label: "From Godown",
+        type: "select",
+        options: "godowns",
+        apiEndpoint: "/api/setup/godowns",
+        nameKey: "godown",
+        valueKey: "id",
+        required: true,
+      },
+      {
+        name: "godown2",
+        label: "To Godown",
+        type: "select",
+        options: "godowns",
+        apiEndpoint: "/api/setup/godowns",
+        nameKey: "godown",
+        valueKey: "id",
+        required: true,
+        validate: (value, masterData) => {
+          if (value === masterData.godown) {
+            return "From and To godowns cannot be the same";
+          }
+          return null;
+        },
+      },
+      { name: "rmk", label: "Narration", type: "textarea" },
+    ],
+    lineFields: [
+      {
+        name: "itcd",
+        label: "Product",
+        type: "select",
+        options: "products",
+        apiEndpoint: "/api/setup/items",
+        nameKey: "item",
+        valueKey: "itcd",
+        required: true,
+      },
+      { name: "no_of_pack", label: "No of Packs", type: "number" },
+      { name: "qty_per_pack", label: "Qty Per Pack", type: "number" },
+      {
+        name: "qty",
+        label: "Qty",
+        type: "number",
+        dependencies: ["no_of_pack", "qty_per_pack"],
+        calculate: (v) => v.no_of_pack * v.qty_per_pack,
+        validate: async (value, line, allLines, formData) => {
+          if (!value || value <= 0) return "Quantity must be greater than 0";
+
+          // Check stock in source godown
+          try {
+            const response = await axios.get(
+              `/api/inventory/stock?itcd=${line.itcd}&godown=${formData.master.godown}`
+            );
+            const availableStock = response.data.stock || 0;
+            if (value > availableStock) {
+              return `Only ${availableStock} available in source godown`;
+            }
+          } catch (error) {
+            return "Error checking stock availability";
+          }
+          return null;
+        },
+      },
+    ],
+    totals: {
+      totalQty: {
+        label: "Total Quantity",
+        calculate: (lines) => lines.reduce((sum, l) => sum + (l.qty || 0), 0),
+      },
+    },
+    tableFields: [
+      { name: "dateD", label: "Date", type: "date" },
+      { name: "vr_no", label: "Voucher No", type: "text" },
+      {
+        name: "godown",
+        label: "From Godown",
+        type: "text",
+        refApi: "/api/setup/godowns?id=",
+        refValueKey: "id",
+        refNameKey: "godown",
+      },
+      {
+        name: "godown2",
+        label: "To Godown",
+        type: "text",
+        refApi: "/api/setup/godowns?id=",
+        refValueKey: "id",
+        refNameKey: "godown",
+      },
+      { name: "rmk", label: "Narration", type: "text" },
     ],
   },
 };

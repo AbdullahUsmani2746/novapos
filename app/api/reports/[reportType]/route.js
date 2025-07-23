@@ -428,10 +428,8 @@ async function getStockReport(filters) {
     where.ic_id = parseInt(filters.category);
   }
 
-  if (filters.showZero === "false") {
-    where.stock = { gt: 0 };
-  }
-
+  // Note: We'll handle showZero filter after calculating actual stock
+  
   const items = await prisma.item.findMany({
     where,
     include: {
@@ -454,8 +452,8 @@ async function getStockReport(filters) {
     },
   });
 
-  // Process each item to calculate stock values
-  const processedItems = items.map(item => {
+  // Process each item to calculate stock values with raw query
+  const processedItems = await Promise.all(items.map(async item => {
     let totalPurchaseQty = 0;
     let totalPurchaseValue = 0;
     let totalSaleQty = 0;
@@ -463,14 +461,59 @@ async function getStockReport(filters) {
     let avgPurchaseRate = 0;
     let avgSaleRate = 0;
 
-    // Process transactions for each item
+    // Calculate actual stock using raw query for each godown
+    let actualStock = 0;
+    
+    // If you have a specific godown, use it. Otherwise, you might need to sum across all godowns
+    // For now, I'll assume you want to calculate for a specific godown or all godowns
+    if (filters.godown) {
+      console.log("NOpw",filters.godown, item)
+      const stockResult = await prisma.$queryRaw`
+        SELECT SUM(
+          CASE 
+            WHEN tm.tran_code IN (4, 10) AND tm.godown = ${Number(filters.godown)} THEN t.qty  -- Purchase, Sale Return (add to stock)
+            WHEN tm.tran_code IN (6, 9, 5) AND tm.godown = ${Number(filters.godown)} THEN -t.qty  -- Sale, Purchase Return (remove from stock)
+            WHEN tm.tran_code = 11 AND tm.godown = ${Number(filters.godown)} THEN -t.qty  -- Transfer out
+            WHEN tm.tran_code = 11 AND tm.godown2 = ${Number(filters.godown)} THEN t.qty   -- Transfer in
+            ELSE 0
+          END
+        ) as stock
+        FROM "Transactions" t
+        JOIN "TRANSACTIONS_MASTER" tm ON t.tran_id = tm.tran_id
+        WHERE t.itcd = ${item.itcd} 
+        AND (tm.godown = ${Number(filters.godown)} OR tm.godown2 = ${Number(filters.godown)})
+      `;
+          console.log("Acutal Stock: ",stockResult)
+
+      actualStock = stockResult[0]?.stock || 0;
+
+    } else {
+      // If no specific godown, calculate total stock across all godowns
+      const stockResult = await prisma.$queryRaw`
+        SELECT SUM(
+          CASE 
+            WHEN tm.tran_code IN (4, 10) THEN t.qty  -- Purchase, Sale Return (add to stock)
+            WHEN tm.tran_code IN (6, 9, 5) THEN -t.qty  -- Sale, Purchase Return (remove from stock)
+            WHEN tm.tran_code = 11 THEN 0  -- Transfers cancel out when summing all godowns
+            ELSE 0
+          END
+        ) as stock
+        FROM "Transactions" t
+        JOIN "TRANSACTIONS_MASTER" tm ON t.tran_id = tm.tran_id
+        WHERE t.itcd = ${item.itcd}
+      `;
+      actualStock = stockResult[0]?.stock || 0;
+    }
+
+
+    // Process transactions for each item (keeping existing logic)
     item.Transactions.forEach(transaction => {
       const tranCode = transaction.transactionsMaster.tran_code;
       const qty = transaction.qty || 0;
       const rate = transaction.rate || 0;
       const amount = qty * rate;
-      const damt = transaction.damt || 0
-      const camt = transaction.camt || 0
+      const damt = transaction.damt || 0;
+      const camt = transaction.camt || 0;
 
       switch (tranCode) {
         case 4: // Purchase
@@ -505,11 +548,11 @@ async function getStockReport(filters) {
       avgSaleRate = totalSaleValue / totalSaleQty;
     }
 
-    // Calculate current stock value based on purchase rate
-    const currentStockValue = item.stock * avgPurchaseRate;
+    // Calculate current stock value based on purchase rate (using actual calculated stock)
+    const currentStockValue = actualStock * avgPurchaseRate;
     
     // Calculate potential sale value of current stock
-    const potentialSaleValue = item.stock * avgSaleRate;
+    const potentialSaleValue = actualStock * avgSaleRate;
     
     // Calculate profit margin
     const profitMargin = avgSaleRate > 0 && avgPurchaseRate > 0 
@@ -518,8 +561,9 @@ async function getStockReport(filters) {
 
     return {
       ...item,
+      actualStock: actualStock, // Add the calculated stock to the item
       stockAnalysis: {
-        currentStock: item.stock,
+        currentStock: actualStock, // Use calculated stock instead of item.stock
         currentStockValue: parseFloat(currentStockValue.toFixed(2)),
         potentialSaleValue: parseFloat(potentialSaleValue.toFixed(2)),
         
@@ -546,9 +590,15 @@ async function getStockReport(filters) {
         }
       }
     };
-  });
+  }));
 
-  return processedItems;
+  // Apply showZero filter after calculating actual stock
+  let filteredItems = processedItems;
+  if (filters.showZero === "false") {
+    filteredItems = processedItems.filter(item => item.actualStock > 0);
+  }
+
+  return filteredItems;
 }
 
 // async function getStockReport(filters) {
@@ -678,9 +728,9 @@ async function getStockReport(filters) {
 function calculateStockSummary(data) {
   return {
     total_items: data.length,
-    total_stock: data.reduce((sum, item) => sum + (item.stock || 0), 0),
+    total_stock: data.reduce((sum, item) => sum + (item.stockAnalysis.currentStock || 0), 0),
     total_value: data.reduce(
-      (sum, item) => sum + (item.stock || 0) * (item.price || 0),
+      (sum, item) => sum + (item.stockAnalysis.currentStockValue || 0), 
       0
     ),
   };
@@ -702,7 +752,13 @@ async function getStockActivityReport(filters) {
       : {
           NOT: [{ tran_code: 1 }, { tran_code: 2 }, { tran_code: 3 }],
         }),
-    ...(filters.godown && { godown: parseInt(filters.godown) }),
+    // Updated godown filtering to handle transfers like Stock Ledger
+    ...(filters.godown && {
+      OR: [
+        { godown: parseInt(filters.godown) },
+        { godown2: parseInt(filters.godown) },
+      ],
+    }),
     ...(filters.product && {
       transactions: {
         some: {
@@ -744,7 +800,7 @@ async function getStockActivityReport(filters) {
   console.log("Transactions fetched:", transactions);
 
   // Get opening stock: single value or map
-  const openingData = await getOpeningStock(
+  const openingData = await getOpeningBalanceRaw(
     filters.product,
     filters.godown,
     filters.dateFrom
@@ -771,36 +827,53 @@ async function getStockActivityReport(filters) {
           sale_qty: 0,
           sale_ret_qty: 0,
           pos_qty: 0,
+          transfer_in_qty: 0,
+          transfer_out_qty: 0,
         };
       }
 
+      // CORRECTED: Now matches Stock Ledger logic
       switch (t.tran_code) {
-        case 4:
+        case 4: // Purchase - increases stock
           productMap[productId].purchase_qty += qty;
           break;
-        case 9:
+        case 9: // Purchase Return - CORRECTED: reduces stock (was incorrectly adding)
           productMap[productId].purchase_ret_qty += qty;
           break;
-        case 6:
+        case 6: // Sale - reduces stock
           productMap[productId].sale_qty += qty;
           break;
-        case 10:
+        case 10: // Sale Return - increases stock
           productMap[productId].sale_ret_qty += qty;
           break;
-        case 5:
+        case 5: // POS - reduces stock
           productMap[productId].pos_qty += qty;
+          break;
+        case 11: // Transfer - NEW: handle transfers like Stock Ledger
+          if (filters.godown) {
+            if (t.godown2 === parseInt(filters.godown)) {
+              // Transfer in to this godown
+              productMap[productId].transfer_in_qty += qty;
+            } else if (t.godown === parseInt(filters.godown)) {
+              // Transfer out from this godown
+              productMap[productId].transfer_out_qty += qty;
+            }
+          }
           break;
       }
     });
   });
 
   const formattedData = Object.values(productMap).map((item) => {
+    // CORRECTED: Fixed calculation to match Stock Ledger logic
     const total_qty =
       item.purchase_qty +
-      item.sale_ret_qty -
+      item.sale_ret_qty +
+      item.transfer_in_qty -
       item.sale_qty -
-      item.purchase_ret_qty -
-      item.pos_qty;
+      item.purchase_ret_qty - // CORRECTED: subtract purchase returns
+      item.pos_qty -
+      item.transfer_out_qty;
 
     const stock_balance = item.opening_stock + total_qty;
 
@@ -1028,12 +1101,15 @@ async function getStockLedgerReport(filters) {
     throw new Error("Item is required for stock ledger report");
   }
 
-  // Get opening balance as of dateFrom
-  const openingBalance = await getOpeningBalance(
+  // Get opening balance using raw query as of dateFrom
+  const openingBalance = await getOpeningBalanceRaw(
     filters.item,
     filters.godown,
-    filters.dateFrom
+    filters.dateFrom,
+    filters.dateTo
   );
+
+  const godownValue = parseInt(filters.godown);
 
   // Get all transactions for the item
   const where = {
@@ -1046,11 +1122,17 @@ async function getStockLedgerReport(filters) {
         itcd: parseInt(filters.item),
       },
     },
+    OR: [
+    { godown: godownValue },
+    { godown2: godownValue },
+  ],
   };
 
-  if (filters.godown) {
-    where.godown = parseInt(filters.godown);
-  }
+  // if (filters.godown) {
+  //   where.godown = parseInt(filters.godown);
+  // }
+
+    console.log("Transaction: ")
 
   const transactions = await prisma.transactionsMaster.findMany({
     where,
@@ -1073,6 +1155,7 @@ async function getStockLedgerReport(filters) {
   // Format the data
   const ledgerData = [];
   let runningBalance = openingBalance;
+  console.log("Transaction: ",transactions)
 
   // Add opening balance row
   ledgerData.push({
@@ -1097,16 +1180,28 @@ async function getStockLedgerReport(filters) {
         let qtyIn = 0;
         let qtyOut = 0;
 
+        // Use the same logic as raw query for stock calculation
         if (t.tran_code === 4 || t.tran_code === 10) {
-          // Purchase or Sale Return
+          // Purchase or Sale Return (add to stock)
           qtyIn = line.qty || 0;
-        } else if (
-          t.tran_code === 6 ||
-          t.tran_code === 9 ||
-          t.tran_code === 5
-        ) {
-          // Sale or Purchase Return
+        } else if (t.tran_code === 6 || t.tran_code === 9 || t.tran_code === 5) {
+          // Sale or Purchase Return (remove from stock)
           qtyOut = line.qty || 0;
+        } else if (t.tran_code === 11) {
+          // Transfer handling
+          if (filters.godown) {
+           if (t.godown2 === parseInt(filters.godown)) {
+              // Transfer in to this godown
+              qtyIn = line.qty || 0;
+                            console.log("QTY IN :",qtyIn)
+
+            }
+            else if (t.godown === parseInt(filters.godown)) {
+              // Transfer out from this godown
+              qtyOut = line.qty || 0;
+            } 
+          }
+          // If no specific godown, transfers cancel out in ledger
         }
 
         runningBalance += qtyIn - qtyOut;
@@ -1128,6 +1223,53 @@ async function getStockLedgerReport(filters) {
   });
 
   return ledgerData;
+}
+
+// Updated opening balance function using raw query
+async function getOpeningBalanceRaw(itemId, godown, dateFrom, dateTo) {
+  const itcd = parseInt(itemId);
+  const fromDate = new Date(dateFrom);
+  const toDate = new Date(dateTo);
+
+
+  if (godown) {
+    console.log("Godwon: ",godown,itcd,fromDate)
+    const stockResult = await prisma.$queryRaw`
+      SELECT SUM(
+        CASE 
+          WHEN tm.tran_code IN (4, 10) AND tm.godown = ${Number(godown)} THEN t.qty  -- Purchase, Sale Return (add to stock)
+          WHEN tm.tran_code IN (6, 9, 5) AND tm.godown = ${Number(godown)} THEN -t.qty  -- Sale, Purchase Return (remove from stock)
+          WHEN tm.tran_code = 11 AND tm.godown = ${Number(godown)} THEN -t.qty  -- Transfer out
+          WHEN tm.tran_code = 11 AND tm.godown2 = ${Number(godown)} THEN t.qty   -- Transfer in
+          ELSE 0
+        END
+      ) as stock
+      FROM "Transactions" t
+      JOIN "TRANSACTIONS_MASTER" tm ON t.tran_id = tm.tran_id
+      WHERE t.itcd = ${itcd} 
+      AND tm."dateD" <= ${fromDate}::timestamp
+      AND (tm.godown2 = ${Number(godown)} OR tm.godown = ${Number(godown)})
+    `;
+    console.log(stockResult)
+    return stockResult[0]?.stock || 0;
+  } else {
+    // Calculate opening balance across all godowns
+    const stockResult = await prisma.$queryRaw`
+      SELECT SUM(
+        CASE 
+          WHEN tm.tran_code IN (4, 10) THEN t.qty  -- Purchase, Sale Return (add to stock)
+          WHEN tm.tran_code IN (6, 9, 5) THEN -t.qty  -- Sale, Purchase Return (remove from stock)
+          WHEN tm.tran_code = 11 THEN 0  -- Transfers cancel out when summing all godowns
+          ELSE 0
+        END
+      ) as stock
+      FROM "Transactions" t
+      JOIN "TRANSACTIONS_MASTER" tm ON t.tran_id = tm.tran_id
+      WHERE t.itcd = ${itcd} 
+      AND tm.dateD < ${fromDate}
+    `;
+    return stockResult[0]?.stock || 0;
+  }
 }
 
 async function getOpeningBalance(itemId, godownId, dateFrom) {
@@ -1286,7 +1428,8 @@ function getTransactionCodesForType(type) {
       5: "POS",
       6: "Sale Invoice",
       9: "Purchase Return",
-      10: "Sale Return"
+      10: "Sale Return",
+      11:"Inter-Godown Transfer"
     };
     return tranTypes[tranCode] || "Unknown";
   }
@@ -1822,8 +1965,8 @@ async function getTrialBalance(filters) {
 
   return Object.entries(accountMap).map(([account, { debit, credit }]) => ({
     account,
-    debit,
-    credit,
+    debit: (debit - credit)>0 ? debit - credit : 0,
+    credit:(debit - credit)<0 ? -(debit - credit) : 0,
     balance: debit - credit,
   }));
 }

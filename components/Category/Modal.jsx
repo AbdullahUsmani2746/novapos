@@ -18,6 +18,7 @@ import { VOUCHER_CONFIG } from "./constants";
     const [open, setOpen] = useState(false);
     const [editMode, setEditMode] = useState(editModes);
     const [selectOriginalOpen, setSelectOriginalOpen] = useState(false);
+    const [Omodal, setOmodal] = useState(false)
   const [originalData, setOriginalData] = useState(null);
     const overlayRef = useRef(null);
 
@@ -29,13 +30,18 @@ import { VOUCHER_CONFIG } from "./constants";
     }, [editModes]);
 
     useEffect(() => {
-    if (!editMode && (type === 'purchaseReturn' || type === 'saleReturn')) {
+      // Only show select original modal when:
+  // 1. Not in edit mode
+  // 2. Is a return type
+  // 3. No existingData (creating new)
+    if (!editMode && (type === 'purchaseReturn' || type === 'saleReturn') && Omodal) {
       setSelectOriginalOpen(true);
     }
-  }, [editMode, type]);
+  }, [editMode, type, Omodal]);
 
   const handleOriginalSelect = (selectedTxn) => {
     setOriginalData(selectedTxn);
+    setOmodal(false)
     setSelectOriginalOpen(false);
   };
 
@@ -56,6 +62,11 @@ import { VOUCHER_CONFIG } from "./constants";
     // Handle opening the modal for creating a new voucher
     const handleOpen = () => {
       setOpen(true);
+      if(!originalData){
+        setOmodal(true)
+
+      }
+ 
       setEditMode(false);
     };
 

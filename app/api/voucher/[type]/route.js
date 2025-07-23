@@ -131,7 +131,13 @@ export async function POST(req, { params }) {
       if ([4, 6, 9, 10].includes(tran_code)) {
         master.godown = parseOptionalInt(master.godown);
       }
-    } else if (tran_code === 3) {
+    } else if (tran_code === 3 || tran_code === 11) {
+      if (tran_code === 11) {
+        console.log("HELLO I GODOWN");
+        master.godown = parseOptionalInt(master.godown);
+        master.godown2 = parseOptionalInt(master.godown2);
+      }
+
       console.log("masterDate:", master.dateD);
 
       masterDateTime = new Date(`${master.dateD}`);
@@ -168,11 +174,10 @@ export async function POST(req, { params }) {
 
     console.log("masterData:", masterData.tran_id);
 
-        let itemAccountMap = {};
+    let itemAccountMap = {};
 
-
-      // 🔁 Build item account map based on item category accounts
-    if ([4, 6, 9, 10].includes(tran_code)) {
+    // 🔁 Build item account map based on item category accounts
+    if ([4, 6, 9, 10, 11].includes(tran_code)) {
       const itemIds = lines
         .map((line) => parseOptionalInt(line.itcd))
         .filter((itcd) => itcd !== undefined);
@@ -188,7 +193,7 @@ export async function POST(req, { params }) {
         const category = item.itemCategories;
 
         let acnoValue = null;
-        if ([4, 9].includes(tran_code)) {
+        if ([4, 9, 11].includes(tran_code)) {
           acnoValue = category?.stock_acno;
         } else if (tran_code === 6) {
           acnoValue = category?.sale_acno;
@@ -228,13 +233,14 @@ export async function POST(req, { params }) {
           }
         }
         // Handle item code for tran_code 4 or 6
-        if ([4, 6, 9, 10].includes(tran_code)) {
+        if ([4, 6, 9, 10, 11].includes(tran_code)) {
           // if ([4, 9].includes(tran_code)) {
           //   base.acno = masterData.pycd;
           // } else if ([6, 10].includes(tran_code)) {
           //   base.acno = masterData.pycd;
           // }
 
+          console.log("YE SENTER")
           const itemValue = parseOptionalInt(line.itcd);
           if (itemValue !== undefined) {
             base.itcd = itemValue;
@@ -323,12 +329,12 @@ export async function POST(req, { params }) {
       let camt = 0;
 
       if (tran_code === 1) {
-        camt = totalCamt - totalDamt ;
+        camt = totalCamt - totalDamt;
       } else if (tran_code === 2) {
-        damt = totalDamt - totalCamt ;
+        damt = totalDamt - totalCamt;
       } else if (tran_code === 6 || tran_code === 9) {
         damt = totalCamt; // mirror camt as damt
-      } else if ( tran_code === 10 || tran_code === 4) {
+      } else if (tran_code === 10 || tran_code === 4) {
         camt = totalDamt; // mirror damt as camt
       }
 
@@ -412,27 +418,27 @@ export async function PUT(req) {
     }
 
     // Format date/times
-   if ([1, 2, 4, 6, 9, 10].includes(tran_code)) {
-  const now = new Date();
+    if ([1, 2, 4, 6, 9, 10].includes(tran_code)) {
+      const now = new Date();
 
-  const dateObj =
-    master.dateD && master.dateD !== "" ? new Date(master.dateD) : now;
+      const dateObj =
+        master.dateD && master.dateD !== "" ? new Date(master.dateD) : now;
 
-  const checkDateObj =
-    master.check_date && master.check_date !== ""
-      ? new Date(master.check_date)
-      : now;
+      const checkDateObj =
+        master.check_date && master.check_date !== ""
+          ? new Date(master.check_date)
+          : now;
 
-  master.dateD = dateObj;
-  master.time = dateObj;
-  master.check_date = checkDateObj;
+      master.dateD = dateObj;
+      master.time = dateObj;
+      master.check_date = checkDateObj;
 
-  if ([4, 6, 9, 10].includes(tran_code)) {
-    master.godown = parseOptionalInt(master.godown);
-  }
-} else if (tran_code === 3) {
-  master.dateD = new Date(master.dateD || new Date());
-}
+      if ([4, 6, 9, 10].includes(tran_code)) {
+        master.godown = parseOptionalInt(master.godown);
+      }
+    } else if (tran_code === 3) {
+      master.dateD = new Date(master.dateD || new Date());
+    }
 
     // Update master
     await prisma.transactionsMaster.update({
@@ -654,7 +660,7 @@ export async function DELETE(req) {
     const tran_code = master.tran_code;
 
     // 🛠️ Revert stock before deleting if applicable
-     // 🛠️ Revert stock before deleting if applicable
+    // 🛠️ Revert stock before deleting if applicable
     if ([4, 6, 9, 10].includes(tran_code)) {
       const lines = await prisma.transactions.findMany({
         where: {

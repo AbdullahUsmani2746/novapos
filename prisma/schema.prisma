@@ -322,6 +322,7 @@ model TransactionsMaster {
   userId        String?       @map("USER_ID")
   invoice_no    String?       @db.Char(150)
   godown        Int?
+  godown2       Int?
   user          User?         @relation("UserTransactions", fields: [userId], references: [id])
   company       Company?      @relation(fields: [company_id], references: [id])
   godownDetails Godown?       @relation(fields: [godown], references: [id])

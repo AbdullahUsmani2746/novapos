@@ -33,19 +33,60 @@ export async function GET(req) {
           where: {
             sub_tran_id: 1 // Only main lines
           },
-        include: {
-        itemDetails: true // Include item details if needed
-      }
-    },
-    acno: true // Include account details
+          include: {
+            itemDetails: true // Include item details if needed
+          }
+        },
+        acno: true // Include account details
       },
       orderBy: {
         dateD: 'desc'
       }
     });
 
+    // Add stock information for each transaction item using raw query
+    const transactionsWithStock = await Promise.all(
+      transactions.map(async (transaction) => {
+        const transactionsWithStock = await Promise.all(
+          transaction.transactions.map(async (transactionItem) => {
+            let stock = 0;
+            
+            if (transactionItem.itcd && transaction.godown) {
+              const stockResult = await prisma.$queryRaw`
+                SELECT SUM(
+                  CASE 
+                    WHEN tm.tran_code IN (4, 10) AND tm.godown = ${transaction.godown} THEN t.qty  -- Purchase, Sale Return (add to stock)
+                    WHEN tm.tran_code IN (6, 9, 5) AND tm.godown = ${transaction.godown} THEN -t.qty  -- Sale, Purchase Return (remove from stock)
+                    WHEN tm.tran_code = 11 AND tm.godown = ${transaction.godown} THEN -t.qty  -- Transfer out
+                    WHEN tm.tran_code = 11 AND tm.godown2 = ${transaction.godown} THEN t.qty   -- Transfer in
+                    ELSE 0
+                  END
+                ) as stock
+                FROM "Transactions" t
+                JOIN "TRANSACTIONS_MASTER" tm ON t.tran_id = tm.tran_id
+                WHERE t.itcd = ${transactionItem.itcd} 
+                AND (tm.godown = ${transaction.godown} OR tm.godown2 = ${transaction.godown})
+              `;
+              
+              stock = stockResult[0]?.stock || 0;
+            }
+
+            return {
+              ...transactionItem,
+              stock: stock
+            };
+          })
+        );
+
+        return {
+          ...transaction,
+          transactions: transactionsWithStock
+        };
+      })
+    );
+
     return NextResponse.json({
-      data: transactions,
+      data: transactionsWithStock,
       status: 200
     });
   } catch (error) {

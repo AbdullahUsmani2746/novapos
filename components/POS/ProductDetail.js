@@ -628,6 +628,7 @@ const ProductDetail = ({ productId }) => {
                     <input
                       type="number"
                       min="0"
+                      readOnly
                       value={form.stock}
                       onChange={(e) =>
                         handleInputChange("stock", e.target.value)

@@ -621,6 +621,15 @@ export const REPORT_CONFIG = {
       clearable: true,
     },
     {
+        name: "godown",
+        label: "Godown",
+        type: "select",
+        nameKey: "godown",
+        options: "godowns",
+        apiEndpoint: "/api/setup/godowns",
+        clearable: true,
+      },
+    {
       name: "showZero",
       label: "Show Zero Stock",
       type: "checkbox",
@@ -651,138 +660,138 @@ export const REPORT_CONFIG = {
       type: "currency",
       valueGetter: (params) => params.row.stockAnalysis?.currentStockValue || 0,
     },
-    {
-      field: "potentialSaleValue",
-      headerName: "Potential Sale Value",
-      width: 160,
-      type: "currency",
-      valueGetter: (params) => params.row.stockAnalysis?.potentialSaleValue || 0,
-    },
+    // {
+    //   field: "potentialSaleValue",
+    //   headerName: "Potential Sale Value",
+    //   width: 160,
+    //   type: "currency",
+    //   valueGetter: (params) => params.row.stockAnalysis?.potentialSaleValue || 0,
+    // },
     
-    // Purchase Analysis
-    {
-      field: "netPurchased",
-      headerName: "Net Purchased",
-      width: 130,
-      type: "number",
-      valueGetter: (params) => params.row.stockAnalysis?.totalPurchased || 0,
-    },
-    {
-      field: "avgPurchaseRate",
-      headerName: "Avg Purchase Rate",
-      width: 150,
-      type: "currency",
-      valueGetter: (params) => params.row.stockAnalysis?.avgPurchaseRate || 0,
-    },
-    {
-      field: "netPurchaseValue",
-      headerName: "Total Purchase Value",
-      width: 160,
-      type: "currency",
-      valueGetter: (params) => params.row.stockAnalysis?.totalPurchaseValue || 0,
-    },
+    // // Purchase Analysis
+    // {
+    //   field: "netPurchased",
+    //   headerName: "Net Purchased",
+    //   width: 130,
+    //   type: "number",
+    //   valueGetter: (params) => params.row.stockAnalysis?.totalPurchased || 0,
+    // },
+    // {
+    //   field: "avgPurchaseRate",
+    //   headerName: "Avg Purchase Rate",
+    //   width: 150,
+    //   type: "currency",
+    //   valueGetter: (params) => params.row.stockAnalysis?.avgPurchaseRate || 0,
+    // },
+    // {
+    //   field: "netPurchaseValue",
+    //   headerName: "Total Purchase Value",
+    //   width: 160,
+    //   type: "currency",
+    //   valueGetter: (params) => params.row.stockAnalysis?.totalPurchaseValue || 0,
+    // },
     
-    // Sales Analysis
-    {
-      field: "netSold",
-      headerName: "Net Sold",
-      width: 120,
-      type: "number",
-      valueGetter: (params) => params.row.stockAnalysis?.netSold || 0,
-    },
-    {
-      field: "avgSaleRate",
-      headerName: "Avg Sale Rate",
-      width: 140,
-      type: "currency",
-      valueGetter: (params) => params.row.stockAnalysis?.avgSaleRate || 0,
-    },
-    {
-      field: "netSaleValue",
-      headerName: "Total Sale Value",
-      width: 150,
-      type: "currency",
-      valueGetter: (params) => params.row.stockAnalysis?.netSaleValue || 0,
-    },
+    // // Sales Analysis
+    // {
+    //   field: "netSold",
+    //   headerName: "Net Sold",
+    //   width: 120,
+    //   type: "number",
+    //   valueGetter: (params) => params.row.stockAnalysis?.netSold || 0,
+    // },
+    // {
+    //   field: "avgSaleRate",
+    //   headerName: "Avg Sale Rate",
+    //   width: 140,
+    //   type: "currency",
+    //   valueGetter: (params) => params.row.stockAnalysis?.avgSaleRate || 0,
+    // },
+    // {
+    //   field: "netSaleValue",
+    //   headerName: "Total Sale Value",
+    //   width: 150,
+    //   type: "currency",
+    //   valueGetter: (params) => params.row.stockAnalysis?.netSaleValue || 0,
+    // },
     
-    // Performance Metrics
-    {
-      field: "profitMargin",
-      headerName: "Profit Margin (%)",
-      width: 140,
-      type: "number",
-      valueGetter: (params) => params.row.stockAnalysis?.profitMargin || 0,
-      cellRenderer: (params) => `${params.value}%`,
-    },
-    {
-      field: "stockTurnover",
-      headerName: "Stock Turnover (%)",
-      width: 150,
-      type: "number",
-      valueGetter: (params) => params.row.stockAnalysis?.stockTurnover || 0,
-      cellRenderer: (params) => `${params.value}%`,
-    },
+    // // Performance Metrics
+    // {
+    //   field: "profitMargin",
+    //   headerName: "Profit Margin (%)",
+    //   width: 140,
+    //   type: "number",
+    //   valueGetter: (params) => params.row.stockAnalysis?.profitMargin || 0,
+    //   cellRenderer: (params) => `${params.value}%`,
+    // },
+    // {
+    //   field: "stockTurnover",
+    //   headerName: "Stock Turnover (%)",
+    //   width: 150,
+    //   type: "number",
+    //   valueGetter: (params) => params.row.stockAnalysis?.stockTurnover || 0,
+    //   cellRenderer: (params) => `${params.value}%`,
+    // },
     
-    // Transaction Counts
-    {
-      field: "purchaseCount",
-      headerName: "Purchase Transactions",
-      width: 160,
-      type: "number",
-      valueGetter: (params) => params.row.stockAnalysis?.transactionCounts?.purchases || 0,
-    },
-    {
-      field: "saleCount",
-      headerName: "Sale Transactions",
-      width: 140,
-      type: "number",
-      valueGetter: (params) => params.row.stockAnalysis?.transactionCounts?.sales || 0,
-    },
-    {
-      field: "returnCount",
-      headerName: "Returns",
-      width: 100,
-      type: "number",
-      valueGetter: (params) => {
-        const analysis = params.row.stockAnalysis?.transactionCounts;
-        return (analysis?.purchaseReturns || 0) + (analysis?.saleReturns || 0);
-      },
-    },
+    // // Transaction Counts
+    // {
+    //   field: "purchaseCount",
+    //   headerName: "Purchase Transactions",
+    //   width: 160,
+    //   type: "number",
+    //   valueGetter: (params) => params.row.stockAnalysis?.transactionCounts?.purchases || 0,
+    // },
+    // {
+    //   field: "saleCount",
+    //   headerName: "Sale Transactions",
+    //   width: 140,
+    //   type: "number",
+    //   valueGetter: (params) => params.row.stockAnalysis?.transactionCounts?.sales || 0,
+    // },
+    // {
+    //   field: "returnCount",
+    //   headerName: "Returns",
+    //   width: 100,
+    //   type: "number",
+    //   valueGetter: (params) => {
+    //     const analysis = params.row.stockAnalysis?.transactionCounts;
+    //     return (analysis?.purchaseReturns || 0) + (analysis?.saleReturns || 0);
+    //   },
+    // },
   ],
   
   // Column Groups for better organization
-  columnGroups: [
-    {
-      groupId: "basic",
-      headerName: "Basic Info",
-      children: ["item", "sku", "category"]
-    },
-    {
-      groupId: "stock",
-      headerName: "Current Stock",
-      children: ["currentStock", "currentStockValue", "potentialSaleValue"]
-    },
-    {
-      groupId: "purchase",
-      headerName: "Purchase Analysis",
-      children: ["netPurchased", "avgPurchaseRate", "netPurchaseValue"]
-    },
-    {
-      groupId: "sales",
-      headerName: "Sales Analysis", 
-      children: ["netSold", "avgSaleRate", "netSaleValue"]
-    },
-    {
-      groupId: "performance",
-      headerName: "Performance Metrics",
-      children: ["profitMargin", "stockTurnover"]
-    },
-    {
-      groupId: "transactions",
-      headerName: "Transaction Summary",
-      children: ["purchaseCount", "saleCount", "returnCount"]
-    }
-  ],
+  // columnGroups: [
+  //   {
+  //     groupId: "basic",
+  //     headerName: "Basic Info",
+  //     children: ["item", "sku", "category"]
+  //   },
+  //   {
+  //     groupId: "stock",
+  //     headerName: "Current Stock",
+  //     children: ["currentStock", "currentStockValue", "potentialSaleValue"]
+  //   },
+  //   {
+  //     groupId: "purchase",
+  //     headerName: "Purchase Analysis",
+  //     children: ["netPurchased", "avgPurchaseRate", "netPurchaseValue"]
+  //   },
+  //   {
+  //     groupId: "sales",
+  //     headerName: "Sales Analysis", 
+  //     children: ["netSold", "avgSaleRate", "netSaleValue"]
+  //   },
+  //   {
+  //     groupId: "performance",
+  //     headerName: "Performance Metrics",
+  //     children: ["profitMargin", "stockTurnover"]
+  //   },
+  //   {
+  //     groupId: "transactions",
+  //     headerName: "Transaction Summary",
+  //     children: ["purchaseCount", "saleCount", "returnCount"]
+  //   }
+  // ],
 
   // Default visible columns (others can be toggled)
   defaultVisibleColumns: [
@@ -792,13 +801,13 @@ export const REPORT_CONFIG = {
   
   summaryFields: [
     { field: "total_items", label: "Total Items", type: "number" },
-    { field: "total_current_stock", label: "Total Current Stock", type: "number" },
-    { field: "total_stock_value", label: "Total Stock Value", type: "currency" },
-    { field: "total_potential_value", label: "Total Potential Sale Value", type: "currency" },
-    { field: "total_purchase_value", label: "Total Purchase Value", type: "currency" },
-    { field: "total_sale_value", label: "Total Sale Value", type: "currency" },
-    { field: "overall_profit_margin", label: "Overall Profit Margin (%)", type: "percentage" },
-    { field: "total_transactions", label: "Total Transactions", type: "number" },
+    { field: "total_stock", label: "Total Current Stock", type: "number" },
+    { field: "total_value", label: "Total Stock Value", type: "currency" },
+    // { field: "total_potential_value", label: "Total Potential Sale Value", type: "currency" },
+    // { field: "total_purchase_value", label: "Total Purchase Value", type: "currency" },
+    // { field: "total_sale_value", label: "Total Sale Value", type: "currency" },
+    // { field: "overall_profit_margin", label: "Overall Profit Margin (%)", type: "percentage" },
+    // { field: "total_transactions", label: "Total Transactions", type: "number" },
   ],
   
   // Enhanced export options
@@ -879,6 +888,15 @@ export const REPORT_CONFIG = {
         nameKey: "ic_name",
         clearable: true,
       },
+      {
+        name: "godown",
+        label: "Godown",
+        type: "select",
+        nameKey: "godown",
+        options: "godowns",
+        apiEndpoint: "/api/setup/godowns",
+        clearable: true,
+      },
     ],
     columns: [
       { field: "product_code", headerName: "Product Code", width: 120 },
@@ -903,8 +921,14 @@ export const REPORT_CONFIG = {
         type: "number",
       },
       {
-        field: "total_qty",
-        headerName: "TOTAL QTY",
+        field: "transfer_in_qty",
+        headerName: " TRANSFER IN QTY",
+        width: 120,
+        type: "number",
+      },
+      {
+        field: "transfer_out_qty",
+        headerName: " TRANSFER OUT QTY",
         width: 120,
         type: "number",
       },
@@ -1362,6 +1386,20 @@ export const REPORT_CONFIG = {
       { field: "debit", headerName: "Debit", width: 150, type: "currency" },
       { field: "credit", headerName: "Credit", width: 150, type: "currency" },
       { field: "balance", headerName: "Balance", width: 150, type: "currency" },
+    ],
+
+    summaryFields: [
+      {
+        field: "total_debit",
+        label: "Total Debit",
+        type:"currency"
+      },
+      {
+        field: "total_credit",
+        label: "Total Credit",
+        type:"currency"
+
+      },
     ],
     exportOptions: { pdf: true, excel: true, csv: true },
   },

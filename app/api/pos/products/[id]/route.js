@@ -4,6 +4,9 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
   try {
+    const { searchParams } = new URL(request.url);
+    const godown = searchParams.get("godown") || 1;
+
     const product = await prisma.item.findUnique({
       where: { itcd: parseInt(params.id) },
       include: {
@@ -27,9 +30,38 @@ export async function GET(request, { params }) {
       }
     });
 
-    return product
-      ? NextResponse.json(product)
-      : NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    if (!product) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+
+    // If godown is provided, calculate stock using raw query
+    if (godown) {
+      try {
+        const stockResult = await prisma.$queryRaw`
+          SELECT SUM(
+            CASE 
+              WHEN tm.tran_code IN (4, 10) AND tm.godown = ${Number(godown)} THEN t.qty  -- Purchase, Sale Return (add to stock)
+              WHEN tm.tran_code IN (6, 9, 5) AND tm.godown = ${Number(godown)} THEN -t.qty  -- Sale, Purchase Return (remove from stock)
+              WHEN tm.tran_code = 11 AND tm.godown = ${Number(godown)} THEN -t.qty  -- Transfer out
+              WHEN tm.tran_code = 11 AND tm.godown2 = ${Number(godown)} THEN t.qty   -- Transfer in
+              ELSE 0
+            END
+          ) as stock
+          FROM "Transactions" t
+          JOIN "TRANSACTIONS_MASTER" tm ON t.tran_id = tm.tran_id
+          WHERE t.itcd = ${product.itcd} 
+          AND (tm.godown = ${Number(godown)} OR tm.godown2 = ${Number(godown)})
+        `;
+        
+        // Add calculated stock to product object
+        product.stock = stockResult[0]?.stock || 0;
+      } catch (stockError) {
+        console.error(`Error calculating stock for item ${product.itcd}:`, stockError);
+        product.stock = 0;
+      }
+    }
+
+    return NextResponse.json(product);
   } catch (error) {
     console.error('GET product error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
