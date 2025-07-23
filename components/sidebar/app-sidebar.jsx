@@ -106,7 +106,20 @@ const data = {
         
       ],
     },
-
+{
+      title: "Transfer",
+      url: "#",
+      icon: SquareTerminal,
+      isActive: true,
+      items: [
+        {
+          title: "Godown Transfer",
+          url: "/accounting/return/purchaseReturn",
+        },
+        
+        
+      ],
+    },
     {
       title: "POS",
       url: "/pos",
