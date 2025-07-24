@@ -8,6 +8,7 @@ import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import { format } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
 import {
   Card,
   CardHeader,
@@ -67,10 +68,14 @@ import {
   DollarSign,
   Activity,
 } from "lucide-react";
+import axios from "axios";
 
 const ReportViewer = ({ reportType }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const [godowns, setGodowns] = useState([]);
+  const [error, setError] = useState(null);
 
   // Core state
   const [loading, setLoading] = useState(true);
@@ -303,7 +308,7 @@ const ReportViewer = ({ reportType }) => {
     // Main data sheet
     const mainData = data.map((item) => {
       const row = {};
-      config.columns.forEach((col) => {
+      allColumns?.forEach((col) => {
         if (col.valueGetter) {
           row[col.headerName] = col.valueGetter({ row: item });
         } else {
@@ -540,6 +545,7 @@ const ReportViewer = ({ reportType }) => {
 
   // Sorted data
   const sortedData = useMemo(() => {
+    if (!sortConfig.key && data.items) return data.items;
     if (!sortConfig.key) return data;
 
     return [...data].sort((a, b) => {
@@ -756,6 +762,54 @@ const ReportViewer = ({ reportType }) => {
       </div>
     );
   };
+
+  useEffect(() => {
+  if (!config?.dynamicColumns) return;
+
+  const fetchGodowns = async () => {
+  setLoading(true);
+  try {
+    const res = await axios.get("/api/setup/godowns");
+    console.log("Godown: ",res.data.data)
+    setGodowns(res.data.data); // axios auto-parses JSON
+  } catch (err) {
+    setError(err.message || "Error fetching godowns");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  fetchGodowns();
+}, [config?.dynamicColumns]);
+
+//   const { data: godowns } = useQuery({
+//   queryKey: ["godowns"],
+//   queryFn: async () => {
+//     const res = await fetch("/api/setup/godowns");
+//     return res.json();
+//   },
+//   enabled: config?.dynamicColumns,
+// });
+
+// Generate dynamic columns based on godowns
+const dynamicColumns = useMemo(() => {
+  if (!config?.dynamicColumns || !godowns) return [];
+
+  return godowns.map(godown => ({
+    field: `godown_${godown.id}`,
+    headerName: godown.godown,
+    width: 120,
+    type: "number",
+    valueGetter: (params) => params.row.godownStocks?.[godown.id] || 0,
+  }));
+}, [config, godowns]);
+
+// Combine static and dynamic columns
+const allColumns = useMemo(() => {
+  if (!config) return [];
+  return [...(config.columns || []), ...dynamicColumns];
+}, [config, dynamicColumns]);
 
   if (!config) {
     return (
@@ -1038,7 +1092,8 @@ const ReportViewer = ({ reportType }) => {
                 <Table>
                   <TableHeader className="bg-slate-50/80">
                     <TableRow className="border-slate-200/50">
-                      {config.columns.map((column) => (
+                      {
+                      allColumns?.map((column) => (
                         <TableHead
                           key={column.field}
                           className={`font-bold text-slate-700 ${
@@ -1070,7 +1125,8 @@ const ReportViewer = ({ reportType }) => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedData.map((row, index) => (
+                    {
+                    sortedData?.map((row, index) => (
                       <TableRow
                         key={index}
                         className={`border-slate-200/50 hover:bg-slate-50/50 transition-all duration-200 ${
@@ -1078,7 +1134,7 @@ const ReportViewer = ({ reportType }) => {
                         }`}
                         onClick={() => handleRowClick(row)}
                       >
-                        {config.columns.map((column) => (
+                        {allColumns?.map((column) => (
                           <TableCell key={column.field} className="py-4">
                             {column.valueGetter ? (
                               <span className={column.className || ""}>

@@ -209,7 +209,7 @@ export async function POST(req, { params }) {
       console.log("Item Account Map:", itemAccountMap);
     }
 
-    const linesss = await prisma.transactions.createMany({
+    const linesss = await prisma.transactions.createMany({ 
       data: lines.map((line) => {
         const base = {
           ...line,
@@ -249,7 +249,7 @@ export async function POST(req, { params }) {
 
           // Add original_qty for returns (tran_code 9 and 10)
           if ([9, 10].includes(tran_code) && line.original_qty) {
-            base.original_qty = parseFloat(line.original_qty) || 0;
+            base.original_qty = parseFloat(line.original_qty) || 0.00;
           }
         }
         console.log("base:", base);

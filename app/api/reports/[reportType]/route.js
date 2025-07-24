@@ -51,6 +51,10 @@ export async function GET(request, { params }) {
         data = await getStockReport(filters);
         summary = calculateStockSummary(data);
         break;
+      case "stockMetrics":
+        data = await getStockMetricsReport(filters);
+        summary = calculateStockMetricsSummary(data);
+        break;
       case "stockActivity":
         data = await getStockActivityReport(filters);
         summary = calculateStockActivitySummary(data);
@@ -600,130 +604,6 @@ async function getStockReport(filters) {
 
   return filteredItems;
 }
-
-// async function getStockReport(filters) {
-//   const where = {};
-
-//   if (filters.category) {
-//     where.ic_id = parseInt(filters.category);
-//   }
-
-//   if (filters.showZero === "false") {
-//     where.stock = { gt: 0 };
-//   }
-
-//   const items = await prisma.item.findMany({
-//     where,
-//     include: {
-//       itemCategories: true,
-//     },
-//     orderBy: {
-//       item: "asc",
-//     },
-//   });
-
-//   return items;
-// }
-
-// Alternative version with aggregated SQL queries for better performance with large datasets
-// async function getStockReportOptimized(filters) {
-//   const where = {};
-
-//   if (filters.category) {
-//     where.ic_id = parseInt(filters.category);
-//   }
-
-//   if (filters.showZero === "false") {
-//     where.stock = { gt: 0 };
-//   }
-
-//   const items = await prisma.item.findMany({
-//     where,
-//     include: {
-//       itemCategories: true,
-//     },
-//     orderBy: {
-//       item: "asc",
-//     },
-//   });
-
-//   // Get aggregated transaction data for all items
-//   const itemIds = items.map(item => item.itcd);
-  
-//   const transactionSummary = await prisma.$queryRaw`
-//     SELECT 
-//       t.itcd,
-//       tm.tran_code,
-//       SUM(CASE WHEN tm.tran_code IN (4) THEN t.qty ELSE 0 END) as total_purchase_qty,
-//       SUM(CASE WHEN tm.tran_code IN (4) THEN (t.qty * t.rate) ELSE 0 END) as total_purchase_value,
-//       SUM(CASE WHEN tm.tran_code IN (5, 6) THEN t.qty ELSE 0 END) as total_sale_qty,
-//       SUM(CASE WHEN tm.tran_code IN (5, 6) THEN (t.qty * t.rate) ELSE 0 END) as total_sale_value,
-//       SUM(CASE WHEN tm.tran_code IN (9) THEN t.qty ELSE 0 END) as total_purchase_return_qty,
-//       SUM(CASE WHEN tm.tran_code IN (9) THEN (t.qty * t.rate) ELSE 0 END) as total_purchase_return_value,
-//       SUM(CASE WHEN tm.tran_code IN (10) THEN t.qty ELSE 0 END) as total_sale_return_qty,
-//       SUM(CASE WHEN tm.tran_code IN (10) THEN (t.qty * t.rate) ELSE 0 END) as total_sale_return_value,
-//       COUNT(CASE WHEN tm.tran_code = 4 THEN 1 END) as purchase_count,
-//       COUNT(CASE WHEN tm.tran_code IN (5, 6) THEN 1 END) as sale_count,
-//       COUNT(CASE WHEN tm.tran_code = 9 THEN 1 END) as purchase_return_count,
-//       COUNT(CASE WHEN tm.tran_code = 10 THEN 1 END) as sale_return_count
-//     FROM "Transactions" t
-//     JOIN "TRANSACTIONS_MASTER" tm ON t.tran_id = tm.tran_id
-//     WHERE t.itcd IN (${itemIds.join(',')}) 
-//       AND tm.tran_code IN (4, 5, 6, 9, 10)
-//     GROUP BY t.itcd
-//   `;
-
-//   console.log("transactionSummary: ",transactionSummary)
-
-//   // Process items with transaction data
-//   const processedItems = items.map(item => {
-//     const itemTransactions = transactionSummary.find(ts => ts.itcd === item.itcd) || {};
-    
-//     const netPurchaseQty = (itemTransactions.total_purchase_qty || 0) - (itemTransactions.total_purchase_return_qty || 0);
-//     const netPurchaseValue = (itemTransactions.total_purchase_value || 0) - (itemTransactions.total_purchase_return_value || 0);
-//     const netSaleQty = (itemTransactions.total_sale_qty || 0) - (itemTransactions.total_sale_return_qty || 0);
-//     const netSaleValue = (itemTransactions.total_sale_value || 0) - (itemTransactions.total_sale_return_value || 0);
-    
-//     const avgPurchaseRate = netPurchaseQty > 0 ? netPurchaseValue / netPurchaseQty : 0;
-//     const avgSaleRate = netSaleQty > 0 ? netSaleValue / netSaleQty : 0;
-    
-//     const currentStockValue = item.stock * avgPurchaseRate;
-//     const potentialSaleValue = item.stock * avgSaleRate;
-//     const profitMargin = avgSaleRate > 0 && avgPurchaseRate > 0 
-//       ? ((avgSaleRate - avgPurchaseRate) / avgPurchaseRate) * 100 
-//       : 0;
-
-//     return {
-//       ...item,
-//       stockAnalysis: {
-//         currentStock: item.stock,
-//         currentStockValue: parseFloat(currentStockValue.toFixed(2)),
-//         potentialSaleValue: parseFloat(potentialSaleValue.toFixed(2)),
-        
-//         // Net figures after returns
-//         netPurchased: parseFloat(netPurchaseQty.toFixed(2)),
-//         netPurchaseValue: parseFloat(netPurchaseValue.toFixed(2)),
-//         avgPurchaseRate: parseFloat(avgPurchaseRate.toFixed(2)),
-        
-//         netSold: parseFloat(netSaleQty.toFixed(2)),
-//         netSaleValue: parseFloat(netSaleValue.toFixed(2)),
-//         avgSaleRate: parseFloat(avgSaleRate.toFixed(2)),
-        
-//         profitMargin: parseFloat(profitMargin.toFixed(2)),
-//         stockTurnover: netPurchaseQty > 0 ? parseFloat((netSaleQty / netPurchaseQty * 100).toFixed(2)) : 0,
-        
-//         transactionCounts: {
-//           purchases: itemTransactions.purchase_count || 0,
-//           sales: itemTransactions.sale_count || 0,
-//           purchaseReturns: itemTransactions.purchase_return_count || 0,
-//           saleReturns: itemTransactions.sale_return_count || 0
-//         }
-//       }
-//     };
-//   });
-
-//   return processedItems;
-// }
 
 function calculateStockSummary(data) {
   return {
@@ -1977,3 +1857,98 @@ function calculateTrialBalanceSummary(data) {
   return { total_debit, total_credit, diff: total_debit - total_credit };
 }
 
+
+// route.js
+async function getStockMetricsReport(filters) {
+  // First, get all godowns
+  const godowns = await prisma.godown.findMany({
+    orderBy: {
+      godown: "asc",
+    },
+  });
+
+  console.log("GOdown: ",godowns)
+
+  // Get all items with their categories
+  const where = {};
+  if (filters.category) {
+    where.ic_id = parseInt(filters.category);
+  }
+
+  const items = await prisma.item.findMany({
+    where,
+    include: {
+      itemCategories: true,
+    },
+    orderBy: {
+      item: "asc",
+    },
+  });
+
+  // Process each item to calculate stock in each godown
+  const processedItems = await Promise.all(items.map(async (item) => {
+    const godownStocks = {};
+    let totalStock = 0;
+
+    // Calculate stock for each godown
+    await Promise.all(godowns.map(async (godown) => {
+      const stockResult = await prisma.$queryRaw`
+        SELECT SUM(
+          CASE 
+            WHEN tm.tran_code IN (4, 10) AND tm.godown = ${Number(godown.id)} THEN t.qty  -- Purchase, Sale Return (add to stock)
+            WHEN tm.tran_code IN (6, 9, 5) AND tm.godown = ${Number(godown.id)} THEN -t.qty  -- Sale, Purchase Return (remove from stock)
+            WHEN tm.tran_code = 11 AND tm.godown = ${Number(godown.id)} THEN -t.qty  -- Transfer out
+            WHEN tm.tran_code = 11 AND tm.godown2 = ${Number(godown.id)} THEN t.qty   -- Transfer in
+            ELSE 0
+          END
+        ) as stock
+        FROM "Transactions" t
+        JOIN "TRANSACTIONS_MASTER" tm ON t.tran_id = tm.tran_id
+        WHERE t.itcd = ${item.itcd} 
+        AND (tm.godown = ${Number(godown.id)} OR tm.godown2 = ${Number(godown.id)})
+      `;
+
+      const stock = stockResult[0]?.stock || 0;
+      godownStocks[godown.id] = stock;
+      totalStock += stock;
+    }));
+
+    console.log("YES ")
+
+    return {
+      ...item,
+      godownStocks,
+      totalStock,
+    };
+  }));
+
+  // Apply showZero filter
+  let filteredItems = processedItems;
+  if (filters.showZero === "false") {
+    filteredItems = processedItems.filter(item => item.totalStock > 0);
+  }
+
+  return {
+    items: filteredItems,
+    godowns, // Include godowns in response for dynamic columns
+  };
+}
+
+function calculateStockMetricsSummary(data) {
+  const { items, godowns } = data;
+  
+  // Calculate total stock across all items and godowns
+  const totalStock = items.reduce((sum, item) => sum + item.totalStock, 0);
+  
+  // Calculate godown-wise totals
+  const godownTotals = {};
+  godowns.forEach(godown => {
+    godownTotals[godown.id] = items.reduce((sum, item) => sum + (item.godownStocks[godown.id] || 0), 0);
+  });
+
+  return {
+    total_items: items.length,
+    total_stock: totalStock,
+    godown_totals: godownTotals,
+  };
+}

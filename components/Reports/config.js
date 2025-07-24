@@ -1403,5 +1403,56 @@ export const REPORT_CONFIG = {
     ],
     exportOptions: { pdf: true, excel: true, csv: true },
   },
+// config.js
+stockMetrics: {
+  title: "Stock Metrics by Godown",
+  description: "Detailed view of stock quantities across all godowns",
+  apiEndpoint: "/api/reports/stockMetrics",
+  filters: [
+    {
+      name: "category",
+      label: "Category",
+      nameKey: "ic_name",
+      type: "select",
+      options: "itemCategories",
+      apiEndpoint: "/api/setup/item_categories",
+      clearable: true,
+    },
+    {
+      name: "showZero",
+      label: "Show Zero Stock",
+      type: "checkbox",
+      default: false,
+    },
+  ],
+  dynamicColumns: true, // Flag to indicate we'll generate columns dynamically
+  columns: [
+    { field: "item", headerName: "Item", width: 200 },
+    { field: "sku", headerName: "SKU", width: 120 },
+    {
+      field: "category",
+      headerName: "Category",
+      width: 150,
+      valueGetter: (params) => params.row.itemCategories?.ic_name || "",
+    },
+    {
+      field: "totalStock",
+      headerName: "Total Stock",
+      width: 120,
+      type: "number",
+      valueGetter: (params) => params.row.totalStock || 0,
+    },
+  ],
+  summaryFields: [
+    { field: "total_items", label: "Total Items", type: "number" },
+    { field: "total_stock", label: "Total Current Stock", type: "number" },
+  ],
+  exportOptions: {
+    pdf: true,
+    excel: true,
+    csv: true,
+  },
+},
+
 
 };

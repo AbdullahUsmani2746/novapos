@@ -166,9 +166,9 @@ export const generateVoucherPDF = (voucher) => {
     doc.rect(margin, titleY, pageWidth - 2 * margin, titleHeight, "F");
 
     // Rounded corners effect with white corners
-    doc.setFillColor(...colors.white);
-    doc.rect(margin, titleY, 2, 2, "F");
-    doc.rect(pageWidth - margin - 2, titleY, 2, 2, "F");
+    // doc.setFillColor(...colors.white);
+    // doc.rect(margin, titleY, 2, 2, "F");
+    // doc.rect(pageWidth - margin - 2, titleY, 2, 2, "F");
 
     doc.setTextColor(...colors.white);
     doc.setFont("helvetica", "bold");
