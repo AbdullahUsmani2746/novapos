@@ -475,7 +475,7 @@ async function getStockReport(filters) {
       const stockResult = await prisma.$queryRaw`
         SELECT SUM(
           CASE 
-            WHEN tm.tran_code IN (4, 10) AND tm.godown = ${Number(filters.godown)} THEN t.qty  -- Purchase, Sale Return (add to stock)
+            WHEN tm.tran_code IN (4, 10, 12) AND tm.godown = ${Number(filters.godown)} THEN t.qty  -- Purchase, Sale Return (add to stock)
             WHEN tm.tran_code IN (6, 9, 5) AND tm.godown = ${Number(filters.godown)} THEN -t.qty  -- Sale, Purchase Return (remove from stock)
             WHEN tm.tran_code = 11 AND tm.godown = ${Number(filters.godown)} THEN -t.qty  -- Transfer out
             WHEN tm.tran_code = 11 AND tm.godown2 = ${Number(filters.godown)} THEN t.qty   -- Transfer in
@@ -496,7 +496,7 @@ async function getStockReport(filters) {
       const stockResult = await prisma.$queryRaw`
         SELECT SUM(
           CASE 
-            WHEN tm.tran_code IN (4, 10) THEN t.qty  -- Purchase, Sale Return (add to stock)
+            WHEN tm.tran_code IN (4, 10, 12) THEN t.qty  -- Purchase, Sale Return (add to stock)
             WHEN tm.tran_code IN (6, 9, 5) THEN -t.qty  -- Sale, Purchase Return (remove from stock)
             WHEN tm.tran_code = 11 THEN 0  -- Transfers cancel out when summing all godowns
             ELSE 0
@@ -707,6 +707,7 @@ async function getStockActivityReport(filters) {
           sale_qty: 0,
           sale_ret_qty: 0,
           pos_qty: 0,
+          pos_ret_qty:0,
           transfer_in_qty: 0,
           transfer_out_qty: 0,
         };
@@ -729,6 +730,9 @@ async function getStockActivityReport(filters) {
         case 5: // POS - reduces stock
           productMap[productId].pos_qty += qty;
           break;
+        case 12: // POS Return - incrase stock
+          productMap[productId].pos_ret_qty += qty;
+          break;
         case 11: // Transfer - NEW: handle transfers like Stock Ledger
           if (filters.godown) {
             if (t.godown2 === parseInt(filters.godown)) {
@@ -749,6 +753,7 @@ async function getStockActivityReport(filters) {
     const total_qty =
       item.purchase_qty +
       item.sale_ret_qty +
+      item.pos_ret_qty +
       item.transfer_in_qty -
       item.sale_qty -
       item.purchase_ret_qty - // CORRECTED: subtract purchase returns
@@ -770,18 +775,17 @@ async function getStockActivityReport(filters) {
 
 function calculateStockActivitySummary(data) {
   const total_in = data
-    .filter((item) => item.tranCode === 4 || item.tranCode === 10)
-    .reduce((sum, item) => sum + (item.qty || 0), 0);
+    .reduce((sum, item) => sum + (item.purchase_qty || 0) + (item.pos_ret_qty || 0) + (item.transfer_in_qty || 0)+(item.sale_ret_qty || 0), 0);
 
   const total_out = data
-    .filter((item) => item.tranCode === 6 || item.tranCode === 9)
-    .reduce((sum, item) => sum + (item.qty || 0), 0);
+        .reduce((sum, item) => sum + (item.sale_qty || 0) + (item.pos_qty || 0) + (item.transfer_out_qty || 0) +(item.purchase_ret_qty || 0), 0);
 
+
+    const total_stock = data.reduce((sum,total)=>sum + total.stock_balance,0)
   return {
+    total_stock,
     total_in,
-    total_out,
-    net_movement: total_in - total_out,
-    total_amount: data.reduce((sum, item) => sum + (item.amount || 0), 0),
+    total_out
   };
 }
 
@@ -1061,7 +1065,7 @@ async function getStockLedgerReport(filters) {
         let qtyOut = 0;
 
         // Use the same logic as raw query for stock calculation
-        if (t.tran_code === 4 || t.tran_code === 10) {
+        if (t.tran_code === 4 || t.tran_code === 10 || t.tran_code === 12) {
           // Purchase or Sale Return (add to stock)
           qtyIn = line.qty || 0;
         } else if (t.tran_code === 6 || t.tran_code === 9 || t.tran_code === 5) {
@@ -1091,6 +1095,7 @@ async function getStockLedgerReport(filters) {
           transaction_no: t.vr_no,
           transaction_type: getTransactionTypeLabel(t.tran_code),
           vendor_customer: t.acno?.acname || "",
+          transactions:Array(line),
           opening_qty: opening,
           qty_in: qtyIn,
           qty_out: qtyOut,
@@ -1117,7 +1122,7 @@ async function getOpeningBalanceRaw(itemId, godown, dateFrom, dateTo) {
     const stockResult = await prisma.$queryRaw`
       SELECT SUM(
         CASE 
-          WHEN tm.tran_code IN (4, 10) AND tm.godown = ${Number(godown)} THEN t.qty  -- Purchase, Sale Return (add to stock)
+          WHEN tm.tran_code IN (4, 10, 12) AND tm.godown = ${Number(godown)} THEN t.qty  -- Purchase, Sale Return (add to stock)
           WHEN tm.tran_code IN (6, 9, 5) AND tm.godown = ${Number(godown)} THEN -t.qty  -- Sale, Purchase Return (remove from stock)
           WHEN tm.tran_code = 11 AND tm.godown = ${Number(godown)} THEN -t.qty  -- Transfer out
           WHEN tm.tran_code = 11 AND tm.godown2 = ${Number(godown)} THEN t.qty   -- Transfer in
@@ -1137,7 +1142,7 @@ async function getOpeningBalanceRaw(itemId, godown, dateFrom, dateTo) {
     const stockResult = await prisma.$queryRaw`
       SELECT SUM(
         CASE 
-          WHEN tm.tran_code IN (4, 10) THEN t.qty  -- Purchase, Sale Return (add to stock)
+          WHEN tm.tran_code IN (4, 10, 12) THEN t.qty  -- Purchase, Sale Return (add to stock)
           WHEN tm.tran_code IN (6, 9, 5) THEN -t.qty  -- Sale, Purchase Return (remove from stock)
           WHEN tm.tran_code = 11 THEN 0  -- Transfers cancel out when summing all godowns
           ELSE 0
@@ -1309,7 +1314,8 @@ function getTransactionCodesForType(type) {
       6: "Sale Invoice",
       9: "Purchase Return",
       10: "Sale Return",
-      11:"Inter-Godown Transfer"
+      11:"Inter-Godown Transfer",
+      12:"POS Sale Return"
     };
     return tranTypes[tranCode] || "Unknown";
   }
@@ -1478,7 +1484,7 @@ export async function getAccountLedger(filters) {
           lt: new Date(dateFrom)
         },
         tran_code: {
-          in: [1, 2, 3, 4, 5, 6, 9, 10] // Added new transaction codes
+          in: [1, 2, 3, 4, 5, 6, 9, 10, 12] // Added new transaction codes
         }
       },
       acno: accountNo
@@ -1521,7 +1527,11 @@ export async function getAccountLedger(filters) {
     } else if (txn.transactionsMaster.tran_code === 5) { // POS
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
-    } else if (txn.transactionsMaster.tran_code === 6) { // Sale Invoice
+    } else if (txn.transactionsMaster.tran_code === 12) { // POS SAlE RETURN
+      debitAmount = txn.damt || 0;
+      creditAmount = txn.camt || 0;
+    } 
+    else if (txn.transactionsMaster.tran_code === 6) { // Sale Invoice
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
     } else if (txn.transactionsMaster.tran_code === 9) { // Purchase Return
@@ -1544,12 +1554,14 @@ export async function getAccountLedger(filters) {
           lte: new Date(dateTo)
         },
         tran_code: {
-          in: [1, 2, 3, 4, 5, 6, 9, 10] // Added new transaction codes
+          in: [1, 2, 3, 4, 5, 6, 9, 10, 12] // Added new transaction codes
         }
       },
       acno: accountNo
     },
     include: {
+      itemDetails:true,
+
       transactionsMaster: {
         select: {
           dateD: true,
@@ -1623,7 +1635,13 @@ export async function getAccountLedger(filters) {
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
       entryType = "POS";
-    } else if (txn.transactionsMaster.tran_code === 6) { // Sale Invoice
+    }
+    else if (txn.transactionsMaster.tran_code === 12) { // POS Return
+      debitAmount = txn.damt || 0;
+      creditAmount = txn.camt || 0;
+      entryType = "POS Return";
+    }
+     else if (txn.transactionsMaster.tran_code === 6) { // Sale Invoice
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
       entryType = "Sale Invoice";
@@ -1642,6 +1660,7 @@ export async function getAccountLedger(filters) {
     ledgerEntries.push({
       date: new Date(txn.transactionsMaster.dateD).toLocaleDateString(),
       vr_no: txn.transactionsMaster.vr_no,
+      transactions:Array(txn),
       tran_type: entryType,
       narration: txn.narration1 || txn.transactionsMaster.rmk || "",
       debit: debitAmount > 0 ? debitAmount : null,
@@ -1689,7 +1708,12 @@ function calculateAmounts(transaction) {
   } else if (transactionsMaster.tran_code === 5) { // POS
     debitAmount = damt || 0;
     creditAmount = camt || 0;
-  } else if (transactionsMaster.tran_code === 6) { // Sale Invoice
+  }
+   else if (transactionsMaster.tran_code === 12) { // POS SALE RETURN
+    debitAmount = damt || 0;
+    creditAmount = camt || 0;
+  }
+   else if (transactionsMaster.tran_code === 6) { // Sale Invoice
     debitAmount = damt || 0;
     creditAmount = camt || 0;
   } else if (transactionsMaster.tran_code === 9) { // Purchase Return
@@ -1725,7 +1749,7 @@ async function getAccountActivity(filters) {
         transactionsMaster: {
           dateD: { lt: new Date(dateFrom) },
           tran_code: {
-            in: [1, 2, 3, 4, 5, 6, 9, 10] // Added new transaction codes
+            in: [1, 2, 3, 4, 5, 6, 9, 10, 12] // Added new transaction codes
           }
         },
       },
@@ -1759,7 +1783,7 @@ async function getAccountActivity(filters) {
             lte: new Date(dateTo),
           },
           tran_code: {
-            in: [1, 2, 3, 4, 5, 6, 9, 10] // Added new transaction codes
+            in: [1, 2, 3, 4, 5, 6, 9, 10, 12] // Added new transaction codes
           }
         },
       },
@@ -1801,7 +1825,9 @@ async function getAccountActivity(filters) {
 function calculateAccountActivitySummary(data) {
   return {
     total_accounts: new Set(data.map((t) => t.account)).size,
-    total_amount: data.reduce((sum, t) => sum + t.amount, 0),
+    total_debit: data.reduce((sum, t) => sum + t.debit, 0),
+    total_credit: data.reduce((sum, t) => sum + t.credit, 0),
+
   };
 }
 
@@ -1814,7 +1840,7 @@ async function getTrialBalance(filters) {
         dateD: {
           lte: new Date(dateTo),
         },
-        tran_code: { in: [1, 2, 3, 4, 5, 6, 9, 10] }, // All transaction codes
+        tran_code: { in: [1, 2, 3, 4, 5, 6, 9, 10,12] }, // All transaction codes
       },
     },
     include: {
@@ -1833,9 +1859,9 @@ async function getTrialBalance(filters) {
 
   const accountMap = {};
   for (const t of entries) {
-    const account = t.acnoDetails?.acname || "Unknown";
+    const account = t.acnoDetails.acname || "Unknown";
     if (!accountMap[account]) {
-      accountMap[account] = { debit: 0, credit: 0 };
+      accountMap[account] = { debit: 0, credit: 0, acno:t.acno };
     }
     
     const { debitAmount, creditAmount } = calculateAmounts(t);
@@ -1843,11 +1869,12 @@ async function getTrialBalance(filters) {
     accountMap[account].credit += creditAmount;
   }
 
-  return Object.entries(accountMap).map(([account, { debit, credit }]) => ({
+  return Object.entries(accountMap).map(([account, { debit, credit,acno }]) => ({
     account,
     debit: (debit - credit)>0 ? debit - credit : 0,
     credit:(debit - credit)<0 ? -(debit - credit) : 0,
     balance: debit - credit,
+    acno:acno
   }));
 }
 
@@ -1895,7 +1922,7 @@ async function getStockMetricsReport(filters) {
       const stockResult = await prisma.$queryRaw`
         SELECT SUM(
           CASE 
-            WHEN tm.tran_code IN (4, 10) AND tm.godown = ${Number(godown.id)} THEN t.qty  -- Purchase, Sale Return (add to stock)
+            WHEN tm.tran_code IN (4, 10, 12) AND tm.godown = ${Number(godown.id)} THEN t.qty  -- Purchase, Sale Return (add to stock)
             WHEN tm.tran_code IN (6, 9, 5) AND tm.godown = ${Number(godown.id)} THEN -t.qty  -- Sale, Purchase Return (remove from stock)
             WHEN tm.tran_code = 11 AND tm.godown = ${Number(godown.id)} THEN -t.qty  -- Transfer out
             WHEN tm.tran_code = 11 AND tm.godown2 = ${Number(godown.id)} THEN t.qty   -- Transfer in

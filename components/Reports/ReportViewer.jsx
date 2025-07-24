@@ -97,6 +97,19 @@ const ReportViewer = ({ reportType }) => {
   const [dataLoadingProgress, setDataLoadingProgress] = useState(0);
   const [summaryAnimationDelay, setSummaryAnimationDelay] = useState(0);
 
+  const [showDrillDownModal, setShowDrillDownModal] = useState(false);
+  const [drillDownRow, setDrillDownRow] = useState(null);
+  const [drillDownFilters, setDrillDownFilters] = useState({});
+
+  // Add this handler function
+  const handleDrillDown = (row) => {
+    setDrillDownRow(row);
+    setDrillDownFilters({
+  ...(filters.godown && { godown: filters.godown })
+    });
+    setShowDrillDownModal(true);
+  };
+
   // Initialize configuration and filters
   useEffect(() => {
     if (!reportType) return;
@@ -270,11 +283,12 @@ const ReportViewer = ({ reportType }) => {
       key,
       direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
     }));
+    ta;
   };
 
   const handleRowClick = (row) => {
     if (config.detailColumns) {
-      console.log(row.transactions);
+      console.log("tx: ",row.transactions);
       setDetailRow(row.transactions);
       setShowDetails(true);
     }
@@ -542,7 +556,6 @@ const ReportViewer = ({ reportType }) => {
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     saveAs(blob, `${config.title}_${format(new Date(), "yyyy-MM-dd")}.csv`);
   };
-
   // Sorted data
   const sortedData = useMemo(() => {
     if (!sortConfig.key && data.items) return data.items;
@@ -764,52 +777,51 @@ const ReportViewer = ({ reportType }) => {
   };
 
   useEffect(() => {
-  if (!config?.dynamicColumns) return;
+    if (!config?.dynamicColumns) return;
 
-  const fetchGodowns = async () => {
-  setLoading(true);
-  try {
-    const res = await axios.get("/api/setup/godowns");
-    console.log("Godown: ",res.data.data)
-    setGodowns(res.data.data); // axios auto-parses JSON
-  } catch (err) {
-    setError(err.message || "Error fetching godowns");
-  } finally {
-    setLoading(false);
-  }
-};
+    const fetchGodowns = async () => {
+      setLoading(true);
+      try {
+        const res = await axios.get("/api/setup/godowns");
+        console.log("Godown: ", res.data.data);
+        setGodowns(res.data.data); // axios auto-parses JSON
+      } catch (err) {
+        setError(err.message || "Error fetching godowns");
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchGodowns();
+  }, [config?.dynamicColumns]);
 
-  fetchGodowns();
-}, [config?.dynamicColumns]);
+  //   const { data: godowns } = useQuery({
+  //   queryKey: ["godowns"],
+  //   queryFn: async () => {
+  //     const res = await fetch("/api/setup/godowns");
+  //     return res.json();
+  //   },
+  //   enabled: config?.dynamicColumns,
+  // });
 
-//   const { data: godowns } = useQuery({
-//   queryKey: ["godowns"],
-//   queryFn: async () => {
-//     const res = await fetch("/api/setup/godowns");
-//     return res.json();
-//   },
-//   enabled: config?.dynamicColumns,
-// });
+  // Generate dynamic columns based on godowns
+  const dynamicColumns = useMemo(() => {
+    if (!config?.dynamicColumns || !godowns) return [];
 
-// Generate dynamic columns based on godowns
-const dynamicColumns = useMemo(() => {
-  if (!config?.dynamicColumns || !godowns) return [];
+    return godowns.map((godown) => ({
+      field: `godown_${godown.id}`,
+      headerName: godown.godown,
+      width: 120,
+      type: "number",
+      valueGetter: (params) => params.row.godownStocks?.[godown.id] || 0,
+    }));
+  }, [config, godowns]);
 
-  return godowns.map(godown => ({
-    field: `godown_${godown.id}`,
-    headerName: godown.godown,
-    width: 120,
-    type: "number",
-    valueGetter: (params) => params.row.godownStocks?.[godown.id] || 0,
-  }));
-}, [config, godowns]);
-
-// Combine static and dynamic columns
-const allColumns = useMemo(() => {
-  if (!config) return [];
-  return [...(config.columns || []), ...dynamicColumns];
-}, [config, dynamicColumns]);
+  // Combine static and dynamic columns
+  const allColumns = useMemo(() => {
+    if (!config) return [];
+    return [...(config.columns || []), ...dynamicColumns];
+  }, [config, dynamicColumns]);
 
   if (!config) {
     return (
@@ -1092,8 +1104,7 @@ const allColumns = useMemo(() => {
                 <Table>
                   <TableHeader className="bg-slate-50/80">
                     <TableRow className="border-slate-200/50">
-                      {
-                      allColumns?.map((column) => (
+                      {allColumns?.map((column) => (
                         <TableHead
                           key={column.field}
                           className={`font-bold text-slate-700 ${
@@ -1117,7 +1128,7 @@ const allColumns = useMemo(() => {
                           </div>
                         </TableHead>
                       ))}
-                      {config.detailColumns && (
+                      {(config.detailColumns || config.drillDown?.enabled) && (
                         <TableHead className="font-bold text-slate-700">
                           Actions
                         </TableHead>
@@ -1125,8 +1136,7 @@ const allColumns = useMemo(() => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {
-                    sortedData?.map((row, index) => (
+                    {sortedData?.map((row, index) => (
                       <TableRow
                         key={index}
                         className={`border-slate-200/50 hover:bg-slate-50/50 transition-all duration-200 ${
@@ -1166,6 +1176,21 @@ const allColumns = useMemo(() => {
                               className="bg-primary text-white hover:text-primary"
                             >
                               <EyeIcon className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        )}
+                        {config.drillDown?.enabled && (
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDrillDown(row);
+                              }}
+                              className="text-primary hover:text-primary"
+                            >
+                              {config.drillDown.label}
                             </Button>
                           </TableCell>
                         )}
@@ -1276,6 +1301,111 @@ const allColumns = useMemo(() => {
           </div>
         )}
       </div>
+
+      {showDrillDownModal && config.drillDown && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader className="bg-primary text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl font-bold">
+                    {config.drillDown.modalTitle}
+                  </CardTitle>
+                  <CardDescription className="text-white">
+                    Configure date range for detailed view
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowDrillDownModal(false)}
+                  className="text-white hover:text-white hover:bg-white/10"
+                >
+                  <XIcon className="w-5 h-5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              {config.drillDown.fields.map((field) => (
+                <div key={field.name} className="space-y-2">
+                  <Label>{field.label}</Label>
+                  {field.type === "date" ? (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          {drillDownFilters[field.name] ? (
+                            format(drillDownFilters[field.name], "PPP")
+                          ) : (
+                            <span>Select {field.label.toLowerCase()}</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={drillDownFilters[field.name]}
+                          onSelect={(date) =>
+                            setDrillDownFilters((prev) => ({
+                              ...prev,
+                              [field.name]: date,
+                            }))
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
+                    <Input
+                      type={field.type}
+                      value={drillDownFilters[field.name] || ""}
+                      onChange={(e) =>
+                        setDrillDownFilters((prev) => ({
+                          ...prev,
+                          [field.name]: e.target.value,
+                        }))
+                      }
+                    />
+                  )}
+                </div>
+              ))}
+            </CardContent>
+            <CardFooter className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowDrillDownModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (config.drillDown.linkBuilder) {
+                    const link = config.drillDown.linkBuilder(
+                      drillDownRow,
+                      drillDownFilters
+                    );
+                    router.push(link);
+                  }
+                  setShowDrillDownModal(false);
+                }}
+                disabled={
+                  !Object.keys(drillDownFilters).every(
+                    (key) =>
+                      drillDownFilters[key] !== undefined &&
+                      drillDownFilters[key] !== null &&
+                      drillDownFilters[key] !== ""
+                  )
+                }
+              >
+                View Details
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

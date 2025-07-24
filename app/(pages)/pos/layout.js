@@ -71,9 +71,9 @@ const ModernPosLayout = ({ children }) => {
     },
 
     {
-      id: "reports",
-      label: "Reports",
-      href: "/pos/reports",
+      id: "posReturn",
+      label: "Sale Return",
+      href: "/pos/posReturn",
       icon: Notebook,
       color: "from-primary to-primary",
     },

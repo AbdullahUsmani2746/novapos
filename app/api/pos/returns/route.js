@@ -87,17 +87,17 @@ export async function POST(request) {
         invoice_no: `RET-${Date.now()}`,
         sync_status: "pending",
         // Link to original order
-        reference_id: originalOrderId,
-        narration1: `Return for order ${originalOrder.invoice_no}`,
-        narration2: returnReason,
+        // reference_id: originalOrderId,
+        rmk: `Return for order ${originalOrder.invoice_no}`,
+        rmk1: returnReason,
         transactions: {
           create: itemsWithCategory.map((item) => ({
             itcd: item.itcd,
-            qty: -item.returnQty, // Negative quantity for returns
+            qty: item.returnQty, // Negative quantity for returns
             rate: item.returnAmount / item.returnQty, // Calculate rate from return amount
             acno: String(item.categoryAcno).padStart(4, '0'),
-            gross_amount: -item.returnAmount, // Negative amount for returns
-            camt: -item.returnAmount,
+            gross_amount: item.returnAmount, // Negative amount for returns
+            damt: item.returnAmount,
             narration1: `POS Return: ${item.itemName}`,
             narration2: returnReason,
           })),
@@ -107,15 +107,15 @@ export async function POST(request) {
     });
 
     // Update stock - add back returned items
-    for (const item of returnItems) {
-      await prisma.item.update({
-        where: { itcd: item.itcd },
-        data: { 
-          stock: { increment: item.returnQty },
-          sync_status: "pending" 
-        },
-      });
-    }
+    // for (const item of returnItems) {
+    //   await prisma.item.update({
+    //     where: { itcd: item.itcd },
+    //     data: { 
+    //       stock: { increment: item.returnQty },
+    //       sync_status: "pending" 
+    //     },
+    //   });
+    // }
 
     // Create auto entry for customer refund (debit customer account)
     const customerRefundEntry = {
@@ -132,28 +132,28 @@ export async function POST(request) {
     console.log("Customer refund auto entry created:", customerRefundEntry);
 
     // Create cash/payment auto entry (credit cash account - money going out)
-    const cashEntry = {
-      tran_id: returnOrder.tran_id,
-      sub_tran_id: 4,
-      narration1: "Cash Refund - Auto Entry",
-      narration2: returnReason,
-      damt: totalReturnAmount, // Debit cash (money going out)
-      camt: 0,
-      acno: "0001", // Assuming cash account code
-    };
+    // const cashEntry = {
+    //   tran_id: returnOrder.tran_id,
+    //   sub_tran_id: 4,
+    //   narration1: "Cash Refund - Auto Entry",
+    //   narration2: returnReason,
+    //   damt: totalReturnAmount, // Debit cash (money going out)
+    //   camt: 0,
+    //   acno: "0001", // Assuming cash account code
+    // };
 
-    await prisma.transactions.create({ data: cashEntry });
-    console.log("Cash refund auto entry created:", cashEntry);
+    // await prisma.transactions.create({ data: cashEntry });
+    // console.log("Cash refund auto entry created:", cashEntry);
 
     // Optional: Update original order status or add return reference
-    await prisma.transactionsMaster.update({
-      where: { tran_id: originalOrderId },
-      data: {
-        narration2: originalOrder.narration2 
-          ? `${originalOrder.narration2} | Partial Return: ${returnOrder.invoice_no}`
-          : `Partial Return: ${returnOrder.invoice_no}`
-      }
-    });
+    // await prisma.transactionsMaster.update({
+    //   where: { tran_id: originalOrderId },
+    //   data: {
+    //     narration2: originalOrder.narration2 
+    //       ? `${originalOrder.narration2} | Partial Return: ${returnOrder.invoice_no}`
+    //       : `Partial Return: ${returnOrder.invoice_no}`
+    //   }
+    // });
 
     // Return the created return order
     return NextResponse.json({
@@ -183,7 +183,7 @@ export async function GET(request) {
     const skip = (page - 1) * limit;
 
     const where = {
-      tran_code: 5, // Return transactions only
+      tran_code: 12, // Return transactions only
       ...(search && {
         OR: [
           { invoice_no: { contains: search, mode: 'insensitive' } },
@@ -196,7 +196,13 @@ export async function GET(request) {
       prisma.transactionsMaster.findMany({
         where,
         include: {
-          transactions: true,
+          acno:true,
+          transactions: {
+            include: {
+            acnoDetails:true,
+            itemDetails:true,
+            },
+          },
           user: { select: { name: true } }, // Assuming you have user relation
         },
         orderBy: { dateD: 'desc' },

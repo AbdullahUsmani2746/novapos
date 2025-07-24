@@ -19,7 +19,7 @@ export async function GET(request) {
     const stock = await prisma.$queryRaw`
       SELECT SUM(
         CASE 
-          WHEN tm.tran_code IN (4, 10) AND tm.godown = ${godown}THEN t.qty  -- Purchase, Sale Return (add to stock)
+          WHEN tm.tran_code IN (4, 10, 12) AND tm.godown = ${godown}THEN t.qty  -- Purchase, Sale Return (add to stock)
           WHEN tm.tran_code IN (6, 9, 5) AND tm.godown = ${godown} THEN -t.qty  -- Sale, Purchase Return (remove from stock)
           WHEN tm.tran_code = 11 AND tm.godown = ${godown} THEN -t.qty  -- Transfer out
           WHEN tm.tran_code = 11 AND tm.godown2 = ${godown} THEN t.qty   -- Transfer in
