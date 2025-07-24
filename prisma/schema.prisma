@@ -352,6 +352,7 @@ model Transactions {
   chno               String?            @db.Char(150)
   check_date         DateTime?
   party_name         String?            @db.Char(150)
+  stock              Int?
   damt               Float?
   camt               Float?
   qty                Float?
