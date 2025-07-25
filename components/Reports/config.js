@@ -1371,7 +1371,7 @@ export const REPORT_CONFIG = {
         nameKey: "acname",
         valueKey: "acno",
         options: "accounts",
-        apiEndpoint: "/api/accounts/acno?excludeMacno=003,004",
+        apiEndpoint: "/api/accounts/acno",
         required: true,
       },
     ],

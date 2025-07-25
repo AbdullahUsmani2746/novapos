@@ -1508,15 +1508,15 @@ export async function getAccountLedger(filters) {
 
     if (txn.transactionsMaster.tran_code === 1) { // Receipt Voucher
       if (txn.sub_tran_id === 1) { // Main entry
-        creditAmount = txn.camt || 0;
-      } else if (txn.sub_tran_id === 2) { // Deduction entry
         debitAmount = txn.damt || 0;
+      } else if (txn.sub_tran_id === 2) { // Deduction entry
+        creditAmount = txn.camt || 0;
       }
     } else if (txn.transactionsMaster.tran_code === 2) { // Payment Voucher
       if (txn.sub_tran_id === 1) { // Main entry
-        debitAmount = txn.damt || 0;
-      } else if (txn.sub_tran_id === 2) { // Deduction entry
         creditAmount = txn.camt || 0;
+      } else if (txn.sub_tran_id === 2) { // Deduction entry
+        debitAmount = txn.damt || 0;
       }
     } else if (txn.transactionsMaster.tran_code === 3) { // Journal Voucher
       debitAmount = txn.damt || 0;
@@ -1689,15 +1689,15 @@ function calculateAmounts(transaction) {
 
   if (transactionsMaster.tran_code === 1) { // Receipt Voucher
     if (sub_tran_id === 1) { // Main entry
-      creditAmount = camt || 0;
-    } else if (sub_tran_id === 2) { // Deduction entry
       debitAmount = damt || 0;
+    } else if (sub_tran_id === 2) { // Deduction entry
+      creditAmount = camt || 0;
     }
   } else if (transactionsMaster.tran_code === 2) { // Payment Voucher
     if (sub_tran_id === 1) { // Main entry
-      debitAmount = damt || 0;
-    } else if (sub_tran_id === 2) { // Deduction entry
       creditAmount = camt || 0;
+    } else if (sub_tran_id === 2) { // Deduction entry
+      debitAmount = damt || 0;
     }
   } else if (transactionsMaster.tran_code === 3) { // Journal Voucher
     debitAmount = damt || 0;
