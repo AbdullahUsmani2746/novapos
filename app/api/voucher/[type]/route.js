@@ -329,7 +329,7 @@ export async function POST(req, { params }) {
       let camt = 0;
 
       if (tran_code === 1) {
-        damt = totalDamt - totalCamt;
+        damt = totalCamt - totalDamt;
 
       } else if (tran_code === 2) {
         camt = totalCamt - totalDamt;
