@@ -105,9 +105,15 @@ const ReportViewer = ({ reportType }) => {
   const handleDrillDown = (row) => {
     setDrillDownRow(row);
     setDrillDownFilters({
-  ...(filters.godown && { godown: filters.godown })
+      ...(filters.godown && { godown: filters.godown }),
+      ...(filters.dateTo && { dateTo: filters.dateTo }),
     });
-    setShowDrillDownModal(true);
+    if (config.drillDown.linkBuilder && !config.drillDown.fields) {
+      const link = config.drillDown.linkBuilder(row, drillDownFilters);
+      router.push(link);
+    } else {
+      setShowDrillDownModal(true);
+    }
   };
 
   // Initialize configuration and filters
@@ -288,7 +294,7 @@ const ReportViewer = ({ reportType }) => {
 
   const handleRowClick = (row) => {
     if (config.detailColumns) {
-      console.log("tx: ",row.transactions);
+      console.log("tx: ", row.transactions);
       setDetailRow(row.transactions);
       setShowDetails(true);
     }
@@ -1326,7 +1332,7 @@ const ReportViewer = ({ reportType }) => {
               </div>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
-              {config.drillDown.fields.map((field) => (
+              {config.drillDown.fields?.map((field) => (
                 <div key={field.name} className="space-y-2">
                   <Label>{field.label}</Label>
                   {field.type === "date" ? (

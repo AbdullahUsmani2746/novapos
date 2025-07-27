@@ -765,12 +765,6 @@ export const REPORT_CONFIG = {
       modalTitle: "View Stock Ledger Details",
       fields: [
         {
-          name: "dateFrom",
-          label: "From Date",
-          type: "date",
-          required: true,
-        },
-        {
           name: "dateTo",
           label: "To Date",
           type: "date",
@@ -779,10 +773,8 @@ export const REPORT_CONFIG = {
       ],
       linkBuilder: (row, filters) =>
         `/accounting/reports/stockLedger?item=${row.itcd}&godown=${
-          filters.godown
-        }&dateFrom=${new Date(
-          filters.dateFrom
-        ).toISOString()}&dateTo=${new Date(filters.dateTo).toISOString()}`,
+          filters.godown ? filters.godown : 1
+        }&dateFrom=2000-01-01T11%3A00%3A00.000Z&dateTo=${new Date(filters.dateTo).toISOString()}`,
     },
 
     summaryFields: [
@@ -1395,6 +1387,11 @@ export const REPORT_CONFIG = {
         label: "Total Credit",
         type: "currency",
       },
+      {
+        field: "closing",
+        label: "Balance",
+        type: "currency",
+      },
     ],
     detailColumns: [
       {
@@ -1507,26 +1504,18 @@ export const REPORT_CONFIG = {
       enabled: true,
       label: "View Ledger",
       modalTitle: "View Account Ledger Details",
-      fields: [
-        {
-          name: "dateFrom",
-          label: "From Date",
-          type: "date",
-          required: true,
-        },
-        {
-          name: "dateTo",
-          label: "To Date",
-          type: "date",
-          required: true,
-        },
-      ],
+      // fields: [
+      //   {
+      //     name: "dateTo",
+      //     label: "To Date",
+      //     type: "date",
+      //     required: true,
+      //   },
+      // ],
       linkBuilder: (row, filters) =>
         `/accounting/reports/accountLedger?account=${
           row.acno
-        }&dateFrom=${new Date(
-          filters.dateFrom
-        ).toISOString()}&dateTo=${new Date(filters.dateTo).toISOString()}`,
+        }&dateFrom=2000-01-01T11%3A00%3A00.000Z&dateTo=${new Date(filters.dateTo).toISOString()}`,
     },
     exportOptions: { pdf: true, excel: true, csv: true },
   },

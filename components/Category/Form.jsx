@@ -221,6 +221,8 @@ export default function VoucherForm({
   originalData, // Add this prop
 }) {
   const voucherConfig = VOUCHER_CONFIG[type] || {};
+
+  const validationTimersRef = useRef({});
   const [transferConfirmOpen, setTransferConfirmOpen] = useState(false);
   const [masterData, setMasterData] = useState({});
   const [mainLines, setMainLines] = useState([{}]);
@@ -265,6 +267,12 @@ export default function VoucherForm({
     saleReturn: "/api/voucher/saleReturn",
     transfer: "/api/voucher/transfer"
   };
+  useEffect(() => {
+  return () => {
+    Object.values(validationTimersRef.current).forEach(clearTimeout);
+  };
+}, []);
+  
 
   // Fetch options for select fields
   const getRequiredOptionTypes = useCallback(() => {
@@ -652,27 +660,50 @@ export default function VoucherForm({
     lines[index] = newLine;
     if (isMain) setMainLines(lines);
     else setDeductionLines(lines);
+    // ---- Debounced validation starts here ----
+  const key = `${isMain ? "main" : "deduction"}-${index}-${fieldName}`;
+
+  // clear any previous timer for this field
+  const prevTimer = validationTimersRef.current[key];
+  if (prevTimer) clearTimeout(prevTimer);
+
+  validationTimersRef.current[key] = window.setTimeout(() => {
+    const validationError = fieldConfig.validate
+      ? fieldConfig.validate(processedValue, newLine)
+      : null;
+
+console.log("validate:alidation Error: ", validationError.value)
+    setErrors((prev) => ({
+      ...prev,
+      validation: {
+        ...prev.validation,
+        [key]: validationError,
+      },
+    }));
+    delete validationTimersRef.current[key];
+  }, 500); // <-- your debounce delay
+  // ---- Debounced validation ends here ----
 
     // Validate the field
-    if (fieldConfig.validate) {
-      const validationError = fieldConfig.validate(processedValue, newLine);
-      setErrors((prev) => ({
-        ...prev,
-        validation: {
-          ...prev.validation,
-          [`${isMain ? "main" : "deduction"}-${index}-${fieldName}`]:
-            validationError,
-        },
-      }));
-    } else {
-      setErrors((prev) => ({
-        ...prev,
-        validation: {
-          ...prev.validation,
-          [`${isMain ? "main" : "deduction"}-${index}-${fieldName}`]: null,
-        },
-      }));
-    }
+    // if (fieldConfig.validate) {
+    //   const validationError = fieldConfig.validate(processedValue, newLine);
+    //   setErrors((prev) => ({
+    //     ...prev,
+    //     validation: {
+    //       ...prev.validation,
+    //       [`${isMain ? "main" : "deduction"}-${index}-${fieldName}`]:
+    //         validationError,
+    //     },
+    //   }));
+    // } else {
+    //   setErrors((prev) => ({
+    //     ...prev,
+    //     validation: {
+    //       ...prev.validation,
+    //       [`${isMain ? "main" : "deduction"}-${index}-${fieldName}`]: null,
+    //     },
+    //   }));
+    // }
   };
 
   const addLine = (isMain) => {
@@ -808,6 +839,11 @@ export default function VoucherForm({
             }
           }
         });
+
+        // Validate receipt amount is positive
+      if (line.camt && parseFloat(line.camt) <= 0) {
+        newErrors[`main-${index}-camt`] = "Amount must be greater than 0";
+      }
       });
     }
 
@@ -823,11 +859,19 @@ export default function VoucherForm({
               ] = `${field.label} is required`;
             }
           });
+
+          // Validate deduction amount is positive
+        if (line.damt && parseFloat(line.damt) <= 0) {
+          newErrors[`deduction-${index}-damt`] = "Amount must be greater than 0";
+        }
         }
       });
     }
 
     // Balance check
+          console.log("Fields")
+          console.log("YES ", voucherConfig.balanceCheck)
+
     if (voucherConfig.balanceCheck) {
       const formData = {
         master: masterData,
@@ -835,12 +879,24 @@ export default function VoucherForm({
         deductions: deductionLines,
         totals,
       };
-      if (!voucherConfig.balanceCheck.condition(formData)) {
-        newErrors.balance =
-          typeof voucherConfig.balanceCheck.errorMessage === "function"
-            ? voucherConfig.balanceCheck.errorMessage(formData)
-            : voucherConfig.balanceCheck.errorMessage;
+      // if (!voucherConfig.balanceCheck.condition(formData)) {
+      //   newErrors.balance =
+      //     typeof voucherConfig.balanceCheck.errorMessage === "function"
+      //       ? voucherConfig.balanceCheck.errorMessage(formData)
+      //       : voucherConfig.balanceCheck.errorMessage;
+      // }
+
+      try {
+      const isValid = await voucherConfig.balanceCheck.condition(formData);
+      console.log(isValid)
+      console.log("Fields")
+      if (!isValid) {
+        newErrors.balance = voucherConfig.balanceCheck.errorMessage(formData);
       }
+    } catch (error) {
+      newErrors.balance = "Failed to validate amounts with server";
+      console.error("Validation error:", error);
+    }
     }
 
     setErrors((prev) => ({ ...prev, validation: newErrors }));
@@ -914,7 +970,9 @@ export default function VoucherForm({
       return;
     }
 
-    if (!validateForm()) {
+      const isValid = await validateForm();
+
+     if (!isValid) {
       toast.error("Please correct the highlighted errors");
       const firstErrorKey = Object.keys(errors.validation)[0];
       if (firstErrorKey) {
@@ -1041,7 +1099,7 @@ export default function VoucherForm({
       );
     }
     // Show stock info for product quantity in sale voucher
-    if (type === "sale" && isMain && fieldName === "qty" && line.itcd || type === "transfer" && isMain && fieldName === "qty" && line.itcd)  {
+    if (type === "sale" && isMain && fieldName === "qty" && line.itcd)  {
       const stock = stockLevels[line.itcd] || 0;
       return (
         <div className="space-y-1">

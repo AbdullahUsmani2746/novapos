@@ -1507,16 +1507,25 @@ export async function getAccountLedger(filters) {
     let creditAmount = 0;
 
     if (txn.transactionsMaster.tran_code === 1) { // Receipt Voucher
+      if (txn.sub_tran_id === 3) { // Auto entry
+        debitAmount = txn.damt || 0;
+      }
+      else if (txn.sub_tran_id === 1) { // Main entry
+         creditAmount = txn.camt || 0;
+      } else if (txn.sub_tran_id === 2) { // Deduction entry
+        debitAmount = txn.damt || 0;
+      }
+    } else if (txn.transactionsMaster.tran_code === 2) { // Payment Voucher
+      if (txn.sub_tran_id === 3) { // Auto entry
+        creditAmount = txn.camt || 0;
+      }
       if (txn.sub_tran_id === 1) { // Main entry
         debitAmount = txn.damt || 0;
       } else if (txn.sub_tran_id === 2) { // Deduction entry
         creditAmount = txn.camt || 0;
       }
-    } else if (txn.transactionsMaster.tran_code === 2) { // Payment Voucher
-      if (txn.sub_tran_id === 1) { // Main entry
-        creditAmount = txn.camt || 0;
-      } else if (txn.sub_tran_id === 2) { // Deduction entry
-        debitAmount = txn.damt || 0;
+      else if (txn.sub_tran_id === 3) { // Deduction entry
+        debitAmount = txn.camt || 0;
       }
     } else if (txn.transactionsMaster.tran_code === 3) { // Journal Voucher
       debitAmount = txn.damt || 0;
@@ -1611,7 +1620,11 @@ export async function getAccountLedger(filters) {
       if (txn.sub_tran_id === 1) { // Main entry
         creditAmount = txn.camt || 0;
         entryType = "Receipt";
-      } else if (txn.sub_tran_id === 2) { // Deduction entry
+      } if (txn.sub_tran_id === 3) { // Main entry
+        debitAmount = txn.damt || 0;
+        entryType = "Receipt";
+      }
+       else if (txn.sub_tran_id === 2) { // Deduction entry
         debitAmount = txn.damt || 0;
         entryType = "Receipt Deduction";
       }
@@ -1622,6 +1635,9 @@ export async function getAccountLedger(filters) {
       } else if (txn.sub_tran_id === 2) { // Deduction entry
         creditAmount = txn.camt || 0;
         entryType = "Payment Deduction";
+      }if (txn.sub_tran_id === 3) { // Main entry
+        debitAmount = txn.camt || 0;
+        entryType = "Payment";
       }
     } else if (txn.transactionsMaster.tran_code === 3) { // Journal Voucher
       debitAmount = txn.damt || 0;
@@ -1689,16 +1705,20 @@ function calculateAmounts(transaction) {
 
   if (transactionsMaster.tran_code === 1) { // Receipt Voucher
     if (sub_tran_id === 1) { // Main entry
-      debitAmount = damt || 0;
+       creditAmount = camt || 0;
     } else if (sub_tran_id === 2) { // Deduction entry
-      creditAmount = camt || 0;
-    }
+       debitAmount= damt || 0;
+    }else if (sub_tran_id === 3) { // Deduction entry
+        debitAmount = damt || 0;
+      }
   } else if (transactionsMaster.tran_code === 2) { // Payment Voucher
     if (sub_tran_id === 1) { // Main entry
-      creditAmount = camt || 0;
-    } else if (sub_tran_id === 2) { // Deduction entry
       debitAmount = damt || 0;
-    }
+    } else if (sub_tran_id === 2) { // Deduction entry
+      creditAmount = camt || 0;
+    }else if (sub_tran_id === 3) { // Deduction entry
+        creditAmount = camt || 0;
+      }
   } else if (transactionsMaster.tran_code === 3) { // Journal Voucher
     debitAmount = damt || 0;
     creditAmount = camt || 0;
@@ -1859,7 +1879,9 @@ async function getTrialBalance(filters) {
 
   const accountMap = {};
   for (const t of entries) {
+    console.log("acanme: ",t.acnoDetails.acname)
     const account = t.acnoDetails.acname || "Unknown";
+    console.log("Account: ",account)
     if (!accountMap[account]) {
       accountMap[account] = { debit: 0, credit: 0, acno:t.acno };
     }
