@@ -412,7 +412,9 @@ export default function VoucherForm({
       ) || {};
 
     if (editMode && existingData) {
-      const mappedMaster = {
+            console.log("Type: ",type)
+
+      const mappedMaster =( type !== "purchaseOrder" && type !== "saleOrder") ?{
         ...existingData.master,
         pycd: String(existingData.master.pycd || ""), // Ensure string
         godown: String(existingData.master.godown || ""), // Convert number to string
@@ -428,9 +430,13 @@ export default function VoucherForm({
         rmk2: String(existingData.master.rmk2 || ""),
         tran_code:
           Number(existingData.master.tran_code) || voucherConfig.tran_code,
+      } : {
+         ...existingData.master,
+
       };
 
-      const mappedLines = existingData.lines?.map((line) => ({
+      const mappedLines = (type !== "purchaseOrder" && type !== "saleOrder") ? 
+      existingData.lines?.map((line) => ({
         ...line,
         itcd: String(line.itcd || ""), // Convert number to string
         no_of_pack: Number(line.no_of_pack) || 0,
@@ -442,6 +448,10 @@ export default function VoucherForm({
         st_amount: Number(line.st_amount) || 0,
         additional_tax: Number(line.additional_tax) || 0,
         camt: Number(line.camt) || 0,
+      })) || [{}] : 
+      existingData.lines?.map((line) => ({
+        ...line,
+        itcd: String(line.itcd || ""), // Convert number to string
       })) || [{}];
 
       setMasterData(mappedMaster);

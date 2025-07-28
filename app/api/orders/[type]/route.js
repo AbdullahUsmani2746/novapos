@@ -170,7 +170,9 @@ export async function PUT(req, { params }) {
       );
     }
 
-    const { master, details } = await req.json();
+    const { master, lines } = await req.json();
+    delete master.tran_code;
+    delete master.users;
 
     if (!master || !master.order_no) {
       return NextResponse.json(
@@ -191,7 +193,7 @@ export async function PUT(req, { params }) {
       );
     }
 
-    if (existingOrder.order_catagory !== config.order_catagory) {
+    if (existingOrder.order_catagory !== Number(config.tran_code.toString()[0])) {
       return NextResponse.json(
         { message: `Order type doesn't match ${config.title}` },
         { status: 400 }
@@ -203,7 +205,7 @@ export async function PUT(req, { params }) {
       where: { order_no: master.order_no },
       data: {
         ...master,
-        dated: master.dated ? new Date(master.dated) : existingOrder.dated,
+        dateD: master.dateD ? new Date(master.dateD) : existingOrder.dateD,
         due_date: master.due_date ? new Date(master.due_date) : existingOrder.due_date,
       },
     });
@@ -217,15 +219,20 @@ export async function PUT(req, { params }) {
     const updateOperations = [];
     const detailIdsToKeep = [];
 
-    for (const detail of details) {
+    for (const detail of lines) {
       if (detail.id) {
         // Update existing detail
         updateOperations.push(
           prisma.orderDetail.update({
             where: { id: detail.id },
             data: {
-              ...detail,
-              qty: (detail.no_of_packs || 1) * (detail.qty_per_pack || 1),
+              amount: detail.amount,
+            no_of_packs: detail.no_of_packs,
+            qty: detail.qty,
+            qty_per_pack: detail.qty_per_pack,
+            rate:detail.rate,
+            unit: detail.unit,
+            itcd: Number(detail.itcd),
             },
           })
         );
@@ -235,9 +242,14 @@ export async function PUT(req, { params }) {
         updateOperations.push(
           prisma.orderDetail.create({
             data: {
-              ...detail,
-              order_no: master.order_no,
-              qty: (detail.no_of_packs || 1) * (detail.qty_per_pack || 1),
+              amount: detail.amount,
+            no_of_packs: detail.no_of_packs,
+            qty: detail.qty,
+            qty_per_pack: detail.qty_per_pack,
+            rate:detail.rate,
+            unit: detail.unit,
+            itcd: Number(detail.itcd),
+            order_no: master.order_no
             },
           })
         );
@@ -308,7 +320,8 @@ export async function DELETE(req, { params }) {
       );
     }
 
-    if (existingOrder.order_catagory !== config.order_catagory) {
+    console.log("ordeR: ",Number(config.tran_code.toString()[0]))
+    if (existingOrder.order_catagory !== Number(config.tran_code.toString()[0])) {
       return NextResponse.json(
         { message: `Order type doesn't match ${config.title}` },
         { status: 400 }
@@ -316,14 +329,14 @@ export async function DELETE(req, { params }) {
     }
 
     // Delete in transaction
-    await prisma.$transaction([
-      prisma.orderDetail.deleteMany({
+  
+     await  prisma.orderDetail.deleteMany({
         where: { order_no },
-      }),
-      prisma.orderMaster.delete({
+      });
+     await prisma.orderMaster.delete({
         where: { order_no },
-      }),
-    ]);
+      });
+    
 
     return NextResponse.json({
       message: `${config.title} deleted successfully`,

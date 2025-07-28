@@ -582,7 +582,7 @@ const DataViewModal = ({ data, isOpen, onClose }) => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )} 
+            )}
           </div>
         </motion.div>
       </motion.div>
@@ -639,8 +639,11 @@ export default function VoucherTable({
     setLoading(true);
     setError(null);
     try {
-      console.log()
-      const api = VOUCHER_CONFIG[type].tran_code===(400 || 600) ? '/api/orders/' : '/api/voucher/';
+      console.log();
+      const api =
+        VOUCHER_CONFIG[type].tran_code === 400 || VOUCHER_CONFIG[type].tran_code===600
+          ? "/api/orders/"
+          : "/api/voucher/";
       const response = await axios.get(`${api}${type}`, {
         params: { page, limit },
       });
@@ -714,10 +717,14 @@ export default function VoucherTable({
       "Are you sure you want to delete this voucher?"
     );
     if (!confirmDelete) return;
-
+    const api = (type !== "purchaseOrder" && type !== "saleOrder") ? "/api/voucher/": "/api/orders/"
     try {
-      const res = await axios.delete(`/api/voucher/${type}`, {
-        data: { tran_id: rowData.tran_id },
+      const res = await axios.delete(`${api}${type}`, {
+        data: {
+          ...((type !== "purchaseOrder" && type !== "saleOrder")
+            ? { tran_id: rowData.tran_id }
+            : { order_no: rowData.order_no }),
+        },
       });
 
       alert("Deleted successfully");
@@ -732,6 +739,7 @@ export default function VoucherTable({
 
   const handleModal = (rowData, index) => {
     setSelectedRow(rowData); // Set fresh selectedRow
+    console.log("Rowdata: ",rowData)
     setFocusedRowIndex(index);
     setIsEditModal(true);
     console.log("Selected Row for Edit:", JSON.stringify(rowData, null, 2)); // Debug
@@ -1113,25 +1121,33 @@ export default function VoucherTable({
                   ...Object.fromEntries(
                     Object.entries(selectedRow).filter(
                       ([key]) =>
-                        !["acno", "transactions", "godownDetails"].includes(key)
+                        ![
+                          "acno",
+                          "transactions",
+                          "godownDetails",
+                          "orderDetails",
+                        ].includes(key)
                     )
                   ),
                 }
               : {},
 
             lines:
-              selectedRow?.transactions
-                ?.filter((t) => t.sub_tran_id === 1)
-                .map(
-                  ({
-                    itemDetails,
-                    acnoDetails,
-                    godownDetails,
-                    currencyDetails,
-                    costCenter,
-                    ...rest
-                  }) => rest
-                ) || [],
+             type !== "purchaseOrder" && type !== "saleOrder"
+                ? selectedRow?.transactions
+                    ?.filter((t) => t.sub_tran_id === 1)
+                    .map(
+                      ({
+                        itemDetails,
+                        acnoDetails,
+                        godownDetails,
+                        currencyDetails,
+                        costCenter,
+                        ...rest
+                      }) => rest
+                    ) || []
+                : selectedRow?.orderDetails.map(({ items, ...rest }) => rest) ||
+                  [],
 
             deductions:
               selectedRow?.transactions
