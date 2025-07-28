@@ -90,6 +90,24 @@ const data = {
       ],
     },
     {
+      title: "Orders",
+      url: "#",
+      icon: SquareTerminal,
+      isActive: true,
+      items: [
+        {
+          title: "Purchase Order",
+          url: "/accounting/order/purchaseOrder",
+        },
+        {
+          title: "Sale Order",
+          url: "/accounting/order/saleOrder",
+        },
+        
+      ],
+    },
+
+    {
       title: "Returns",
       url: "#",
       icon: SquareTerminal,

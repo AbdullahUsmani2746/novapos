@@ -263,7 +263,9 @@ export default function VoucherForm({
     sale: "/api/voucher/sale",
     purchaseReturn: "/api/voucher/purchaseReturn",
     saleReturn: "/api/voucher/saleReturn",
-    transfer: "/api/voucher/transfer"
+    transfer: "/api/voucher/transfer",
+    purchaseOrder: "/api/orders/purchaseOrder",
+    saleOrder: "/api/orders/saleOrder",
   };
 
   // Fetch options for select fields
@@ -755,6 +757,7 @@ export default function VoucherForm({
       if (field.required && !masterData[fieldName]?.toString().trim()) {
         newErrors[fieldName] = `${field.label} is required`;
       }
+
       // Run async validation if exists
       if (field.validate && masterData[fieldName]) {
         setLoading((prev) => ({ ...prev, validation: true }));
@@ -1100,7 +1103,7 @@ export default function VoucherForm({
               className="h-9 text-sm w-full"
             />
             <div className="text-xs text-gray-500 flex items-center gap-1">
-              <span>of {masterData.tran_code }</span>
+              <span>of</span>
               <span className="font-medium">{(masterData.tran_code === 9 || masterData.tran_code === 11)  ? (line.stock || 0) : (line.original_qty || 0)}</span>
             </div>
           </div>

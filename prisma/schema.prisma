@@ -50,6 +50,7 @@ model User {
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
   sessions      Session[]
+  orderMaster   OrderMaster[]
   transactionsMaster TransactionsMaster[] @relation("UserTransactions")
 }
 
@@ -129,6 +130,7 @@ model ACNO {
   contactPerson      String?              @map("contact_person") @db.VarChar(25)
   crLimit            Int?                 @map("cr_limit")
   salesArea          String?              @map("sales_ares") @db.VarChar(25)
+  oderMaster         OrderMaster[]
   transactionsMaster TransactionsMaster[]
   transactions       Transactions[]
   mainAccount        MACNO                @relation(fields: [macno], references: [macno])
@@ -236,6 +238,7 @@ model Item {
   wc_parent_id  Int?
   sync_status   String?    @default("synced")
   last_sync     DateTime?
+  orderMaster    OrderDetail[]
   itemCategories ItemCategory   @relation(fields: [ic_id], references: [id])
   Transactions Transactions[]
 }
@@ -254,6 +257,7 @@ model Godown {
   company_id         Int
   company            Company              @relation(fields: [company_id], references: [id])
   TransactionsMaster TransactionsMaster[]
+  OrderMaster OrderMaster[]
   Transaction        Transactions[]
 }
 
@@ -303,6 +307,39 @@ model Currency {
   transactions Transactions[]
 }
 
+model OrderMaster {
+  order_no               Int            @id @default(autoincrement())
+  dateD                  DateTime       @default(now())
+  godown                 Int?
+  userId                 String?        @db.VarChar(25)
+  status                 Int            // 1 or 2
+  due_date               DateTime?
+  party_code             String
+  delivery_terms         String?        @db.VarChar(25)
+  payment_terms          String?        @db.VarChar(25)
+  delivery_location      String?        @db.VarChar(500)
+  order_catagory         Int            // 4 = purchase order, 6 = sales order
+  additional_instructions String?       @db.VarChar(500)
+  godownDetails           Godown?        @relation(fields: [godown], references: [id])
+  acno                    ACNO?         @relation(fields: [party_code], references: [acno])
+  users                    User?         @relation(fields: [userId], references: [id])
+  orderDetails           OrderDetail[] 
+}
+
+model OrderDetail {
+  id           Int       @id @default(autoincrement())
+  order_no     Int
+  itcd         Int
+  no_of_packs  Int
+  qty_per_pack Int
+  qty          Int       // Derived from no_of_packs * qty_per_pack (can be computed manually or through trigger)
+  unit         String?   @db.VarChar(25)
+  rate         Float
+  amount       Float
+  items        Item        @relation(fields: [itcd], references: [itcd])
+  orderMaster  OrderMaster @relation(fields: [order_no], references: [order_no])
+}
+
 model TransactionsMaster {
   tran_id       Int           @id @default(autoincrement())
   company_id    Int?
@@ -335,8 +372,6 @@ model TransactionsMaster {
   @@unique([tran_code, vr_no]) // Enforces no duplicate voucher numbers per tran_code
   @@map("TRANSACTIONS_MASTER")
 }
-
-
 
 model Transactions {
   id                 Int                @id @default(autoincrement())

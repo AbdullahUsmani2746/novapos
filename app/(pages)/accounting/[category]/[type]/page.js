@@ -84,6 +84,23 @@ const CONFIG = {
       gradient: "from-primary to-primary",
     },
   },
+
+   order: {
+    purchaseOrder: {
+      label: "Purchase Order",
+      stats: ["total"],
+      apiPath: "purchaseOrder",
+      icon: TrendingUp,
+      gradient: "from-primary to-primary",
+    },
+    saleOrder: {
+      label: "Sales Order",
+      stats: ["total"],
+      apiPath: "saleOrder",
+      icon: Sparkles,
+      gradient: "from-primary to-primary",
+    },
+  },
 };
 
 // Animation variants
@@ -202,7 +219,10 @@ export default function DynamicVoucherPage({ params: paramsPromise }) {
       try {
         setIsLoading(true);
 
-        const res = await axios.get(`/api/voucher/${typeConfig.apiPath}`);
+        console.log(categoryConfig, typeConfig)
+        const api = params.category==="order" ? "/api/orders/" : "/api/voucher/"
+
+        const res = await axios.get(`${api}${typeConfig.apiPath}`);
         const data = await res.data;
         console.log("Fetched data:", data);
 

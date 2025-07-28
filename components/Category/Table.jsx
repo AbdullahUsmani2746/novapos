@@ -639,7 +639,9 @@ export default function VoucherTable({
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`/api/voucher/${type}`, {
+      console.log()
+      const api = VOUCHER_CONFIG[type].tran_code===(400 || 600) ? '/api/orders/' : '/api/voucher/';
+      const response = await axios.get(`${api}${type}`, {
         params: { page, limit },
       });
       setData(response.data.data || []);
