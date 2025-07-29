@@ -684,7 +684,6 @@ export default function VoucherForm({
       ? fieldConfig.validate(processedValue, newLine)
       : null;
 
-console.log("validate:alidation Error: ", validationError.value)
     setErrors((prev) => ({
       ...prev,
       validation: {
@@ -934,7 +933,7 @@ console.log("validate:alidation Error: ", validationError.value)
     };
 
     // ✅ Validate stock for sale transactions
-    if (type === "sale") {
+    if (type === "sale" && isMain && fieldName === "itcd" && value || type === "transfer" && isMain && fieldName === "itcd" && value) {
       const stockErrors = [];
 
       formData.lines.forEach((line, index) => {
@@ -1112,7 +1111,7 @@ console.log("validate:alidation Error: ", validationError.value)
       );
     }
     // Show stock info for product quantity in sale voucher
-    if (type === "sale" && isMain && fieldName === "qty" && line.itcd)  {
+    if ((type === "sale" && isMain && fieldName === "qty" && line.itcd) || (type === "transfer" && isMain && fieldName === "qty" && line.itcd))  {
       const stock = stockLevels[line.itcd] || 0;
       return (
         <div className="space-y-1">

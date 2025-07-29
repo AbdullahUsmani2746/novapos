@@ -270,7 +270,7 @@ export async function PUT(req, { params }) {
     }
 
     // Execute all operations in a transaction
-    await prisma.$transaction(updateOperations);
+    // await prisma.$transaction(updateOperations);
 
     return NextResponse.json({
       message: `${config.title} updated successfully`,
