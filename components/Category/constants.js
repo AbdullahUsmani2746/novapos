@@ -136,7 +136,55 @@ export const VOUCHER_CONFIG = {
         label: "Amount",
         type: "number",
         // dependencies: ["fc_amount", "rate"],
-        // calculate: (v) => v.fc_amount * v.rate,
+        calculate: (v) => v.fc_amount * v.rate,
+        validate: (() => {
+          let timeoutId;
+          let lastValidatedValue = null;
+          let pendingValidation = false;
+
+          return async (value, line) => {
+            // Skip if same as last validated value or already validating
+            if (value === lastValidatedValue || pendingValidation) return null;
+
+            // Clear any pending validation
+            if (timeoutId) clearTimeout(timeoutId);
+
+            // Return immediately for empty values
+            if (!value || !line.invoice_no) {
+              lastValidatedValue = value;
+              return null;
+            }
+
+            // Set pending state
+            pendingValidation = true;
+
+            return new Promise((resolve) => {
+              timeoutId = setTimeout(async () => {
+                try {
+                  const response = await axios.get(
+                    `/api/voucher/check-amount?invoice_no=${line.invoice_no}&amount=${value}&camt=true`
+                  );
+
+                  lastValidatedValue = value;
+
+                  if (!response.data.exists) {
+                    resolve(`Invoice ${line.invoice_no} not found`);
+                  } else if (!response.data.valid) {
+                    resolve(
+                      `Amount exceeds available balance (${response.data.availableBalance})`
+                    );
+                  } else {
+                    resolve("null");
+                  }
+                } catch (error) {
+                  resolve(`Validation error: ${error.message}`);
+                } finally {
+                  pendingValidation = false;
+                }
+              }, 800); // Increased debounce to 800ms for better UX
+            });
+          };
+        })(),
       },
     ],
     deductionFields: [
@@ -236,12 +284,41 @@ export const VOUCHER_CONFIG = {
         calculate: (_, t) => t.mainTotal - t.deductionTotal,
       },
     },
-    balanceCheck: {
-      condition: (formData) => formData.totals.netTotal >= 0,
-      errorMessage: (formData) =>
-        `Net Payment (${formData.totals.netTotal.toFixed(
-          2
-        )}) cannot be negative.`,
+     balanceCheck: {
+      condition: async (formData) => {
+        // First check if net total is negative
+        if (formData.totals.netTotal < 0) return false;
+
+        // Then validate against API
+        try {
+          const response = await axios.get(
+            "/api/reports/trialBalance?dateTo=2025-07-31T11:00:00.000Z"
+          );
+          let isValid = false;
+          if (response.data.data) {
+            response.data.data.forEach((data) => {
+              if (data.acno === formData.master.pycd) {
+                if (data.balance >= formData.totals.netTotal) {
+                  isValid = true;
+                }
+              }
+            });
+          }
+
+          return isValid;
+        } catch (error) {
+          console.error("Validation API error:", error);
+          return false; // Fail-safe: don't allow if API fails
+        }
+      },
+      errorMessage: (formData) => {
+        if (formData.totals.netTotal < 0) {
+          return `Net Receipt cannot be negative (Current: ${formData.totals.netTotal.toFixed(
+            2
+          )})`;
+        }
+        return "Net total exceeds available balance or violates business rules";
+      },
     },
 
     tableFields: [
@@ -565,48 +642,13 @@ export const VOUCHER_CONFIG = {
         calculate: (_, t) => t.mainTotal - t.deductionTotal,
       },
     },
-    // balanceCheck: {
-    //   condition: (formData) => formData.totals.netTotal >= 0,
-    //   errorMessage: (formData) =>
-    //     `Net Receipt (${formData.totals.netTotal.toFixed(
-    //       2
-    //     )}) cannot be negative.`,
-    // },
-    balanceCheck: {
-      condition: async (formData) => {
-        // First check if net total is negative
-        if (formData.totals.netTotal < 0) return false;
-
-        // Then validate against API
-        try {
-          const response = await axios.get(
-            "/api/reports/trialBalance?dateTo=2025-07-31T11:00:00.000Z"
-          );
-          let isValid = false;
-          if (response.data.data) {
-            response.data.data.forEach((data) => {
-              if (data.acno === formData.master.pycd) {
-                if (data.balance >= formData.totals.netTotal) {
-                  isValid = true;
-                }
-              }
-            });
-          }
-
-          return isValid;
-        } catch (error) {
-          console.error("Validation API error:", error);
-          return false; // Fail-safe: don't allow if API fails
-        }
-      },
-      errorMessage: (formData) => {
-        if (formData.totals.netTotal < 0) {
-          return `Net Receipt cannot be negative (Current: ${formData.totals.netTotal.toFixed(
-            2
-          )})`;
-        }
-        return "Net total exceeds available balance or violates business rules";
-      },
+    
+   balanceCheck: {
+      condition: (formData) => formData.totals.netTotal >= 0,
+      errorMessage: (formData) =>
+        `Net Receipt (${formData.totals.netTotal.toFixed(
+          2
+        )}) cannot be negative.`,
     },
     tableFields: [
       { name: "dateD", label: "Date", type: "date" },
