@@ -9,7 +9,7 @@ export async function GET(req, { params }) {
   const page = parseInt(url.searchParams.get("page") || "1");
   const limit = parseInt(url.searchParams.get("limit") || "10");
   const skip = (page - 1) * limit;
-  const status = parseInt(url.searchParams.get("status") || "0"); // 0 means all
+  const status = parseInt(url.searchParams.get("status") || 1); // 0 means all
   
   const config = VOUCHER_CONFIG[type]?.tran_code;
   console.log(Number(config.toString()[0]))
@@ -226,7 +226,7 @@ export async function PUT(req, { params }) {
           prisma.orderDetail.update({
             where: { id: detail.id },
             data: {
-              amount: detail.amount,
+            amount: detail.amount,
             no_of_packs: detail.no_of_packs,
             qty: detail.qty,
             qty_per_pack: detail.qty_per_pack,
@@ -242,14 +242,14 @@ export async function PUT(req, { params }) {
         updateOperations.push(
           prisma.orderDetail.create({
             data: {
-              amount: detail.amount,
+            amount: detail.amount,
             no_of_packs: detail.no_of_packs,
             qty: detail.qty,
             qty_per_pack: detail.qty_per_pack,
             rate:detail.rate,
             unit: detail.unit,
             itcd: Number(detail.itcd),
-            order_no: master.order_no
+            order_no: master.order_no,
             },
           })
         );
@@ -270,7 +270,7 @@ export async function PUT(req, { params }) {
     }
 
     // Execute all operations in a transaction
-    // await prisma.$transaction(updateOperations);
+    await prisma.$transaction(updateOperations);
 
     return NextResponse.json({
       message: `${config.title} updated successfully`,

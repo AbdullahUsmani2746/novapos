@@ -243,7 +243,7 @@ export const VOUCHER_CONFIG = {
           2
         )}) cannot be negative.`,
     },
-    
+
     tableFields: [
       { name: "dateD", label: "Date", type: "date" },
       { name: "tran_id", label: "Transaction No", type: "text" },
@@ -573,39 +573,41 @@ export const VOUCHER_CONFIG = {
     //     )}) cannot be negative.`,
     // },
     balanceCheck: {
-    condition: async (formData) => {
-      // First check if net total is negative
-      if (formData.totals.netTotal < 0) return false;
-      
-      // Then validate against API
-      try {
-        const response = await axios.get('/api/reports/trialBalance?dateTo=2025-07-31T11:00:00.000Z')
-        let isValid = false;
-        if(response.data.data){
-          
-          response.data.data.forEach((data)=>{
-            if(data.acno === formData.master.pycd){
-              if (data.balance >= formData.totals.netTotal){
-                isValid=true
-              }
-            } 
-          })
-          
-        }
+      condition: async (formData) => {
+        // First check if net total is negative
+        if (formData.totals.netTotal < 0) return false;
 
-        return isValid;
-      } catch (error) {
-        console.error("Validation API error:", error);
-        return false; // Fail-safe: don't allow if API fails
-      }
+        // Then validate against API
+        try {
+          const response = await axios.get(
+            "/api/reports/trialBalance?dateTo=2025-07-31T11:00:00.000Z"
+          );
+          let isValid = false;
+          if (response.data.data) {
+            response.data.data.forEach((data) => {
+              if (data.acno === formData.master.pycd) {
+                if (data.balance >= formData.totals.netTotal) {
+                  isValid = true;
+                }
+              }
+            });
+          }
+
+          return isValid;
+        } catch (error) {
+          console.error("Validation API error:", error);
+          return false; // Fail-safe: don't allow if API fails
+        }
+      },
+      errorMessage: (formData) => {
+        if (formData.totals.netTotal < 0) {
+          return `Net Receipt cannot be negative (Current: ${formData.totals.netTotal.toFixed(
+            2
+          )})`;
+        }
+        return "Net total exceeds available balance or violates business rules";
+      },
     },
-    errorMessage: (formData) => {
-      if (formData.totals.netTotal < 0) {
-        return `Net Receipt cannot be negative (Current: ${formData.totals.netTotal.toFixed(2)})`;
-      }
-      return "Net total exceeds available balance or violates business rules";
-    }
-  },
     tableFields: [
       { name: "dateD", label: "Date", type: "date" },
       { name: "tran_id", label: "Transaction No", type: "text" },
@@ -759,6 +761,39 @@ export const VOUCHER_CONFIG = {
       },
 
       {
+        name: "po_no",
+        label: "Purchase Order No",
+        type: "select",
+        options: "purchaseOrders",
+        apiEndpoint: "/api/orders/purchaseOrder",
+        nameKey: "order_no",
+        valueKey: "order_no",
+        onChange: async (value, formData) => {
+          if (!value) return;
+          try {
+            const response = await axios.get(
+              `/api/orders/purchaseOrder`
+            );
+            console.log("respo: ",response.data.data)
+            console.log("respoValue: ", value)
+            console.log("respoValue Type: ",typeof value)
+
+            const filterResponse = response.data.data.filter(item => item.order_no === Number(value))
+            console.log("filterRespo: ",filterResponse)
+            return {
+              pycd: filterResponse[0].party_code, // Vendor
+              godown: filterResponse[0].godown,
+              orderDetails: filterResponse[0].orderDetails, // Full details of the order
+              // Add other fields you want to auto-fill
+            };
+          } catch (error) {
+            console.error("Error fetching PO details:", error);
+            return {};
+          }
+        },
+      },
+
+      {
         name: "pycd",
         label: "Vendor",
         type: "select",
@@ -826,7 +861,10 @@ export const VOUCHER_CONFIG = {
         label: "Product",
         type: "select",
         options: "products",
-        apiEndpoint: "/api/setup/items",
+        apiEndpoint: (formData) =>
+          formData.po_no
+            ? `/api/orders/purchaseOrder`
+            : "/api/setup/items",
         createEndpoint: "/api/setup/items",
         nameKey: "item",
         valueKey: "itcd",
@@ -864,6 +902,15 @@ export const VOUCHER_CONFIG = {
         required: true,
         dependencies: ["no_of_pack", "qty_per_pack"],
         calculate: (v) => v.no_of_pack * v.qty_per_pack,
+        validate: (value, line, allLines, formData) => {
+           if (formData.po_no && line.itcd) {
+           const orderedQty = line.po_qty || 0;
+            if (value > orderedQty) {
+                 return `Cannot exceed ordered quantity (${orderedQty})`;
+              }
+            }
+          return null;
+        }
       },
       { name: "rate", label: "Rate", type: "number" },
       {
@@ -972,6 +1019,38 @@ export const VOUCHER_CONFIG = {
         required: true,
         autoGenerate: true,
         readOnly: true, // Add this to make it non-editable
+      },
+      {
+        name: "so_no",
+        label: "Sale Order No",
+        type: "select",
+        options: "saleOrders",
+        apiEndpoint: "/api/orders/saleOrder",
+        nameKey: "order_no",
+        valueKey: "order_no",
+        onChange: async (value, formData) => {
+          if (!value) return;
+          try {
+            const response = await axios.get(
+              `/api/orders/saleOrder`
+            );
+            console.log("respo: ",response.data.data)
+            console.log("respoValue: ", value)
+            console.log("respoValue Type: ",typeof value)
+
+            const filterResponse = response.data.data.filter(item => item.order_no === Number(value))
+            console.log("filterRespo: ",filterResponse)
+            return {
+              pycd: filterResponse[0].party_code, // Vendor
+              godown: filterResponse[0].godown,
+              orderDetails: filterResponse[0].orderDetails, // Full details of the order
+              // Add other fields you want to auto-fill
+            };
+          } catch (error) {
+            console.error("Error fetching PO details:", error);
+            return {};
+          }
+        },
       },
       {
         name: "pycd",
@@ -1089,15 +1168,19 @@ export const VOUCHER_CONFIG = {
       },
     ],
     lineFields: [
-      {
+       {
         name: "itcd",
         label: "Product",
         type: "select",
         options: "products",
-        apiEndpoint: "/api/setup/items",
+        apiEndpoint: (formData) =>
+          formData.so_no
+            ? `/api/orders/saleOrder`
+            : "/api/setup/items",
         createEndpoint: "/api/setup/items",
         nameKey: "item",
         valueKey: "itcd",
+        required: true,
         modalFields: [
           { name: "item", label: "Product Name", type: "text", required: true },
           {
@@ -1118,8 +1201,18 @@ export const VOUCHER_CONFIG = {
         name: "qty",
         label: "Qty",
         type: "number",
+        required: true,
         dependencies: ["no_of_pack", "qty_per_pack"],
         calculate: (v) => v.no_of_pack * v.qty_per_pack,
+        validate: (value, line, allLines, formData) => {
+           if (formData.so_no && line.itcd) {
+           const orderedQty = line.so_qty || 0;
+            if (value > orderedQty) {
+                 return `Cannot exceed ordered quantity (${orderedQty})`;
+              }
+            }
+          return null;
+        }
       },
       { name: "rate", label: "Rate", type: "number" },
       {
@@ -1752,7 +1845,12 @@ export const VOUCHER_CONFIG = {
         valueKey: "acno",
         required: true,
         modalFields: [
-          { name: "acname", label: "Supplier Name", type: "text", required: true },
+          {
+            name: "acname",
+            label: "Supplier Name",
+            type: "text",
+            required: true,
+          },
           {
             name: "macno",
             label: "Main Account",
@@ -1874,7 +1972,8 @@ export const VOUCHER_CONFIG = {
       },
       totalAmount: {
         label: "Total Amount",
-        calculate: (lines) => lines.reduce((sum, l) => sum + (l.amount || 0), 0),
+        calculate: (lines) =>
+          lines.reduce((sum, l) => sum + (l.amount || 0), 0),
       },
     },
     tableFields: [
@@ -1909,7 +2008,7 @@ export const VOUCHER_CONFIG = {
         label: "Date",
         type: "date",
         required: true,
-      },  
+      },
       {
         name: "party_code",
         label: "Customer",
@@ -1921,7 +2020,12 @@ export const VOUCHER_CONFIG = {
         valueKey: "acno",
         required: true,
         modalFields: [
-          { name: "acname", label: "Customer Name", type: "text", required: true },
+          {
+            name: "acname",
+            label: "Customer Name",
+            type: "text",
+            required: true,
+          },
           {
             name: "macno",
             label: "Main Account",
@@ -2043,7 +2147,8 @@ export const VOUCHER_CONFIG = {
       },
       totalAmount: {
         label: "Total Amount",
-        calculate: (lines) => lines.reduce((sum, l) => sum + (l.amount || 0), 0),
+        calculate: (lines) =>
+          lines.reduce((sum, l) => sum + (l.amount || 0), 0),
       },
     },
     tableFields: [
@@ -2069,5 +2174,4 @@ export const VOUCHER_CONFIG = {
       { name: "total", label: "Total Amount", type: "number", isTotal: true },
     ],
   },
-
 };

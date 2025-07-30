@@ -138,8 +138,9 @@ const SearchableSelect = ({
   const [search, setSearch] = useState("");
   const inputRef = useRef(null);
 
-  const filteredOptions = options.filter((opt) =>
-    opt.label.toLowerCase().includes(search.toLowerCase())
+  const filteredOptions = options.filter((opt) => 
+    String(opt.label).toLowerCase().includes(search.toLowerCase())
+    
   );
 
   useEffect(() => {
@@ -270,11 +271,10 @@ export default function VoucherForm({
     saleOrder: "/api/orders/saleOrder",
   };
   useEffect(() => {
-  return () => {
-    Object.values(validationTimersRef.current).forEach(clearTimeout);
-  };
-}, []);
-  
+    return () => {
+      Object.values(validationTimersRef.current).forEach(clearTimeout);
+    };
+  }, []);
 
   // Fetch options for select fields
   const getRequiredOptionTypes = useCallback(() => {
@@ -296,7 +296,7 @@ export default function VoucherForm({
     try {
       const response = await axios.post("/api/voucher/check-stock", {
         productIds,
-        godown:1
+        godown: 1,
       });
       setStockLevels((prev) => ({ ...prev, ...response.data }));
     } catch (error) {
@@ -317,7 +317,13 @@ export default function VoucherForm({
       const endpoints = [];
 
       allFields.forEach((field) => {
-        if (field.type === "select" && field.options && field.apiEndpoint) {
+        if (field.type === "select" && field.options && typeof field.apiEndpoint==="function") {
+          console.log("Master Data fields : ", field.apiEndpoint(masterData) );
+          endpoints.push({ key: field.options, url: field.apiEndpoint(masterData) });
+        }
+        else if (field.type === "select" && field.options && field.apiEndpoint) {
+                    console.log("Master Data fields 2 : ", field.apiEndpoint);
+
           endpoints.push({ key: field.options, url: field.apiEndpoint });
         }
       });
@@ -343,6 +349,8 @@ export default function VoucherForm({
           return { key, data: res.data.data || [] };
         })
       );
+
+      console.log("Fetched options data: ", results);
 
       const newOptionsData = results.reduce(
         (acc, { key, data }) => ({ ...acc, [key]: data }),
@@ -412,47 +420,52 @@ export default function VoucherForm({
       ) || {};
 
     if (editMode && existingData) {
-            console.log("Type: ",type)
+      console.log("Type: ", type);
 
-      const mappedMaster =( type !== "purchaseOrder" && type !== "saleOrder") ?{
-        ...existingData.master,
-        pycd: String(existingData.master.pycd || ""), // Ensure string
-        godown: String(existingData.master.godown || ""), // Convert number to string
-        dateD:
-          formatDateToYYYYMMDD(existingData.master.dateD) ||
-          formatDateToYYYYMMDD(new Date()),
-        time: formatTimeToHHMMSS(existingData.master.time) || now,
-        vr_no: String(existingData.master.vr_no || ""),
-        check_no: String(existingData.master.check_no || ""),
-        check_date: formatDateToYYYYMMDD(existingData.master.check_date) || "",
-        rmk: String(existingData.master.rmk || ""),
-        invoice_no: String(existingData.master.invoice_no || "").trim(), // Trim whitespace
-        rmk2: String(existingData.master.rmk2 || ""),
-        tran_code:
-          Number(existingData.master.tran_code) || voucherConfig.tran_code,
-      } : {
-         ...existingData.master,
+      const mappedMaster =
+        type !== "purchaseOrder" && type !== "saleOrder"
+          ? {
+              ...existingData.master,
+              pycd: String(existingData.master.pycd || ""), // Ensure string
+              godown: String(existingData.master.godown || ""), // Convert number to string
+              dateD:
+                formatDateToYYYYMMDD(existingData.master.dateD) ||
+                formatDateToYYYYMMDD(new Date()),
+              time: formatTimeToHHMMSS(existingData.master.time) || now,
+              vr_no: String(existingData.master.vr_no || ""),
+              check_no: String(existingData.master.check_no || ""),
+              check_date:
+                formatDateToYYYYMMDD(existingData.master.check_date) || "",
+              rmk: String(existingData.master.rmk || ""),
+              invoice_no: String(existingData.master.invoice_no || "").trim(), // Trim whitespace
+              rmk2: String(existingData.master.rmk2 || ""),
+              tran_code:
+                Number(existingData.master.tran_code) ||
+                voucherConfig.tran_code,
+            }
+          : {
+              ...existingData.master,
+            };
 
-      };
-
-      const mappedLines = (type !== "purchaseOrder" && type !== "saleOrder") ? 
-      existingData.lines?.map((line) => ({
-        ...line,
-        itcd: String(line.itcd || ""), // Convert number to string
-        no_of_pack: Number(line.no_of_pack) || 0,
-        qty_per_pack: Number(line.qty_per_pack) || 0,
-        qty: Number(line.qty) || 0,
-        rate: Number(line.rate) || 0,
-        gross_amount: Number(line.gross_amount) || 0,
-        st_rate: Number(line.st_rate) || 0,
-        st_amount: Number(line.st_amount) || 0,
-        additional_tax: Number(line.additional_tax) || 0,
-        camt: Number(line.camt) || 0,
-      })) || [{}] : 
-      existingData.lines?.map((line) => ({
-        ...line,
-        itcd: String(line.itcd || ""), // Convert number to string
-      })) || [{}];
+      const mappedLines =
+        type !== "purchaseOrder" && type !== "saleOrder"
+          ? existingData.lines?.map((line) => ({
+              ...line,
+              itcd: String(line.itcd || ""), // Convert number to string
+              no_of_pack: Number(line.no_of_pack) || 0,
+              qty_per_pack: Number(line.qty_per_pack) || 0,
+              qty: Number(line.qty) || 0,
+              rate: Number(line.rate) || 0,
+              gross_amount: Number(line.gross_amount) || 0,
+              st_rate: Number(line.st_rate) || 0,
+              st_amount: Number(line.st_amount) || 0,
+              additional_tax: Number(line.additional_tax) || 0,
+              camt: Number(line.camt) || 0,
+            })) || [{}]
+          : existingData.lines?.map((line) => ({
+              ...line,
+              itcd: String(line.itcd || ""), // Convert number to string
+            })) || [{}];
 
       setMasterData(mappedMaster);
       setMainLines(mappedLines.length > 0 ? mappedLines : [{}]);
@@ -484,7 +497,7 @@ export default function VoucherForm({
           st_amount: 0, // Will be calculated
           additional_tax: Number(line.additional_tax) || 0,
           camt: 0, // Will be calculated
-          stock:Number(line.stock) || 0,
+          stock: Number(line.stock) || 0,
           original_qty: Number(line.qty) || 0, // Store original for validation
         })) || [{}];
 
@@ -536,8 +549,8 @@ export default function VoucherForm({
 
             setMasterData((prev) => ({
               ...prev,
-              check_no: stInvResponse.data.nextNumber || "1",
-              rmk2: deliveryResponse.data.nextNumber || "1",
+              check_no: String(stInvResponse.data.nextNumber) || "1",
+              rmk2: String(deliveryResponse.data.nextNumber) || "1",
             }));
           } catch (error) {
             console.error("Error fetching next numbers:", error);
@@ -586,6 +599,27 @@ export default function VoucherForm({
     const fieldConfig = voucherConfig.masterFields.find(
       (f) => (f.formName || f.name) === name
     );
+
+    // Handle PO/SO selection
+    if ((name === "po_no" || name === "so_no") && fieldConfig?.onChange) {
+      try {
+        const updates = await fieldConfig.onChange(value, masterData);
+        setMasterData((prev) => ({
+          ...prev,
+          [name]: value,
+          ...updates,
+          // [`${name}Details`]: updates, // Store full order details for validation
+        }));
+      } catch (error) {
+        toast.error(`Failed to load order details: ${error.message}`);
+      }
+    } else {
+      setMasterData((prev) => ({
+        ...prev,
+        [name]: value === "placeholder" ? "" : value,
+      }));
+    }
+
     if (fieldConfig?.validate) {
       setLoading((prev) => ({ ...prev, validation: true }));
       try {
@@ -638,7 +672,42 @@ export default function VoucherForm({
 
     if (!fieldConfig) return;
 
-    if (type === "sale" && isMain && fieldName === "itcd" && value || type === "transfer" && isMain && fieldName === "itcd" && value) {
+    if (
+      (type === "sale" && isMain && fieldName === "itcd" && value) ||
+      (type === "purchase" && isMain && fieldName === "itcd" && value) ||
+      (type === "transfer" && isMain && fieldName === "itcd" && value) ||
+      (type === "saleOrder" && isMain && fieldName === "itcd" && value) ||
+      (type === "purchase" && isMain && fieldName === "itcd" && value) 
+    ) {
+
+      // For purchase vouchers with PO selected
+  if (type === "purchase" || "sale" && masterData.po_no || masterData.so_no)  {
+    const poItem = masterData.orderDetails?.find(
+      item => item.itcd === Number(value)
+      
+    );
+        console.log("PO Item 1: ", masterData); 
+        console.log("PO Item 2: ", value);
+
+    
+    console.log("PO Item: ", poItem);
+    
+    if (poItem) {
+      // Update the line with PO details
+      lines[index] = { 
+        ...lines[index],
+        itcd: value,
+        rate: poItem.rate || 0,
+        // You might want to add original PO quantities for validation
+        ...(type==="purchase" ? {po_qty: (poItem.no_of_packs || 0) * (poItem.qty_per_pack || 0)}
+      
+        : {so_qty: (poItem.no_of_packs || 0) * (poItem.qty_per_pack || 0)}),
+      };
+      
+      if (isMain) setMainLines([...lines]);
+      else setDeductionLines([...lines]);
+    }
+  }
       // Fetch stock for this product
       fetchStockLevels([value]);
     }
@@ -673,27 +742,27 @@ export default function VoucherForm({
     if (isMain) setMainLines(lines);
     else setDeductionLines(lines);
     // ---- Debounced validation starts here ----
-  const key = `${isMain ? "main" : "deduction"}-${index}-${fieldName}`;
+    const key = `${isMain ? "main" : "deduction"}-${index}-${fieldName}`;
 
-  // clear any previous timer for this field
-  const prevTimer = validationTimersRef.current[key];
-  if (prevTimer) clearTimeout(prevTimer);
+    // clear any previous timer for this field
+    const prevTimer = validationTimersRef.current[key];
+    if (prevTimer) clearTimeout(prevTimer);
 
-  validationTimersRef.current[key] = window.setTimeout(() => {
-    const validationError = fieldConfig.validate
-      ? fieldConfig.validate(processedValue, newLine)
-      : null;
+    validationTimersRef.current[key] = window.setTimeout(() => {
+      const validationError = fieldConfig.validate
+        ? fieldConfig.validate(processedValue, newLine)
+        : null;
 
-    setErrors((prev) => ({
-      ...prev,
-      validation: {
-        ...prev.validation,
-        [key]: validationError,
-      },
-    }));
-    delete validationTimersRef.current[key];
-  }, 500); // <-- your debounce delay
-  // ---- Debounced validation ends here ----
+      setErrors((prev) => ({
+        ...prev,
+        validation: {
+          ...prev.validation,
+          [key]: validationError,
+        },
+      }));
+      delete validationTimersRef.current[key];
+    }, 500); // <-- your debounce delay
+    // ---- Debounced validation ends here ----
 
     // Validate the field
     // if (fieldConfig.validate) {
@@ -853,9 +922,9 @@ export default function VoucherForm({
         });
 
         // Validate receipt amount is positive
-      if (line.camt && parseFloat(line.camt) <= 0) {
-        newErrors[`main-${index}-camt`] = "Amount must be greater than 0";
-      }
+        if (line.camt && parseFloat(line.camt) <= 0) {
+          newErrors[`main-${index}-camt`] = "Amount must be greater than 0";
+        }
       });
     }
 
@@ -873,16 +942,17 @@ export default function VoucherForm({
           });
 
           // Validate deduction amount is positive
-        if (line.damt && parseFloat(line.damt) <= 0) {
-          newErrors[`deduction-${index}-damt`] = "Amount must be greater than 0";
-        }
+          if (line.damt && parseFloat(line.damt) <= 0) {
+            newErrors[`deduction-${index}-damt`] =
+              "Amount must be greater than 0";
+          }
         }
       });
     }
 
     // Balance check
-          console.log("Fields")
-          console.log("YES ", voucherConfig.balanceCheck)
+    console.log("Fields");
+    console.log("YES ", voucherConfig.balanceCheck);
 
     if (voucherConfig.balanceCheck) {
       const formData = {
@@ -899,16 +969,16 @@ export default function VoucherForm({
       // }
 
       try {
-      const isValid = await voucherConfig.balanceCheck.condition(formData);
-      console.log(isValid)
-      console.log("Fields")
-      if (!isValid) {
-        newErrors.balance = voucherConfig.balanceCheck.errorMessage(formData);
+        const isValid = await voucherConfig.balanceCheck.condition(formData);
+        console.log(isValid);
+        console.log("Fields");
+        if (!isValid) {
+          newErrors.balance = voucherConfig.balanceCheck.errorMessage(formData);
+        }
+      } catch (error) {
+        newErrors.balance = "Failed to validate amounts with server";
+        console.error("Validation error:", error);
       }
-    } catch (error) {
-      newErrors.balance = "Failed to validate amounts with server";
-      console.error("Validation error:", error);
-    }
     }
 
     setErrors((prev) => ({ ...prev, validation: newErrors }));
@@ -933,7 +1003,11 @@ export default function VoucherForm({
     };
 
     // ✅ Validate stock for sale transactions
-    if (type === "sale" && isMain && fieldName === "itcd" && value || type === "transfer" && isMain && fieldName === "itcd" && value) {
+    if (
+      (type === "sale") ||
+      (type === "transfer")
+      // || (type === "saleOrder" && isMain && fieldName === "itcd" && value)
+    ) {
       const stockErrors = [];
 
       formData.lines.forEach((line, index) => {
@@ -982,9 +1056,14 @@ export default function VoucherForm({
       return;
     }
 
-      const isValid = await validateForm();
+    const isValid = await validateForm();
+    console.log("Is Valid: ", isValid);
+    console.log("Errors: ", errors.validation);
+    console.log("Errors: ", errors);
 
-     if (!isValid) {
+    
+
+    if (!isValid) {
       toast.error("Please correct the highlighted errors");
       const firstErrorKey = Object.keys(errors.validation)[0];
       if (firstErrorKey) {
@@ -994,9 +1073,12 @@ export default function VoucherForm({
       }
       return;
     }
+    console.log("Errorsa: ", errors);
 
     setLoading((prev) => ({ ...prev, submit: true }));
     try {
+          console.log("Errorsw: ", errors);
+
       const formData = prepareFormData();
       const url =
         editMode && existingData?.voucherId ? `${apiMap[type]}` : apiMap[type];
@@ -1055,7 +1137,29 @@ export default function VoucherForm({
   };
 
   // Utility Functions
-  const getSelectOptions = (optionsType, valueKey = "id", nameKey = "name") => {
+  const getSelectOptions = (
+    optionsType,
+    valueKey = "id",
+    nameKey = "name",
+    formData
+  ) => {
+    // Special handling for products when PO/SO is selected
+    if (optionsType === "products" && formData?.po_no) {
+      console.log("Form Data: ",formData)
+      return (formData.orderDetails || []).map((line) => ({
+        value: line.itcd,
+        label: line.items.item || line.itcd,
+      }));
+    }
+    if (optionsType === "products" && formData?.so_no) {
+      return (formData.orderDetails  || []).map((line) => ({
+        value: line.itcd,
+        label: line.items.item || line.itcd,
+      }));
+    }
+    
+
+    console.log("Options Type: ", optionsType);
     return (optionsData[optionsType] || []).map((opt) => ({
       value: opt[valueKey]?.toString() || "",
       label: opt[nameKey] || opt.title || opt[valueKey]?.toString() || "",
@@ -1097,7 +1201,9 @@ export default function VoucherForm({
           options={getSelectOptions(
             fieldConfig.options,
             fieldConfig.valueKey,
-            fieldConfig.nameKey
+            fieldConfig.nameKey,
+            masterData // Pass form data for dynamic options
+
           )}
           placeholder={`Select ${fieldConfig.label}`}
           label={fieldConfig.label}
@@ -1111,7 +1217,11 @@ export default function VoucherForm({
       );
     }
     // Show stock info for product quantity in sale voucher
-    if ((type === "sale" && isMain && fieldName === "qty" && line.itcd) || (type === "transfer" && isMain && fieldName === "qty" && line.itcd))  {
+    if (
+      (type === "sale" && isMain && fieldName === "qty" && line.itcd) ||
+      (type === "transfer" && isMain && fieldName === "qty" && line.itcd) ||
+      (type === "saleOrder" && isMain && fieldName === "qty" && line.itcd)
+    ) {
       const stock = stockLevels[line.itcd] || 0;
       return (
         <div className="space-y-1">
@@ -1171,7 +1281,11 @@ export default function VoucherForm({
             />
             <div className="text-xs text-gray-500 flex items-center gap-1">
               <span>of</span>
-              <span className="font-medium">{(masterData.tran_code === 9 || masterData.tran_code === 11)  ? (line.stock || 0) : (line.original_qty || 0)}</span>
+              <span className="font-medium">
+                {masterData.tran_code === 9 || masterData.tran_code === 11
+                  ? line.stock || 0
+                  : line.original_qty || 0}
+              </span>
             </div>
           </div>
           {errors.validation[
@@ -1188,6 +1302,42 @@ export default function VoucherForm({
         </div>
       );
     }
+    if (
+  (type === "purchase" && isMain && fieldName === "qty" && line.itcd && line.po_qty) ||
+  (type === "sale" && isMain && fieldName === "qty" && line.itcd && line.so_qty)
+) {
+  const orderedQty = line.po_qty|| line.so_qty || 0;
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs text-gray-700">
+        {fieldConfig.label}
+        {fieldConfig.required && <span className="text-red-500">*</span>}
+      </Label>
+      <div className="flex items-center gap-2">
+        <Input
+          type="number"
+          value={value || ""}
+          onChange={(e) =>
+            handleLineChange(index, fieldName, e.target.value, isMain)
+          } 
+          min={0}
+          max={orderedQty}
+          className="h-9 text-sm w-full"
+        />
+        <div className="text-xs text-gray-500 flex items-center gap-1">
+          <span>of</span>
+          <span className="font-medium">{orderedQty}</span>
+          <span>ordered</span>
+        </div>
+      </div>
+      {errors.validation[`main-${index}-${fieldName}`] && (
+        <p className="text-xs text-red-500">
+          {errors.validation[`main-${index}-${fieldName}`]}
+        </p>
+      )}
+    </div>
+  );
+}
     const inputType =
       fieldConfig.type === "number"
         ? "number"

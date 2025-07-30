@@ -79,6 +79,10 @@ export async function POST(req, { params }) {
     }
 
     const { master, lines, deductions } = body;
+    if(master?.orderDetails){
+    delete master.orderDetails;
+
+    }
 
     console.log("master:", master);
     console.log("lines:", lines);
@@ -166,6 +170,16 @@ export async function POST(req, { params }) {
         }
       }
     }
+    if(master.po_no && tran_code === 4 ) {
+      master.po_no = Number(master.po_no);
+    } else{
+    master.po_no = null;
+
+    }
+    if(master.so_no && tran_code === 6 ) {
+      master.so_no = Number(master.so_no);
+    }else{
+      master.so_no = null;}
     console.log("master after:", master);
 
     const masterData = await prisma.transactionsMaster.create({

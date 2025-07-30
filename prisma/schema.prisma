@@ -346,7 +346,9 @@ model TransactionsMaster {
   dateD         DateTime?
   time          DateTime?
   tran_code     Int?
-  vr_no         Int?           
+  vr_no         Int?
+  po_no         Int?
+  so_no         Int?           
   pycd          String?
   check_no      String?       @map("CHECK_NO")
   check_date    DateTime?     @map("CHECK_DATE")
@@ -379,6 +381,8 @@ model Transactions {
   acno               String?
   itcd               Int?
   ccno               Int?
+  po_qty            Float?             // Add this line to track original PO quantity for purchase
+  so_qty            Float?             // Add this line to track original SO quantity for sales
   narration1         String?            @db.Char(150)
   narration2         String?            @db.Char(150)
   narration3         String?            @db.Char(150)
