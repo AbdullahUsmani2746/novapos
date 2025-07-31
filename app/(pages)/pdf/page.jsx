@@ -1,14 +1,12 @@
 "use client";
 import React from "react";
-// import { generateAdjustmentPDF } from "@/components/Template/Adjustment";
+
 import { generateVoucherPDF } from "@/components/Template/Payment";
-// import { generateReceiptPDF } from "@/components/Template/Receipt";
-// import { generateSalesInvoicePDF } from "@/components/Template/SalesInvoice";
-// import { generateCommisionPDF } from "@/components/Template/Commision";
-// import { generateDeliveryPDF } from "@/components/Template/Delivery";
 import { generateUnifiedPDF } from "@/components/Template/UnifiedReport";
 import { generateSalesOrderPDF } from "@/components/Template/SalesOrder";
 import { generateOrderBalancePDF } from "@/components/Template/OrderBalance";
+import { generateSalesBalancePDF } from "@/components/Template/SalesBalance";
+import { generateCustomerAgingPDF } from "@/components/Template/CustomerAging";
 
 
 const PDF = () => {
@@ -92,7 +90,15 @@ const PDF = () => {
   };
   const handleDownload7 = () => {
     const doc = generateOrderBalancePDF()
-    doc.save("sales-balance.pdf");
+    doc.save("order-balance.pdf");
+  };
+  const handleDownload8 = () => {
+    const doc = generateSalesBalancePDF()
+    doc.save("salesOrder-balance.pdf");
+  };
+  const handleDownload9 = () => {
+    const doc = generateCustomerAgingPDF()
+    doc.save("customer-aging.pdf");
   };
 
   return (
@@ -127,6 +133,18 @@ const PDF = () => {
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
           sales order balance
+        </button>
+        <button
+          onClick={handleDownload8}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          sales balance
+        </button>
+        <button
+          onClick={handleDownload9}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          customer aging
         </button>
        
       </div>
