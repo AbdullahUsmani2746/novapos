@@ -4,9 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { REPORT_CONFIG } from "./config";
 import { saveAs } from "file-saver";
-import * as XLSX from "xlsx";
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import * as XLSX from "xlsx-js-style";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -338,10 +336,191 @@ const ReportViewer = ({ reportType }) => {
       return row;
     });
 
-    const mainWorksheet = XLSX.utils.json_to_sheet(mainData);
+    const mainWorksheet = XLSX.utils.json_to_sheet(mainData, { origin: "A3" });
+
+    // Add Title (Row 1)
+    XLSX.utils.sheet_add_aoa(mainWorksheet, [[config.title]], { origin: "A1" });
+
+    // Add generated date (Row 2)
+    XLSX.utils.sheet_add_aoa(
+      mainWorksheet,
+      [[`Generated on ${format(new Date(), "PPP")}`]],
+      { origin: "A2" }
+    );
+
+    mainWorksheet["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: allColumns.length - 1 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: allColumns.length - 1 } },
+    ];
+
+    // Apply styling for header rows
+    ["A1", "A2"].forEach((cellRef, idx) => {
+      if (!mainWorksheet[cellRef])
+        mainWorksheet[cellRef] = {
+          v:
+            idx === 0
+              ? config.title
+              : `Generated on ${format(new Date(), "PPP")}`,
+          t: "s",
+        };
+
+      if (idx === 0) {
+        // Title styling (Row 1)
+        mainWorksheet[cellRef].s = {
+          font: {
+            bold: true,
+            sz: 24,
+            color: { rgb: "FFFFFF" },
+            name: "Calibri",
+            scheme: "major",
+          },
+          fill: {
+            patternType: "solid",
+            fgColor: { rgb: "4472C4" },
+            bgColor: { rgb: "4472C4" },
+          },
+          alignment: {
+            horizontal: "center",
+            vertical: "center",
+            wrapText: true,
+          },
+        };
+
+        if (!mainWorksheet["!rows"]) {
+          mainWorksheet["!rows"] = [];
+        }
+        mainWorksheet["!rows"][0] = { hpt: 40 };
+        mainWorksheet["!rows"][1] = { hpt: 23 };
+      } else {
+        // Date styling (Row 2)
+        mainWorksheet[cellRef].s = {
+          font: {
+            italic: true,
+            sz: 12,
+            color: { rgb: "2C3E50" },
+            name: "Calibri",
+          },
+          fill: {
+            patternType: "solid",
+            fgColor: { rgb: "D6EAF8" },
+            bgColor: { rgb: "D6EAF8" },
+          },
+          alignment: {
+            horizontal: "right",
+            vertical: "center",
+          },
+        };
+      }
+    });
+
+    // Calculate optimal column widths with special handling for item name
+    const calculateColumnWidth = (data, columnKey) => {
+      const headerLength = columnKey.length;
+      const maxContentLength = Math.max(
+        ...data.map((row) => {
+          const value = row[columnKey];
+          return value ? value.toString().length : 0;
+        })
+      );
+
+      // Make item name column wider
+      if (
+        columnKey.toLowerCase().includes("item") ||
+        columnKey.toLowerCase().includes("name")
+      ) {
+        return Math.min(Math.max(headerLength, maxContentLength, 25), 40);
+      }
+
+      // Return the larger of header or content, with min 10 and max 30
+      return Math.min(Math.max(headerLength, maxContentLength, 10), 30);
+    };
+
+    // Set column widths based on content
+    const wscols = Object.keys(mainData[0] || {}).map((key) => ({
+      wch: calculateColumnWidth(mainData, key),
+    }));
+    mainWorksheet["!cols"] = wscols;
+
+    // Set row heights
+    const wsrows = [];
+    for (let i = 0; i <= mainData.length + 2; i++) {
+      wsrows.push({
+        hpt:
+          i === 0
+            ? 40 // Title row
+            : i === 1
+            ? 23 // Date row
+            : 32, // Data rows
+      });
+    }
+    mainWorksheet["!rows"] = wsrows;
+
+    // Add borders and styling to all cells
+    const range = XLSX.utils.decode_range(mainWorksheet["!ref"] || "A1");
+
+    for (let row = 0; row <= range.e.r; row++) {
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const cell = XLSX.utils.encode_cell({ r: row, c: col });
+        if (!mainWorksheet[cell]) {
+          mainWorksheet[cell] = { v: "" };
+        }
+
+        // Common border style for all cells
+        const borderStyle = {
+          style: "thin",
+          color: { rgb: "000000" },
+        };
+
+        if (row === 2) {
+          mainWorksheet[cell].s = {
+            fill: { fgColor: { rgb: "2C3E50" } },
+            font: {
+              bold: true,
+              color: { rgb: "FFFFFF" },
+              size: 12,
+            },
+            alignment: {
+              horizontal: "center",
+              vertical: "center",
+              wrapText: true,
+            },
+            border: {
+              top: borderStyle,
+              bottom: borderStyle,
+              left: borderStyle,
+              right: borderStyle,
+            },
+          };
+        } else if (row > 2) {
+          mainWorksheet[cell].s = {
+            fill: {
+              fgColor: {
+                rgb: row % 2 === 0 ? "F8F9FA" : "FFFFFF",
+              },
+            },
+            font: {
+              size: 11,
+              color: { rgb: "000000" },
+            },
+            alignment: {
+              horizontal: "center",
+              vertical: "center",
+              wrapText: true,
+            },
+            border: {
+              top: borderStyle,
+              bottom: borderStyle,
+              left: borderStyle,
+              right: borderStyle,
+            },
+          };
+        }
+      }
+    }
+
     XLSX.utils.book_append_sheet(workbook, mainWorksheet, "Summary");
 
-    // Detail sheets if available
+    // Detail sheets with improved styling
     if (config.detailColumns && data.some((item) => item.transactions)) {
       const detailData = [];
 
@@ -368,141 +547,238 @@ const ReportViewer = ({ reportType }) => {
 
       if (detailData.length > 0) {
         const detailWorksheet = XLSX.utils.json_to_sheet(detailData);
+
+        // Calculate column widths for detail sheet with special handling for item name
+        const detailWscols = Object.keys(detailData[0] || {}).map((key) => ({
+          wch:
+            key.toLowerCase().includes("item") ||
+            key.toLowerCase().includes("name")
+              ? 30
+              : calculateColumnWidth(detailData, key),
+        }));
+        detailWorksheet["!cols"] = detailWscols;
+
+        // Set row heights for detail sheet
+        const detailWsrows = [];
+        for (let i = 0; i <= detailData.length; i++) {
+          detailWsrows.push({
+            hpt:
+              i === 0
+                ? 42 // Header row
+                : 36, // Data rows
+          });
+        }
+        detailWorksheet["!rows"] = detailWsrows;
+
+        // Add styling to detail sheet
+        const detailRange = XLSX.utils.decode_range(
+          detailWorksheet["!ref"] || "A1"
+        );
+
+        for (let row = 0; row <= detailRange.e.r; row++) {
+          for (let col = detailRange.s.c; col <= detailRange.e.c; col++) {
+            const cell = XLSX.utils.encode_cell({ r: row, c: col });
+            if (!detailWorksheet[cell]) {
+              detailWorksheet[cell] = { v: "" };
+            }
+
+            const borderStyle = {
+              style: "thin",
+              color: { rgb: "000000" },
+            };
+
+            if (row === 0) {
+              // Header styling for detail sheet
+              detailWorksheet[cell].s = {
+                fill: { fgColor: { rgb: "27AE60" } },
+                font: {
+                  bold: true,
+                  color: { rgb: "FFFFFF" },
+                  size: 12,
+                },
+                alignment: {
+                  horizontal: "center",
+                  vertical: "center",
+                  wrapText: true,
+                },
+                border: {
+                  top: borderStyle,
+                  bottom: borderStyle,
+                  left: borderStyle,
+                  right: borderStyle,
+                },
+              };
+            } else {
+              // Data row styling
+              detailWorksheet[cell].s = {
+                fill: {
+                  fgColor: {
+                    rgb: row % 2 === 0 ? "E8F5E9" : "FFFFFF",
+                  },
+                },
+                font: {
+                  size: 11,
+                  color: { rgb: "000000" },
+                },
+                alignment: {
+                  horizontal: "center",
+                  vertical: "center",
+                  wrapText: true,
+                },
+                border: {
+                  top: borderStyle,
+                  bottom: borderStyle,
+                  left: borderStyle,
+                  right: borderStyle,
+                },
+              };
+            }
+          }
+        }
+
         XLSX.utils.book_append_sheet(workbook, detailWorksheet, "Details");
       }
     }
 
-    // Add styling
-    const wscols = config.columns.map((col) => ({
-      width: col.width ? col.width / 5 : 20,
-    }));
-    mainWorksheet["!cols"] = wscols;
-
-    XLSX.writeFile(
-      workbook,
-      `${config.title}_${format(new Date(), "yyyy-MM-dd")}.xlsx`
-    );
+    // Export with timestamped filename
+    const timestamp = format(new Date(), "yyyy-MM-dd_HHmm");
+    XLSX.writeFile(workbook, `${config.title}_${timestamp}.xlsx`);
   };
 
   const exportToPDF = async () => {
-    const doc = new jsPDF({
-      orientation: "landscape",
-      unit: "mm",
-    });
+    try {
+      setIsExporting(true);
 
-    // Title and header
-    doc.setFontSize(16);
-    doc.setTextColor(40);
-    doc.setFont("helvetica", "bold");
-    doc.text(config.title, 14, 20);
+      const { jsPDF } = await import("jspdf");
+      const { default: autoTable } = await import("jspdf-autotable");
 
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Generated on ${format(new Date(), "PPP")}`, 14, 28);
-
-    // Main table
-    const headers = config.columns.map((col) => ({
-      title: col.headerName,
-      dataKey: col.field,
-    }));
-
-    const rows = data.map((item) => {
-      const row = {};
-      config.columns.forEach((col) => {
-        row[col.field] = col.valueGetter
-          ? String(col.valueGetter({ row: item }))
-          : String(item[col.field] || "");
+      // Initialize jsPDF
+      const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        putOnlyUsedFonts: true,
       });
-      return row;
-    });
 
-    doc.autoTable({
-      head: [headers.map((h) => h.title)],
-      body: rows.map((row) => headers.map((header) => row[header.dataKey])),
-      startY: 35,
-      margin: { left: 10, right: 10 },
-      styles: {
-        fontSize: 8,
-        cellPadding: 2,
-        font: "helvetica",
-        textColor: 40,
-      },
-      headStyles: {
-        fillColor: [59, 130, 246],
-        textColor: 255,
-        fontStyle: "bold",
-      },
-      alternateRowStyles: { fillColor: [249, 250, 251] },
-      columnStyles: {
-        // Apply currency formatting to currency columns
-        ...config.columns.reduce((acc, col) => {
+      // Title and header
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.setTextColor(40);
+      doc.text(config.title, 14, 20);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text(`Generated on ${format(new Date(), "PPP")}`, 14, 28);
+
+      // Prepare main table data
+      const headers = config.columns.map((col) => ({
+        title: col.headerName,
+        dataKey: col.field,
+      }));
+
+      const body = data.map((item) => {
+        const row = {};
+        config.columns.forEach((col) => {
+          row[col.field] = col.valueGetter
+            ? String(col.valueGetter({ row: item }))
+            : String(item[col.field] || "");
+        });
+        return row;
+      });
+
+      // Main table
+      autoTable(doc, {
+        head: [headers.map((h) => h.title)],
+        body: body.map((row) => headers.map((header) => row[header.dataKey])),
+        startY: 35,
+        margin: { left: 10, right: 10 },
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+          font: "helvetica",
+          textColor: 40,
+        },
+        headStyles: {
+          fillColor: [59, 130, 246],
+          textColor: 255,
+          fontStyle: "bold",
+        },
+        alternateRowStyles: {
+          fillColor: [249, 250, 251],
+        },
+        columnStyles: config.columns.reduce((acc, col, index) => {
           if (col.type === "currency") {
-            acc[col.field] = { cellWidth: 15 };
+            acc[index] = { cellWidth: 15 }; // Use column index instead of field name
           }
           return acc;
         }, {}),
-      },
-    });
-
-    // Add details if available
-    if (config.detailColumns && data.some((item) => item.transactions)) {
-      const detailHeaders = [
-        { title: "Parent ID", dataKey: "parentId" },
-        { title: "Parent Voucher", dataKey: "parentVoucher" },
-        ...config.detailColumns.map((col) => ({
-          title: col.headerName,
-          dataKey: col.field,
-        })),
-      ];
-
-      const detailRows = [];
-      data.forEach((item) => {
-        if (item.transactions && item.transactions.length > 0) {
-          item.transactions.forEach((detail) => {
-            detailRows.push({
-              parentId: item.id || "",
-              parentVoucher: item.vr_no || "",
-              ...config.detailColumns.reduce((acc, col) => {
-                acc[col.field] = col.valueGetter
-                  ? String(col.valueGetter({ row: detail }))
-                  : String(detail[col.field] || "");
-                return acc;
-              }, {}),
-            });
-          });
-        }
       });
 
-      if (detailRows.length > 0) {
-        doc.addPage();
-        doc.setFontSize(14);
-        doc.text("Transaction Details", 14, 20);
+      // Transaction details
+      if (config.detailColumns && data.some((item) => item.transactions)) {
+        const detailHeaders = [
+          { title: "Parent ID", dataKey: "parentId" },
+          { title: "Parent Voucher", dataKey: "parentVoucher" },
+          ...config.detailColumns.map((col) => ({
+            title: col.headerName,
+            dataKey: col.field,
+          })),
+        ];
 
-        doc.autoTable({
-          head: [detailHeaders.map((h) => h.title)],
-          body: detailRows.map((row) =>
-            detailHeaders.map((header) => row[header.dataKey])
-          ),
-          startY: 30,
-          margin: { left: 10, right: 10 },
-          styles: {
-            fontSize: 8,
-            cellPadding: 2,
-            font: "helvetica",
-            textColor: 40,
-          },
-          headStyles: {
-            fillColor: [79, 70, 229],
-            textColor: 255,
-            fontStyle: "bold",
-          },
-          alternateRowStyles: { fillColor: [249, 250, 251] },
+        const detailBody = [];
+        data.forEach((item) => {
+          if (item.transactions?.length > 0) {
+            item.transactions.forEach((detail) => {
+              const detailRow = {
+                parentId: item.id || "",
+                parentVoucher: item.vr_no || "",
+              };
+              config.detailColumns.forEach((col) => {
+                detailRow[col.field] = col.valueGetter
+                  ? String(col.valueGetter({ row: detail }))
+                  : String(detail[col.field] || "");
+              });
+              detailBody.push(detailRow);
+            });
+          }
         });
-      }
-    }
 
-    doc.save(`${config.title}_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+        if (detailBody.length > 0) {
+          doc.addPage();
+          doc.setFontSize(14);
+          doc.text("Transaction Details", 14, 20);
+
+          autoTable(doc, {
+            head: [detailHeaders.map((h) => h.title)],
+            body: detailBody.map((row) =>
+              detailHeaders.map((header) => row[header.dataKey])
+            ),
+            startY: 30,
+            margin: { left: 10, right: 10 },
+            styles: {
+              fontSize: 8,
+              cellPadding: 2,
+              font: "helvetica",
+              textColor: 40,
+            },
+            headStyles: {
+              fillColor: [79, 70, 229],
+              textColor: 255,
+              fontStyle: "bold",
+            },
+            alternateRowStyles: {
+              fillColor: [249, 250, 251],
+            },
+          });
+        }
+      }
+
+      doc.save(`${config.title}_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    } catch (error) {
+      console.error("PDF Export Error:", error);
+      alert("Failed to generate PDF. Please check console for details.");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const exportToCSV = async () => {
@@ -562,6 +838,7 @@ const ReportViewer = ({ reportType }) => {
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     saveAs(blob, `${config.title}_${format(new Date(), "yyyy-MM-dd")}.csv`);
   };
+
   // Sorted data
   const sortedData = useMemo(() => {
     if (!sortConfig.key && data.items) return data.items;
