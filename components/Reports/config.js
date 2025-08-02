@@ -39,31 +39,31 @@ export const REPORT_CONFIG = {
       },
     ],
     columns: [
-      { field: "dateD", headerName: "Date", width: 120, type: "date" },
-      { field: "vr_no", headerName: "Voucher No", width: 120 },
-      { field: "invoice_no", headerName: "Invoice No", width: 150 },
+      { field: "dateD", headerName: "Date", width: 32, type: "date" },
+      { field: "vr_no", headerName: "Voucher No", width: 32 },
+      { field: "invoice_no", headerName: "Invoice No", width: 32 },
       {
         field: "vendor_name",
         headerName: "Vendor",
-        width: 200,
+        width: 48,
         valueGetter: (params) => params.row.acno?.acname || "",
       },
       {
         field: "godown_name",
         headerName: "Godown",
-        width: 150,
+        width: 52,
         valueGetter: (params) => params.row.godownDetails?.godown || "",
       },
       {
         field: "total_qty",
         headerName: "Total Qty",
-        width: 120,
+        width: 32,
         type: "number",
       },
       {
         field: "total_amount",
         headerName: "Total Amount",
-        width: 150,
+        width: 52,
         type: "currency",
       },
     ],
@@ -1368,13 +1368,13 @@ export const REPORT_CONFIG = {
       },
     ],
     columns: [
-      { field: "date", headerName: "Date", width: 120, type: "date" },
-      { field: "vr_no", headerName: "Voucher No", width: 120 },
-      { field: "tran_type", headerName: "Type", width: 200 },
-      { field: "narration", headerName: "Narration", width: 200 },
-      { field: "debit", headerName: "Debit", width: 150, type: "currency" },
-      { field: "credit", headerName: "Credit", width: 150, type: "currency" },
-      { field: "balance", headerName: "Balance", width: 150, type: "currency" },
+      { field: "date", headerName: "Date", width: 32, type: "date" },
+      { field: "vr_no", headerName: "Voucher No", width: 32 },
+      { field: "tran_type", headerName: "Type", width: 52 },
+      { field: "narration", headerName: "Narration", width: 52 },
+      { field: "debit", headerName: "Debit", width: 32, type: "currency" },
+      { field: "credit", headerName: "Credit", width: 32, type: "currency" },
+      { field: "balance", headerName: "Balance", width: 32, type: "currency" },
     ],
     summaryFields: [
       {
@@ -1423,6 +1423,7 @@ export const REPORT_CONFIG = {
       },
       { field: "camt", headerName: "Amount", width: 150, type: "currency" },
     ],
+
     exportOptions: { pdf: true, excel: true, csv: true },
   },
 

@@ -1,10 +1,10 @@
 import { jsPDF } from "jspdf";
 
 export const generateCustomerAgingPDF = () => {
-  // ============== ALL VALUES CONSOLIDATED HERE ==============
-  const pageWidth = 210;
-  const pageHeight = 297;
-  const margin = 2;
+  // ============== LANDSCAPE DIMENSIONS ==============
+  const pageWidth = 297; // A4 landscape width
+  const pageHeight = 210; // A4 landscape height
+  const margin = 5;
 
   // Color Palette
   const colors = {
@@ -21,6 +21,7 @@ export const generateCustomerAgingPDF = () => {
   const companyName = "SIEGWERK PAKISTAN LIMITED";
   const documentTitle = "Customer Aging as of 30-JUL-25";
   const customerName = "KOMPASS PAKISTAN (PRIVATE) LIMITED";
+  const customerCode = "186";
   const pageInfo = "Page 1 of 9";
 
   // Sample data based on the image
@@ -571,8 +572,33 @@ export const generateCustomerAgingPDF = () => {
     }
   ];
 
+   const customerTotals = {
+    invoiceAmount: "231,878,039",
+    receipts: "173,726,675",
+    outstanding: "58,151,364",
+    below30: "26,602,805",
+    between31_45: "0",
+    between46_60: "7,072,566",
+    between61_90: "7,777,439",
+    between91_120: "1,570,357",
+    above120: "3,934,570"
+  };
+
+  // Grand totals (same as customer totals since there's only one customer)
+  const grandTotals = {
+    invoiceAmount: "231,878,039",
+    receipts: "173,726,675",
+    outstanding: "58,151,364",
+    below30: "26,602,805",
+    between31_45: "0",
+    between46_60: "7,072,566",
+    between61_90: "7,777,439",
+    between91_120: "1,570,357",
+    above120: "3,934,570"
+  };
+
   // ============== PDF GENERATION CODE ==============
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
   const drawHeader = (yPosition = margin) => {
     // Company name section with dark blue background
@@ -589,87 +615,116 @@ export const generateCustomerAgingPDF = () => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
     doc.setTextColor(...colors.darkText);
-    doc.text(documentTitle, pageWidth / 2, yPosition, { align: "center" });
+    doc.text(documentTitle, pageWidth / 2, yPosition +2 , { align: "center" });
 
     return yPosition + 5;
   };
 
-  const drawCustomerHeader = (customer, yPosition) => {
-    const rowHeight = 8;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.setFillColor(...colors.customerHeader);
-    doc.setTextColor(...colors.white);
-    doc.setDrawColor(...colors.border);
-    doc.setLineWidth(0.5);
-    doc.rect(margin, yPosition, pageWidth - 2 * margin, rowHeight, "FD");
-    doc.text(`Customer    ${customer}`, margin + 2, yPosition + 5);
-    doc.text(pageInfo, pageWidth - margin - 2, yPosition + 5, {
-      align: "right",
-    });
-    return yPosition + rowHeight + 2;
-  };
-
-const drawTableHeader = (yPosition) => {
-  const rowHeight = 10;
-  const colWidths = [18, 12, 12, 10, 15, 20, 20, 20, 15, 15, 15, 15, 15, 15, 15];
-  let currentX = margin;
+const drawCustomerHeader = (customer, customerCode, yPosition) => {
+  const rowHeight = 8;
+  const borderX = margin;
+  const borderY = yPosition;
+  const borderWidth = pageWidth - 2 * margin;
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
+  doc.setFontSize(10);
+  doc.setFillColor(...colors.customerHeader);
+  doc.setTextColor(...colors.white);
+  doc.setDrawColor(...colors.border);
   doc.setLineWidth(0.5);
 
-  const headers = [
-    "Invoice Date",
-    "Tran No",
-    "Invoice No",
-    "CR Days",
-    "Due Date",
-    "Invoice Amount",
-    "Receipts",
-    "Outstanding",
-    "Below 30",
-    "31 to 45",
-    "46 to 60",
-    "61 to 90",
-    "91 to 120",
-    "Above 120",
-    "Total OS Days"
-  ];
+  // Draw full background rectangle
+  doc.rect(borderX, borderY, borderWidth, rowHeight, "FD");
 
-  headers.forEach((header, index) => {
-    // Draw filled rectangle for header cell
-    doc.setFillColor(...colors.secondary);
-    doc.setDrawColor(...colors.border);
-    doc.rect(currentX, yPosition , colWidths[index], rowHeight, "FD");
+  // Vertical divider positions
+  const leftTextX = margin + 2;
+  const rightTextX = pageWidth - margin - 2;
+  const centerX = pageWidth / 2;
+  const textY = yPosition + 5;
 
-    // Split text if too long for the column width
-    const lines = doc.splitTextToSize(header, colWidths[index] - 2);
-    const lineHeight = 3.5;
-    const startY = yPosition + (rowHeight - (lines.length * lineHeight)) / 2 + lineHeight;
+  // Vertical border between "Customer" and center name
+  const dividerX1 = margin + 25; 
+  doc.setDrawColor(...colors.border);
+  doc.line(dividerX1, yPosition, dividerX1, yPosition + rowHeight);
 
-    // Draw each line of header text
-    lines.forEach((line, lineIndex) => {
-      doc.setTextColor(...colors.white); // Ensure white text color
-      doc.text(line, currentX + colWidths[index] / 2, startY + (lineIndex * lineHeight), {
-        align: "center"
-      });
-    });
+  // Vertical border before customer code on right
+  const dividerX2 = pageWidth - margin - 13 ; 
+  doc.line(dividerX2, yPosition, dividerX2, yPosition + rowHeight);
 
-    currentX += colWidths[index];
-  });
+  // Text: Label
+  doc.text("Customer", leftTextX, textY);
 
-  return yPosition + rowHeight;
+  // Text: Centered name (you can trim/pad as needed for longer names)
+  doc.text(customer, centerX, textY, { align: "center" });
+
+  // Text: Right-aligned customer code
+  doc.text(customerCode, rightTextX, textY, { align: "right" });
+
+  return yPosition + rowHeight + 2;
 };
 
 
+  const drawTableHeader = (yPosition) => {
+    const rowHeight = 10;
+    // Adjusted column widths for landscape orientation (total should be around 287mm)
+    const colWidths = [20, 18, 18, 12, 20, 25, 22, 22, 18, 18, 18, 18, 18, 22, 18];
+    let currentX = margin;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setLineWidth(0.5);
+
+    const headers = [
+      "Invoice Date",
+      "Tran No",
+      "Invoice No",
+      "CR Days",
+      "Due Date",
+      "Invoice Amount",
+      "Receipts",
+      "Outstanding",
+      "Below 30",
+      "31 to 45 Days",
+      "46 to 60 Days",
+      "61 to 90 Days",
+      "91 to 120 Days",
+      "Above 120",
+      "Total OS Days"
+    ];
+
+    headers.forEach((header, index) => {
+      // Draw filled rectangle for header cell
+      doc.setFillColor(...colors.secondary);
+      doc.setDrawColor(...colors.border);
+      doc.rect(currentX, yPosition, colWidths[index], rowHeight, "FD");
+
+      // Split text if too long for the column width
+      const lines = doc.splitTextToSize(header, colWidths[index] - 2);
+      const lineHeight = 3.5;
+      const startY = yPosition + (rowHeight - (lines.length * lineHeight)) / 2 + lineHeight;
+
+      // Draw each line of header text
+      lines.forEach((line, lineIndex) => {
+        doc.setTextColor(...colors.white);
+        doc.text(line, currentX + colWidths[index] / 2, startY + (lineIndex * lineHeight), {
+          align: "center"
+        });
+      });
+
+      currentX += colWidths[index];
+    });
+
+    return yPosition + rowHeight;
+  };
+
   const drawAgingRow = (rowData, yPosition) => {
-    const colWidths = [18, 12, 12, 10, 15, 20, 20, 20, 15, 15, 15, 15, 15, 15, 15];
+    // Same column widths as header for consistency
+    const colWidths = [20, 18, 18, 12, 20, 25, 22, 22, 18, 18, 18, 18, 18, 22, 18];
     let currentX = margin;
     const rowHeight = 6;
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
+    doc.setFontSize(8); // Slightly smaller font for data rows
     doc.setLineWidth(0.2);
     doc.setDrawColor(...colors.border);
 
@@ -692,21 +747,22 @@ const drawTableHeader = (yPosition) => {
     ];
 
     // Alternate row colors for better readability
-    const rowColor = (yPosition / rowHeight) % 2 === 0 ? colors.white : colors.lightBg;
+    const rowIndex = Math.floor((yPosition - 50) / rowHeight); // Rough calculation for row alternation
+    const rowColor = rowIndex % 2 === 0 ? colors.white : colors.lightBg;
 
     values.forEach((value, index) => {
       doc.setFillColor(...rowColor);
       doc.rect(currentX, yPosition, colWidths[index], rowHeight, "FD");
 
       // Highlight negative values in red
-      if ((index === 7 || index === 14) && value.startsWith("-")) {
+      if ((index === 7 || index === 13) && value.toString().startsWith("-")) {
         doc.setTextColor(...colors.overdue);
       } else {
         doc.setTextColor(...colors.darkText);
       }
 
       // Center-align all text
-      doc.text(value, currentX + colWidths[index] / 2, yPosition + 4, {
+      doc.text(value.toString(), currentX + colWidths[index] / 2, yPosition + 4, {
         align: "center"
       });
 
@@ -716,22 +772,131 @@ const drawTableHeader = (yPosition) => {
     return yPosition + rowHeight;
   };
 
+ const drawCustomerTotal = (totals, yPosition) => {
+  const colWidths = [20, 18, 18, 12, 20, 25, 22, 22, 18, 18, 18, 18, 18, 22, 18];
+  let currentX = margin;
+  const rowHeight = 8;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setLineWidth(0.2); // ✅ Light line
+  doc.setDrawColor(200, 200, 200); // ✅ Light grey border
+
+  const values = [
+    "",
+    "",
+    "Customer Total",
+    "",
+    "",
+    totals.invoiceAmount,
+    totals.receipts,
+    totals.outstanding,
+    totals.below30,
+    totals.between31_45,
+    totals.between46_60,
+    totals.between61_90,
+    totals.between91_120,
+    totals.above120,
+    ""
+  ];
+
+  values.forEach((value, index) => {
+    doc.setFillColor(...colors.border); // ✅ Keep green fill
+    doc.rect(currentX, yPosition, colWidths[index], rowHeight, "FD");
+
+    doc.setTextColor(...colors.white);
+    doc.text(value.toString(), currentX + colWidths[index] / 2, yPosition + 5, {
+      align: "center"
+    });
+
+    currentX += colWidths[index];
+  });
+
+  return yPosition + rowHeight;
+};
+
+
+ const drawGrandTotal = (totals, yPosition) => {
+  const colWidths = [20, 18, 18, 12, 20, 25, 22, 22, 18, 18, 18, 18, 18, 22, 18];
+  let currentX = margin;
+  const rowHeight = 8;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setLineWidth(0.2); // ✅ Light border
+  doc.setDrawColor(200, 200, 200); // ✅ Light grey border
+
+  const values = [
+    "",
+    "",
+    "Grand Total",
+    "",
+    "",
+    totals.invoiceAmount,
+    totals.receipts,
+    totals.outstanding,
+    totals.below30,
+    totals.between31_45,
+    totals.between46_60,
+    totals.between61_90,
+    totals.between91_120,
+    totals.above120,
+    ""
+  ];
+
+  values.forEach((value, index) => {
+    doc.setFillColor(...colors.border); // ✅ Keep darker green
+    doc.rect(currentX, yPosition, colWidths[index], rowHeight, "FD");
+
+    doc.setTextColor(...colors.white);
+    doc.text(value.toString(), currentX + colWidths[index] / 2, yPosition + 5, {
+      align: "center"
+    });
+
+    currentX += colWidths[index];
+  });
+
+  return yPosition + rowHeight;
+};
+
+
   // === Begin PDF Rendering ===
+ const drawFooter = (yPosition) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...colors.darkText);
+    
+    // Page info (right aligned)
+    doc.text(pageInfo, pageWidth - margin, yPosition, { align: "right" });
+    
+    return yPosition + 5;
+  };
+
+  // Main document generation flow
   let currentY = drawHeader();
-  currentY = drawCustomerHeader(customerName, currentY);
+  currentY = drawCustomerHeader(customerName, customerCode, currentY);
   currentY = drawTableHeader(currentY);
 
-  agingData.forEach((row) => {
-    // Check if we need a new page
-    if (currentY > pageHeight - 15) {
-      doc.addPage();
-      currentY = drawHeader();
-      currentY = drawCustomerHeader(customerName, currentY);
+  // Draw all aging rows
+  agingData.forEach(row => {
+    // Check if we need a new page (leave room for totals and footer)
+    if (currentY > pageHeight - 30) {
+      doc.addPage([pageWidth, pageHeight], 'landscape');
+      currentY = margin;
+      currentY = drawHeader(currentY);
+      currentY = drawCustomerHeader(customerName, customerCode, currentY);
       currentY = drawTableHeader(currentY);
     }
-
     currentY = drawAgingRow(row, currentY);
   });
 
+  // Draw customer total
+  currentY = drawCustomerTotal(customerTotals, currentY);
+  
+  // Draw grand total (same as customer total in this case)
+  currentY = drawGrandTotal(grandTotals, currentY);
+  
+  // Draw footer
+  drawFooter(pageHeight - margin);
   return doc;
 };
