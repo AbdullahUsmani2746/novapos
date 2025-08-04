@@ -326,7 +326,7 @@ const ReportViewer = ({ reportType }) => {
     }
   };
 
-const exportToExcel = async () => {
+const exportToExcel = async () => { 
 
 
     const workbook = XLSX.utils.book_new();
@@ -737,6 +737,21 @@ const exportToPDF = async () => {
         // Check if we should show details
         const showDetails = config.detailColumns && data.some(item => item.transactions);
 
+        // Common styles configuration
+        const commonStyles = {
+            fontSize: 9, // Reduced font size for better fit
+            font: "helvetica",
+            cellPadding: 1, // Reduced padding
+            textColor: [0, 0, 0],
+            halign: "center",
+            valign: "middle",
+            lineWidth: 0.25,
+            lineColor: [0, 0, 0],
+            overflow: "linebreak",
+            minCellHeight: 5, // Minimum row height
+            lineHeight: 1.2 // Tighter line height
+        };
+
         if (showDetails) {
             // ============ DETAILS PDF ============
             const detailData = [];
@@ -759,27 +774,27 @@ const exportToPDF = async () => {
 
             // Add title (green background like Excel)
             doc.setFont("helvetica", "bold");
-            doc.setFontSize(24);
+            doc.setFontSize(18); // Reduced title size
             doc.setTextColor(255, 255, 255);
             doc.setFillColor(39, 174, 96); // Green from Excel
-            doc.rect(0, 0, doc.internal.pageSize.width, 15, 'F');
+            doc.rect(0, 0, doc.internal.pageSize.width, 12, 'F'); // Reduced height
             doc.text(
                 config.title,
                 doc.internal.pageSize.width / 2,
-                10,
+                8, // Adjusted position
                 { align: "center" }
             );
 
             // Add generated date (light blue background)
             doc.setFont("helvetica", "italic");
-            doc.setFontSize(12);
+            doc.setFontSize(10); // Reduced font size
             doc.setTextColor(44, 62, 80); // Dark gray text
             doc.setFillColor(214, 234, 248); // Light blue from Excel
-            doc.rect(0, 15, doc.internal.pageSize.width, 8, 'F');
+            doc.rect(0, 12, doc.internal.pageSize.width, 6, 'F'); // Reduced height
             doc.text(
                 `Generated on ${format(new Date(), "PPP")}`,
                 doc.internal.pageSize.width - 10,
-                20,
+                15, // Adjusted position
                 { align: "right" }
             );
 
@@ -793,27 +808,39 @@ const exportToPDF = async () => {
                 }))
             ];
 
+            // Calculate column widths dynamically
+            const pageWidth = doc.internal.pageSize.width + 30; // minus margins
+            const columnCount = detailHeaders.length;
+            const baseWidth = pageWidth / columnCount;
+            
+            const columnStyles = {};
+            detailHeaders.forEach((header, idx) => {
+                let width = baseWidth;
+                // Wider for item/name columns
+                if (header.title.toLowerCase().includes("item") || 
+                    header.title.toLowerCase().includes("name")) {
+                    width = Math.min(30, baseWidth * 1.5);
+                }
+                // Narrower for date/number columns
+                else if (header.title.toLowerCase().includes("date") || 
+                         header.title.toLowerCase().includes("amount") ||
+                         header.title.toLowerCase().includes("qty")) {
+                    width = Math.max(15, baseWidth * 0.7);
+                }
+                columnStyles[idx] = { cellWidth: width };
+            });
+
             // Add detail table
             autoTable(doc, {
                 head: [detailHeaders.map(h => h.title)],
                 body: detailData.map(row => detailHeaders.map(header => row[header.dataKey] || "0")),
-                startY: 25,
+                startY: 20, // Adjusted start position
                 margin: { left: 10, right: 10 },
-                styles: {
-                    fontSize: 11,
-                    font: "helvetica",
-                    cellPadding: 4,
-                    textColor: [0, 0, 0],
-                    halign: "center",
-                    valign: "middle",
-                    lineWidth: 0.25,
-                    lineColor: [0, 0, 0],
-                    overflow: "linebreak",
-                },
+                styles: commonStyles,
                 headStyles: {
                     fillColor: [39, 174, 96], // Green header like Excel
                     textColor: [255, 255, 255],
-                    fontSize: 12,
+                    fontSize: 10, // Reduced font size
                     fontStyle: "bold",
                     halign: "center",
                     lineWidth: 0.25
@@ -824,15 +851,12 @@ const exportToPDF = async () => {
                 alternateRowStyles: {
                     fillColor: [232, 245, 233] // Light green alternate rows
                 },
-                columnStyles: {
-                    // Special handling for item/name columns
-                    ...detailHeaders.reduce((acc, col, idx) => {
-                        if (col.title.toLowerCase().includes("item") || 
-                            col.title.toLowerCase().includes("name")) {
-                            acc[idx] = { cellWidth: 30 };
-                        }
-                        return acc;
-                    }, {})
+                columnStyles: columnStyles,
+                didDrawCell: (data) => {
+                    // Auto adjust row height based on content
+                    if (data.cell.raw && data.cell.raw.length > 30) {
+                        data.row.height = Math.max(data.row.height, 8); // Set minimum height for long content
+                    }
                 }
             });
         } else {
@@ -852,27 +876,27 @@ const exportToPDF = async () => {
 
             // Add title (blue background like Excel)
             doc.setFont("helvetica", "bold");
-            doc.setFontSize(24);
+            doc.setFontSize(18); // Reduced title size
             doc.setTextColor(255, 255, 255);
             doc.setFillColor(68, 114, 196); // Blue from Excel
-            doc.rect(0, 0, doc.internal.pageSize.width, 15, 'F');
+            doc.rect(0, 0, doc.internal.pageSize.width, 12, 'F'); // Reduced height
             doc.text(
                 config.title,
                 doc.internal.pageSize.width / 2,
-                10,
+                8, // Adjusted position
                 { align: "center" }
             );
 
             // Add generated date (light blue background)
             doc.setFont("helvetica", "italic");
-            doc.setFontSize(12);
+            doc.setFontSize(10); // Reduced font size
             doc.setTextColor(44, 62, 80); // Dark gray text
             doc.setFillColor(214, 234, 248); // Light blue from Excel
-            doc.rect(0, 15, doc.internal.pageSize.width, 8, 'F');
+            doc.rect(0, 12, doc.internal.pageSize.width, 6, 'F'); // Reduced height
             doc.text(
                 `Generated on ${format(new Date(), "PPP")}`,
                 doc.internal.pageSize.width - 10,
-                20,
+                15, // Adjusted position
                 { align: "right" }
             );
 
@@ -882,47 +906,55 @@ const exportToPDF = async () => {
                 dataKey: col.headerName
             }));
 
-        autoTable(doc, {
-  head: [mainHeaders.map(h => h.title)],
-  body: mainData.map(row => mainHeaders.map(header => row[header.dataKey] || "0")),
-  startY: 25,
-  margin: { left: 10, right: 10 },
-  styles: {
-    fontSize: 11,
-    font: "helvetica",
-    cellPadding: 4,
-    textColor: [0, 0, 0],
-    halign: "center",
-    valign: "middle",
-    lineWidth: 0.25,
-    lineColor: [0, 0, 0],
-    overflow: "linebreak",
-  },
-  headStyles: {
-    fillColor: [44, 62, 80],
-    textColor: [255, 255, 255],
-    fontSize: 12,
-    fontStyle: "bold",
-    halign: "center",
-    lineWidth: 0.25
-  },
-  bodyStyles: {
-    lineWidth: 0.25
-  },
-  alternateRowStyles: {
-    fillColor: [248, 249, 250]
-  },
-  columnStyles: {
-    ...allColumns.reduce((acc, col, idx) => {
-      if (
-        col.headerName.toLowerCase().includes("item") || 
-        col.headerName.toLowerCase().includes("name")
-      ) {
-        acc[idx] = { cellWidth: 30 };
-      }
-      return acc;
-    }, {})
-  }
+            // Calculate column widths dynamically
+            const pageWidth = doc.internal.pageSize.width - 10; // minus margins
+            const columnCount = mainHeaders.length;
+            const baseWidth = pageWidth / columnCount;
+            
+            const columnStyles = {};
+            mainHeaders.forEach((header, idx) => {
+                let width = baseWidth;
+                // Wider for item/name columns
+                if (header.title.toLowerCase().includes("item") || 
+                    header.title.toLowerCase().includes("name")) {
+                    width = Math.min(30, baseWidth * 1.5);
+                }
+                // Narrower for date/number columns
+                else if (header.title.toLowerCase().includes("date") || 
+                         header.title.toLowerCase().includes("amount") ||
+                         header.title.toLowerCase().includes("qty")) {
+                    width = Math.max(15, baseWidth * 0.7);
+                }
+                columnStyles[idx] = { cellWidth: width };
+            });
+
+           autoTable(doc, {
+    head: [mainHeaders.map(h => h.title)],
+    body: mainData.map(row => mainHeaders.map(header => row[header.dataKey] || "0")),
+    startY: 20, // Adjusted start position
+    margin: { left: 10, right: 10 },
+    styles: commonStyles,
+    headStyles: {
+        fillColor: [44, 62, 80],
+        textColor: [255, 255, 255],
+        fontSize: 10, // Reduced font size
+        fontStyle: "bold",
+        halign: "center",
+        lineWidth: 0.25
+    },
+    bodyStyles: {
+        lineWidth: 0.25
+    },
+    alternateRowStyles: {
+        fillColor: [248, 249, 250]
+    },
+    columnStyles: columnStyles,
+    didDrawCell: (data) => {
+        // Auto adjust row height based on content
+        if (data.cell.raw && data.cell.raw.length > 30) {
+            data.row.height = Math.max(data.row.height, 8); // Set minimum height for long content
+        }
+    }
 });
 
         }
@@ -1308,7 +1340,7 @@ const formatCellValue = (value) => {
 
   return (
     <div className="min-h-screen  p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="space-y-8">
         {/* Header */}
         <div className="bg-primary rounded-3xl p-8 text-primary shadow-lg relative overflow-hidden">
           <div className="absolute inset-0 bg-secondary/90 from-blue-600/90 to-purple-600/90" />

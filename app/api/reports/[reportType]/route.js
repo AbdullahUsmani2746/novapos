@@ -1884,8 +1884,11 @@ async function getTrialBalance(filters) {
 
   const accountMap = {};
   for (const t of entries) {
-    console.log("acanme: ",t.acnoDetails.acname)
-    const account = t.acnoDetails.acname || "Unknown";
+    const account = t.acnoDetails?.acname || "Unknown";
+    if(account==="Unknown") {
+      console.log("Transaction without account: ", t);
+      continue; // Skip transactions without an account
+    }
     console.log("Account: ",account)
     if (!accountMap[account]) {
       accountMap[account] = { debit: 0, credit: 0, acno:t.acno };
