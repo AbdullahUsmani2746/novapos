@@ -180,6 +180,12 @@ const ReportViewer = ({ reportType }) => {
           options[filter.name] = [];
         }
       }
+      else if(filter.options && !filter.apiEndpoint) {
+        options[filter.name] = filter.options.map((opt) => ({
+          value: opt.value || opt,
+          label: opt.label || opt,
+        }));
+      }
     }
 
     setFilterOptions(options);
@@ -1019,6 +1025,8 @@ const formatCellValue = (value) => {
         : bStr.localeCompare(aStr);
     });
   }, [data, sortConfig]);
+
+  console.log("Sorted Data: ", sortedData);
 
   const renderFilter = (filter) => {
     switch (filter.type) {

@@ -86,6 +86,14 @@ const data = {
           title: "Sale Invoice",
           url: "/accounting/invoice/sale",
         },
+        {
+          title: "Good Receipt Note",
+          url: "/accounting/report/grn",
+        },
+        {
+          title: "Dispatch Note",
+          url: "/accounting/report/dispatch",
+        },
         
       ],
     },

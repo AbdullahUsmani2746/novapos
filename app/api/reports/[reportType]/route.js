@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { REPORT_CONFIG } from "@/components/Reports/config";
 import { format } from "date-fns";
+import { Prisma } from "@prisma/client";
 
 export async function GET(request, { params }) {
   const { reportType } = await params;
@@ -95,6 +96,10 @@ export async function GET(request, { params }) {
       case "trialBalance":
         data = await getTrialBalance(filters);
         summary = calculateTrialBalanceSummary(data);
+        break;
+      case "orderBalance":
+        data = await getOrderBalanceReport(filters);
+        // summary = calculateOrderBalanceSummary(data);  
         break;
       default:
         return NextResponse.json(
@@ -2001,3 +2006,208 @@ function calculateStockMetricsSummary(data) {
     godown_totals: godownTotals,
   };
 }
+
+async function getOrderBalanceReport(filters) {
+  console.log("Filters: ", filters);
+  const { dateFrom, dateTo, orderType, customer, godown } = filters;
+  // const { dateFrom, dateTo } = filters;
+
+  // const orderType = "4";
+  // const godown = "2";
+  // const customer = "0013";
+
+  // Validate required parameters
+  if (!orderType) {
+    throw new Error("Order type is required (4 for purchase, 6 for sales)");
+  }
+  
+  // Determine if it's purchase order (4) or sales order (6)
+  const isPurchaseOrder = parseInt(orderType) === 4;
+  
+  try {
+    // Updated query based on the new PO verification approach
+    const orderBalances = await prisma.$queryRaw`
+      WITH po_verification AS (
+        SELECT 
+          om.order_no,
+          om."dateD" as order_date,
+          om.party_code,
+          a.acname as customer_name,
+          om.delivery_location,
+          od.itcd,
+          i.item as item_name,
+          od.rate,
+          od.amount,
+          CONCAT('Verification for PO ', om.order_no, ', Item ', od.itcd) as description,
+          od.qty as ordered_qty,
+          
+          -- Received quantity (purchases) - tran_code = 4
+          COALESCE(SUM(CASE WHEN tm.tran_code = 4 THEN t.qty ELSE 0 END), 0) as purchased_qty,
+          
+          -- Returned quantity - tran_code = 9  
+          COALESCE(SUM(CASE WHEN tm.tran_code = 9 THEN t.qty ELSE 0 END), 0) as returned_qty,
+          
+          -- Net received (purchases - returns)
+          COALESCE(SUM(
+            CASE 
+              WHEN tm.tran_code = 4 THEN t.qty
+              WHEN tm.tran_code = 9 THEN -t.qty
+              ELSE 0
+            END
+          ), 0) as net_received
+          
+        FROM "OrderMaster" om
+        JOIN "OrderDetail" od ON om.order_no = od.order_no
+        JOIN "Item" i ON od.itcd = i.itcd
+        LEFT JOIN "acno" a ON om.party_code = a.acno
+        LEFT JOIN "TRANSACTIONS_MASTER" tm ON tm.po_no = om.order_no
+        LEFT JOIN "Transactions" t ON t.tran_id = tm.tran_id AND t.itcd = od.itcd
+        
+        WHERE om.order_catagory = ${parseInt(orderType)}
+          ${customer ? Prisma.sql`AND om.party_code = ${customer}` : Prisma.empty}
+          ${godown ? Prisma.sql`AND om.godown = ${parseInt(godown)}` : Prisma.empty}
+          ${dateFrom ? Prisma.sql`AND om."dateD" >= ${new Date(dateFrom)}::timestamp` : Prisma.empty}
+          ${dateTo ? Prisma.sql`AND om."dateD" <= ${new Date(dateTo)}::timestamp` : Prisma.empty}
+          AND (tm.tran_code IN (4, 9) OR tm.tran_code IS NULL)
+        
+        GROUP BY om.order_no, om."dateD", om.party_code, a.acname, om.delivery_location, 
+                 od.itcd, i.item, od.rate, od.amount, od.qty
+      )
+      SELECT 
+        order_no,
+        order_date,
+        party_code,
+        customer_name,
+        delivery_location,
+        itcd,
+        item_name,
+        rate::numeric as rate,
+        amount::numeric as amount,
+        description,
+        ordered_qty::numeric as ordered_qty,
+        purchased_qty::numeric as purchased_qty,
+        returned_qty::numeric as returned_qty,
+        net_received::numeric as net_received,
+        
+        -- Additional verification columns
+        (ordered_qty - net_received)::numeric as pending_qty,
+        
+        CASE 
+          WHEN net_received = ordered_qty THEN 'COMPLETE'
+          WHEN net_received > ordered_qty THEN 'OVER_RECEIVED'
+          WHEN net_received < ordered_qty AND net_received > 0 THEN 'PARTIAL'
+          WHEN net_received = 0 THEN 'PENDING'
+          ELSE 'ERROR'
+        END as status,
+        
+        ROUND(
+          CASE 
+            WHEN ordered_qty > 0 THEN (net_received * 100.0 / ordered_qty)::numeric
+            ELSE 0
+          END, 2
+        ) as completion_percentage
+        
+      FROM po_verification
+      -- WHERE (ordered_qty - net_received) != 0  -- Only show items with balance
+      ORDER BY order_no, itcd
+    `;
+
+    console.log("Order Balances: ", orderBalances);
+
+    // Group by order for the final response
+    const ordersMap = new Map();
+    
+    orderBalances.forEach(row => {
+      const orderNo = parseInt(row.order_no);
+      
+      if (!ordersMap.has(orderNo)) {
+        ordersMap.set(orderNo, {
+          orderNo: orderNo,
+          orderDate: row.order_date,
+          partyCode: row.party_code,
+          customer: row.customer_name,
+          deliveryLocation: row.delivery_location,
+          items: [],
+          totalOrdered: 0,
+          totalPurchased: 0,
+          totalReturned: 0,
+          totalNetReceived: 0,
+          totalPending: 0,
+          totalAmount: 0
+        });
+      }
+      
+      const order = ordersMap.get(orderNo);
+      const orderedQty = parseFloat(row.ordered_qty) || 0;
+      const purchasedQty = parseFloat(row.purchased_qty) || 0;
+      const returnedQty = parseFloat(row.returned_qty) || 0;
+      const netReceived = parseFloat(row.net_received) || 0;
+      const pendingQty = parseFloat(row.pending_qty) || 0;
+      const amount = parseFloat(row.amount) || 0;
+      const completionPercentage = parseFloat(row.completion_percentage) || 0;
+      
+      order.items.push({
+        itemCode: parseInt(row.itcd),
+        itemName: row.item_name,
+        description: row.description,
+        orderedQty: orderedQty,
+        purchasedQty: purchasedQty,
+        returnedQty: returnedQty,
+        netReceived: netReceived,
+        pendingQty: pendingQty,
+        status: row.status,
+        completionPercentage: completionPercentage,
+        rate: parseFloat(row.rate) || 0,
+        amount: amount
+      });
+      
+      order.totalOrdered += orderedQty;
+      order.totalPurchased += purchasedQty;
+      order.totalReturned += returnedQty;
+      order.totalNetReceived += netReceived;
+      order.totalPending += pendingQty;
+      order.totalAmount += amount;
+    });
+
+    const result = Array.from(ordersMap.values());
+    console.log("Order Balance Report: ", result);
+
+    return result
+    // {
+
+    //   // success: true,
+    //   result,
+    //   // summary: {
+    //   //   totalOrders: result.length,
+    //   //   totalItems: orderBalances.length,
+    //   //   orderType: isPurchaseOrder ? 'Purchase Orders' : 'Sales Orders'
+    //   // }
+    // };
+
+  } catch (error) {
+    console.error("Error in getOrderBalanceReport:", error);
+    throw new Error(`Failed to generate order balance report: ${error.message}`);
+  }
+}
+
+// function calculateOrderBalanceSummary(data) {
+//   return {
+//     totalOrders: data?.length,
+//     totalOrdered: data?.reduce((sum, o) => sum + o.totalOrdered, 0),
+//     totalPurchased: data?.reduce((sum, o) => sum + o.totalPurchased, 0),
+//     totalReturned: data?.reduce((sum, o) => sum + o.totalReturned, 0),
+//     totalNetReceived: data?.reduce((sum, o) => sum + o.totalNetReceived, 0),
+//     totalPending: data?.reduce((sum, o) => sum + o.totalPending, 0),
+    
+//     // Status-based metrics
+//     completeOrders: data?.filter(o => o.items.every(item => item.status === 'COMPLETE')).length,
+//     partialOrders: data?.filter(o => o.items.some(item => item.status === 'PARTIAL')).length,
+//     pendingOrders: data?.filter(o => o.items.every(item => item.status === 'PENDING')).length,
+//     overReceivedOrders: data?.filter(o => o.items.some(item => item.status === 'OVER_RECEIVED')).length,
+    
+//     // Average completion percentage
+//     averageCompletion: data?.length > 0 
+//       ? data.reduce((sum, o) => sum + (o.totalNetReceived / o.totalOrdered * 100), 0) / data.length 
+//       : 0
+//   };
+// }

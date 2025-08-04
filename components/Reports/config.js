@@ -1570,4 +1570,60 @@ export const REPORT_CONFIG = {
       csv: true,
     },
   },
+
+  orderBalance: {
+    title: "Order Balance Report",
+    apiEndpoint: "/api/reports/orderBalance",
+    description: "Shows the balance between ordered and received/delivered quantities",
+    filters: [
+      { name: "dateFrom", type: "date", label: "From Date" },
+      { name: "dateTo", type: "date", label: "To Date" },
+      { name: "orderType", type: "select", label: "Order Type", 
+        options: [
+          { value: "all", label: "All" },
+          { value: "4", label: "Purchase Order" },
+          { value: "6", label: "Sales Order" }
+        ] 
+      },
+       
+      {
+        name: "account",
+        label: "Account",
+        type: "select",
+        nameKey: "acname",
+        valueKey: "acno",
+        options: "accounts",
+        apiEndpoint: "/api/accounts/acno?macno=001,006",
+        required: true,
+      },
+      {
+        name: "godown",
+        nameKey: "godown",
+        label: "Godown",
+        type: "select",
+        options: "godowns",
+        apiEndpoint: "/api/setup/godowns",
+        clearable: true,
+      },
+    ],
+    columns: [
+      { field: "customer", headerName: "Customer", width: 200},
+      { field: "orderNo", headerName: "Order No", width: 120,  },
+      { field: "orderDate", headerName: "Date", width: 120, valueGetter: (params) => new Date(params.row.orderDate).toLocaleDateString() },
+      { field: "totalOrdered", headerName: "Total Ordered", width: 120 },
+      { field: "totalPurchased", headerName: "Total Received", width: 120 },
+      { field: "totalReturned", headerName: "total Returned", width: 120 },
+      { field: "totalNetReceived", headerName: "Total Net", width: 120 },
+      { field: "totalPending", headerName: "Total Pending", width: 120 },
+    ],
+    summaryFields: [
+      { field: "totalPurchased", label: "Total Purchased", type: "number" },
+      { field: "totalNetReceived", label: "Total Net Received", type: "number" },
+    ],
+    exportOptions: {
+      pdf: true,
+      excel: true,
+      csv: true,
+    },
+  }
 };

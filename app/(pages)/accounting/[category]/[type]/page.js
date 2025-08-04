@@ -84,6 +84,22 @@ const CONFIG = {
       gradient: "from-primary to-primary",
     },
   },
+  report: {
+    grn: {
+      label: "Good Receipt Note",
+      stats: ["total"],
+      apiPath: "purchase",
+      icon: TrendingUp,
+      gradient: "from-primary to-primary",
+    },
+    dispatch: {
+      label: "Dispatch Note",
+      stats: ["total"],
+      apiPath: "sale",
+      icon: Sparkles,
+      gradient: "from-primary to-primary",
+    },
+  },
 
    order: {
     purchaseOrder: {

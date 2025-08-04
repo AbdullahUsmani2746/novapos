@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { VOUCHER_CONFIG } from "@/components/Category/constants";
 import { BadgeCent } from "lucide-react";
+import { de } from "date-fns/locale";
 
 // GET method
 export async function GET(req, { params }) {
@@ -265,44 +266,25 @@ export async function POST(req, { params }) {
           if ([9, 10].includes(tran_code) && line.original_qty) {
             base.original_qty = parseFloat(line.original_qty) || 0.00;
           }
+
+          if(line.type === "grn" || line.type === "dispatch") {
+
+            if (line.type === "grn") {
+              base.damt = parseFloat(line.qty) * parseFloat(line.rate) || 0.00;
+            } else if (line.type === "dispatch") {
+              base.camt = parseFloat(line.qty) * parseFloat(line.rate) || 0.00;
+            }
+
+          }
         }
         console.log("base:", base);
+        if(base.type){delete base.type; }// Remove type if it exists in the line object}
         return base;
       }),
     });
 
     console.log("linesss:", linesss);
 
-    // ✅ Update item stock for purchase (tran_code === 4) or sale (tran_code === 6)
-    if ([4, 6, 9, 10].includes(tran_code)) {
-      for (const line of lines) {
-        const itemId = parseOptionalInt(line.itcd);
-        const qty = parseFloat(line.qty || 0);
-
-        if (itemId && qty > 0) {
-          // Logic:
-          // - tran_code 4 (Purchase) ➜ increase stock
-          // - tran_code 10 (Sale Return) ➜ increase stock
-          // - tran_code 6 (Sale) ➜ decrease stock
-          // - tran_code 9 (Purchase Return) ➜ decrease stock
-          const isIncrement = [4, 10].includes(tran_code);
-          const updateQty = isIncrement ? qty : -qty;
-
-          await prisma.item.update({
-            where: { itcd: itemId },
-            data: {
-              stock: {
-                increment: updateQty,
-              },
-            },
-          });
-
-          console.log(
-            `Stock updated for item ${itemId}: ${isIncrement ? "+" : "-"}${qty}`
-          );
-        }
-      }
-    }
 
     if (deductions?.length > 0) {
       const ded = await prisma.transactions.createMany({
@@ -324,8 +306,9 @@ export async function POST(req, { params }) {
 
       // Lines totals
       for (const line of lines) {
-        totalDamt += parseFloat(line.damt || 0);
-        totalCamt += parseFloat(line.camt || 0);
+
+        totalDamt += line.type === "grn" ? parseFloat(line.qty || 0)*parseFloat(line.rate || 0)  : parseFloat(line.damt || 0);
+        totalCamt += line.type === "dispatch" ? parseFloat(line.qty || 0)*parseFloat(line.rate || 0) : parseFloat(line.camt || 0);
       }
 
       // Deductions for tran_code 1 and 2

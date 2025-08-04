@@ -2037,8 +2037,7 @@ export const VOUCHER_CONFIG = {
         value1: "godownDetails",
         value2: "godown",
       },
-      { name: "status", label: "Status", type: "text" },
-      { name: "total", label: "Total Amount", type: "number", isTotal: true },
+      // { name: "status", label: "Status", type: "text" },
     ],
   },
   saleOrder: {
@@ -2212,8 +2211,535 @@ export const VOUCHER_CONFIG = {
         value1: "godownDetails",
         value2: "godown",
       },
-      { name: "status", label: "Status", type: "text" },
+      // { name: "status", label: "Status", type: "text" },
+
+    ],
+  },
+grn: {
+    tran_code: 4,
+    hasDeductionBlock: false,
+    masterFields: [
+      // { name: "dateD", label: "Date", type: "date", required: true },
+      // { name: "time", label: "Time", type: "time", required: true },
+      {
+        name: "vr_no",
+        label: "Vr No",
+        type: "text",
+        required: true,
+        autoGenerate: true,
+      },
+      {
+        name: "dateD",
+        label: "Date",
+        type: "date",
+        required: true,
+      },
+
+      {
+        name: "po_no",
+        label: "Purchase Order No",
+        type: "select",
+        options: "purchaseOrders",
+        apiEndpoint: "/api/orders/purchaseOrder",
+        nameKey: "order_no",
+        valueKey: "order_no",
+        onChange: async (value, formData) => {
+          if (!value) return;
+          try {
+            const response = await axios.get(
+              `/api/orders/purchaseOrder`
+            );
+            console.log("respo: ",response.data.data)
+            console.log("respoValue: ", value)
+            console.log("respoValue Type: ",typeof value)
+
+            const filterResponse = response.data.data.filter(item => item.order_no === Number(value))
+            console.log("filterRespo: ",filterResponse)
+            return {
+              pycd: filterResponse[0].party_code, // Vendor
+              godown: filterResponse[0].godown,
+              orderDetails: filterResponse[0].orderDetails, // Full details of the order
+              // Add other fields you want to auto-fill
+            };
+          } catch (error) {
+            console.error("Error fetching PO details:", error);
+            return {};
+          }
+        },
+      },
+
+      {
+        name: "pycd",
+        label: "Vendor",
+        type: "select",
+        options: "accounts",
+        apiEndpoint: "/api/accounts/acno?macno=006",
+        createEndpoint: "/api/accounts/acno",
+        nameKey: "acname",
+        valueKey: "acno",
+        required: true,
+        modalFields: [
+          { name: "name", label: "Vendor Name", type: "text", required: true },
+        ],
+      },
+      { name: "check_no", label: "ST Inv No", type: "text" },
+      { name: "check_date", label: "ST Inv Date", type: "Date" },
+      { name: "rmk", label: "Narration", type: "textarea" },
+      // {
+      //   name: "invoice_no",
+      //   label: "Com Inv No",
+      //   type: "text",
+      //   required: true,
+      //   validate: async (value, masterData) => {
+      //     if (!value || !masterData.pycd) return null;
+      //     try {
+      //       const response = await axios.get(
+      //         `/api/voucher/check-invoice?tran_code=4&pycd=${
+      //           masterData.pycd
+      //         }&invoice_no=${encodeURIComponent(value)}`
+      //       );
+      //       if (response.data.exists) {
+      //         const nextInvoiceNo =
+      //           response.data.nextInvoiceNo || parseInt(value) + 1;
+      //         return `Invoice number ${value} already exists for this vendor. Try ${nextInvoiceNo} or another number.`;
+      //       }
+      //       return null;
+      //     } catch (error) {
+      //       return `Error checking invoice number: ${error.message}`;
+      //     }
+      //   },
+      // },
+      {
+        name: "godown",
+        label: "Godown",
+        type: "select",
+        options: "godowns",
+        apiEndpoint: "/api/setup/godowns",
+        createEndpoint: "/api/setup/godowns",
+        nameKey: "godown",
+        valueKey: "id",
+        required: true,
+        modalFields: [
+          {
+            name: "godown",
+            label: "Godown Name",
+            type: "text",
+            required: true,
+          },
+        ],
+      },
+      { name: "rmk2", label: "Delivery No", type: "text" },
+    ],
+    lineFields: [
+      {
+        name: "itcd",
+        label: "Product",
+        type: "select",
+        options: "products",
+        apiEndpoint: (formData) =>
+          formData.po_no
+            ? `/api/orders/purchaseOrder`
+            : "/api/setup/items",
+        createEndpoint: "/api/setup/items",
+        nameKey: "item",
+        valueKey: "itcd",
+        required: true,
+        modalFields: [
+          { name: "item", label: "Product Name", type: "text", required: true },
+          {
+            name: "ic_id",
+            label: "Item Category",
+            type: "select",
+            options: "itemCategories",
+            apiEndpoint: "/api/setup/item_categories",
+            valueKey: "id",
+            nameKey: "ic_name",
+            required: true,
+          },
+        ],
+      },
+      {
+        name: "no_of_pack",
+        label: "No of Packs",
+        type: "number",
+        required: true,
+      },
+      {
+        name: "qty_per_pack",
+        label: "Qty Per Pack",
+        type: "number",
+        required: true,
+      },
+      {
+        name: "qty",
+        label: "Qty",
+        type: "number",
+        required: true,
+        dependencies: ["no_of_pack", "qty_per_pack"],
+        calculate: (v) => v.no_of_pack * v.qty_per_pack,
+        validate: (value, line, allLines, formData) => {
+           if (formData.po_no && line.itcd) {
+           const orderedQty = line.po_qty || 0;
+            if (value > orderedQty) {
+                 return `Cannot exceed ordered quantity (${orderedQty})`;
+              }
+            }
+          return null;
+        }
+      },
+      // { name: "rate", label: "Rate", type: "number" },
+      // {
+      //   name: "gross_amount",
+      //   label: "Gross Amount",
+      //   type: "number",
+      //   required: true,
+      //   dependencies: ["qty", "rate", "no_of_pack", "qty_per_pack"],
+      //   calculate: (v) => v.qty * v.rate,
+      // },
+      // { name: "st_rate", label: "ST Rate", type: "number" },
+      // {
+      //   name: "st_amount",
+      //   label: "ST Amount",
+      //   type: "number",
+      //   dependencies: [
+      //     "gross_amount",
+      //     "st_rate",
+      //     "no_of_pack",
+      //     "qty_per_pack",
+      //     "rate",
+      //   ],
+      //   calculate: (v) => (v.gross_amount * v.st_rate) / 100,
+      // },
+      // { name: "additional_tax", label: "Additional Tax", type: "number" },
+      // {
+      //   name: "damt",
+      //   label: "Amount",
+      //   required: true,
+      //   type: "number",
+      //   dependencies: [
+      //     "qty",
+      //     "rate",
+      //     "st_rate",
+      //     "additional_tax",
+      //     "no_of_pack",
+      //     "qty_per_pack",
+      //   ], // Updated dependencies
+      //   calculate: (v) => {
+      //     console.log("V: ", v);
+      //     const gross_amount = v.qty * v.rate; // Calculate gross_amount
+      //     const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
+      //     const addTax = (gross_amount * (v.additional_tax || 0)) / 100; // Calculate additional tax
+      //     return gross_amount + st_amount + (addTax || 0); // Include additional_tax
+      //   },
+      // },
+    ],
+    // totals: {
+    //   totalQty: {
+    //     label: "Total Qty",
+    //     calculate: (lines) => lines.reduce((sum, l) => sum + (l.qty || 0), 0),
+    //   },
+    //   grossTotal: {
+    //     label: "Total Gross Amount",
+    //     calculate: (lines) =>
+    //       lines.reduce((sum, l) => sum + (l.gross_amount || 0), 0),
+    //   },
+    //   taxTotal: {
+    //     label: "Total ST Amount",
+    //     calculate: (lines) =>
+    //       lines.reduce((sum, l) => sum + (l.st_amount || 0), 0),
+    //   },
+    //   additionalTaxTotal: {
+    //     label: "Total Additional Tax",
+    //     calculate: (lines) =>
+    //       lines.reduce((sum, l) => sum + (l.additional_tax || 0), 0),
+    //   },
+    //   netTotal: {
+    //     label: "Total Amount",
+    //     calculate: (lines) => {
+    //       console.log("Chajge:", lines);
+    //       return lines.reduce((sum, l) => sum + (l.damt || 0), 0);
+    //     },
+    //   },
+    // },
+    tableFields: [
+      { name: "dateD", label: "Date", type: "date" },
+      { name: "vr_no", label: "Voucher No", type: "text" },
+      // { name: "invoice_no", label: "Invoice No", type: "text" },
+      {
+        name: "pycd",
+        label: "Vendor",
+        type: "text",
+        options: true,
+        value1: "acno",
+        value2: "acname",
+      },
+      { name: "rmk", label: "Narration", type: "text" },
       { name: "total", label: "Total Amount", type: "number", isTotal: true },
     ],
   },
+
+  dispatch: {
+    tran_code: 6,
+    hasDeductionBlock: false,
+    masterFields: [
+      // { name: "dateD", label: "Date", type: "date", required: true },
+      // { name: "time", label: "Time", type: "time", required: true },
+      {
+        name: "vr_no",
+        label: "Vr No",
+        type: "text",
+        required: true,
+        autoGenerate: true,
+      },
+      {
+        name: "dateD",
+        label: "Date",
+        type: "date",
+        required: true,
+      },
+
+      {
+        name: "po_no",
+        label: "Sale Order No",
+        type: "select",
+        options: "purchaseOrders",
+        apiEndpoint: "/api/orders/saleOrder",
+        nameKey: "order_no",
+        valueKey: "order_no",
+        onChange: async (value, formData) => {
+          if (!value) return;
+          try {
+            const response = await axios.get(
+              `/api/orders/saleOrder`
+            );
+            console.log("respo: ",response.data.data)
+            console.log("respoValue: ", value)
+            console.log("respoValue Type: ",typeof value)
+
+            const filterResponse = response.data.data.filter(item => item.order_no === Number(value))
+            console.log("filterRespo: ",filterResponse)
+            return {
+              pycd: filterResponse[0].party_code, // Vendor
+              godown: filterResponse[0].godown,
+              orderDetails: filterResponse[0].orderDetails, // Full details of the order
+              // Add other fields you want to auto-fill
+            };
+          } catch (error) {
+            console.error("Error fetching PO details:", error);
+            return {};
+          }
+        },
+      },
+
+      {
+        name: "pycd",
+        label: "Customer",
+        type: "select",
+        options: "accounts",
+        apiEndpoint: "/api/accounts/acno?macno=001",
+        createEndpoint: "/api/accounts/acno",
+        nameKey: "acname",
+        valueKey: "acno",
+        required: true,
+        modalFields: [
+          { name: "name", label: "Vendor Name", type: "text", required: true },
+        ],
+      },
+      { name: "check_no", label: "ST Inv No", type: "text" },
+      { name: "check_date", label: "ST Inv Date", type: "Date" },
+      { name: "rmk", label: "Narration", type: "textarea" },
+      // {
+      //   name: "invoice_no",
+      //   label: "Com Inv No",
+      //   type: "text",
+      //   required: true,
+      //   validate: async (value, masterData) => {
+      //     if (!value || !masterData.pycd) return null;
+      //     try {
+      //       const response = await axios.get(
+      //         `/api/voucher/check-invoice?tran_code=4&pycd=${
+      //           masterData.pycd
+      //         }&invoice_no=${encodeURIComponent(value)}`
+      //       );
+      //       if (response.data.exists) {
+      //         const nextInvoiceNo =
+      //           response.data.nextInvoiceNo || parseInt(value) + 1;
+      //         return `Invoice number ${value} already exists for this vendor. Try ${nextInvoiceNo} or another number.`;
+      //       }
+      //       return null;
+      //     } catch (error) {
+      //       return `Error checking invoice number: ${error.message}`;
+      //     }
+      //   },
+      // },
+      {
+        name: "godown",
+        label: "Godown",
+        type: "select",
+        options: "godowns",
+        apiEndpoint: "/api/setup/godowns",
+        createEndpoint: "/api/setup/godowns",
+        nameKey: "godown",
+        valueKey: "id",
+        required: true,
+        modalFields: [
+          {
+            name: "godown",
+            label: "Godown Name",
+            type: "text",
+            required: true,
+          },
+        ],
+      },
+      { name: "rmk2", label: "Delivery No", type: "text" },
+    ],
+    lineFields: [
+      {
+        name: "itcd",
+        label: "Product",
+        type: "select",
+        options: "products",
+        apiEndpoint: (formData) =>
+          formData.po_no
+            ? `/api/orders/saleOrder`
+            : "/api/setup/items",
+        createEndpoint: "/api/setup/items",
+        nameKey: "item",
+        valueKey: "itcd",
+        required: true,
+        modalFields: [
+          { name: "item", label: "Product Name", type: "text", required: true },
+          {
+            name: "ic_id",
+            label: "Item Category",
+            type: "select",
+            options: "itemCategories",
+            apiEndpoint: "/api/setup/item_categories",
+            valueKey: "id",
+            nameKey: "ic_name",
+            required: true,
+          },
+        ],
+      },
+      {
+        name: "no_of_pack",
+        label: "No of Packs",
+        type: "number",
+        required: true,
+      },
+      {
+        name: "qty_per_pack",
+        label: "Qty Per Pack",
+        type: "number",
+        required: true,
+      },
+      {
+        name: "qty",
+        label: "Qty",
+        type: "number",
+        required: true,
+        dependencies: ["no_of_pack", "qty_per_pack"],
+        calculate: (v) => v.no_of_pack * v.qty_per_pack,
+        validate: (value, line, allLines, formData) => {
+           if (formData.po_no && line.itcd) {
+           const orderedQty = line.po_qty || 0;
+            if (value > orderedQty) {
+                 return `Cannot exceed ordered quantity (${orderedQty})`;
+              }
+            }
+          return null;
+        }
+      },
+      // { name: "rate", label: "Rate", type: "number" },
+      // {
+      //   name: "gross_amount",
+      //   label: "Gross Amount",
+      //   type: "number",
+      //   required: true,
+      //   dependencies: ["qty", "rate", "no_of_pack", "qty_per_pack"],
+      //   calculate: (v) => v.qty * v.rate,
+      // },
+      // { name: "st_rate", label: "ST Rate", type: "number" },
+      // {
+      //   name: "st_amount",
+      //   label: "ST Amount",
+      //   type: "number",
+      //   dependencies: [
+      //     "gross_amount",
+      //     "st_rate",
+      //     "no_of_pack",
+      //     "qty_per_pack",
+      //     "rate",
+      //   ],
+      //   calculate: (v) => (v.gross_amount * v.st_rate) / 100,
+      // },
+      // { name: "additional_tax", label: "Additional Tax", type: "number" },
+      // {
+      //   name: "damt",
+      //   label: "Amount",
+      //   required: true,
+      //   type: "number",
+      //   dependencies: [
+      //     "qty",
+      //     "rate",
+      //     "st_rate",
+      //     "additional_tax",
+      //     "no_of_pack",
+      //     "qty_per_pack",
+      //   ], // Updated dependencies
+      //   calculate: (v) => {
+      //     console.log("V: ", v);
+      //     const gross_amount = v.qty * v.rate; // Calculate gross_amount
+      //     const st_amount = (gross_amount * (v.st_rate || 0)) / 100; // Calculate st_amount
+      //     const addTax = (gross_amount * (v.additional_tax || 0)) / 100; // Calculate additional tax
+      //     return gross_amount + st_amount + (addTax || 0); // Include additional_tax
+      //   },
+      // },
+    ],
+    // totals: {
+    //   totalQty: {
+    //     label: "Total Qty",
+    //     calculate: (lines) => lines.reduce((sum, l) => sum + (l.qty || 0), 0),
+    //   },
+    //   grossTotal: {
+    //     label: "Total Gross Amount",
+    //     calculate: (lines) =>
+    //       lines.reduce((sum, l) => sum + (l.gross_amount || 0), 0),
+    //   },
+    //   taxTotal: {
+    //     label: "Total ST Amount",
+    //     calculate: (lines) =>
+    //       lines.reduce((sum, l) => sum + (l.st_amount || 0), 0),
+    //   },
+    //   additionalTaxTotal: {
+    //     label: "Total Additional Tax",
+    //     calculate: (lines) =>
+    //       lines.reduce((sum, l) => sum + (l.additional_tax || 0), 0),
+    //   },
+    //   netTotal: {
+    //     label: "Total Amount",
+    //     calculate: (lines) => {
+    //       console.log("Chajge:", lines);
+    //       return lines.reduce((sum, l) => sum + (l.damt || 0), 0);
+    //     },
+    //   },
+    // },
+    tableFields: [
+      { name: "dateD", label: "Date", type: "date" },
+      { name: "vr_no", label: "Voucher No", type: "text" },
+      // { name: "invoice_no", label: "Invoice No", type: "text" },
+      {
+        name: "pycd",
+        label: "Vendor",
+        type: "text",
+        options: true,
+        value1: "acno",
+        value2: "acname",
+      },
+      { name: "rmk", label: "Narration", type: "text" },
+      { name: "total", label: "Total Amount", type: "number", isTotal: true },
+    ],
+  },
+
+
 };

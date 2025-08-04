@@ -138,9 +138,8 @@ const SearchableSelect = ({
   const [search, setSearch] = useState("");
   const inputRef = useRef(null);
 
-  const filteredOptions = options.filter((opt) => 
+  const filteredOptions = options.filter((opt) =>
     String(opt.label).toLowerCase().includes(search.toLowerCase())
-    
   );
 
   useEffect(() => {
@@ -269,6 +268,8 @@ export default function VoucherForm({
     transfer: "/api/voucher/transfer",
     purchaseOrder: "/api/orders/purchaseOrder",
     saleOrder: "/api/orders/saleOrder",
+    grn: "/api/voucher/purchase",
+    dispatch: "/api/voucher/sale",
   };
   useEffect(() => {
     return () => {
@@ -317,12 +318,22 @@ export default function VoucherForm({
       const endpoints = [];
 
       allFields.forEach((field) => {
-        if (field.type === "select" && field.options && typeof field.apiEndpoint==="function") {
-          console.log("Master Data fields : ", field.apiEndpoint(masterData) );
-          endpoints.push({ key: field.options, url: field.apiEndpoint(masterData) });
-        }
-        else if (field.type === "select" && field.options && field.apiEndpoint) {
-                    console.log("Master Data fields 2 : ", field.apiEndpoint);
+        if (
+          field.type === "select" &&
+          field.options &&
+          typeof field.apiEndpoint === "function"
+        ) {
+          console.log("Master Data fields : ", field.apiEndpoint(masterData));
+          endpoints.push({
+            key: field.options,
+            url: field.apiEndpoint(masterData),
+          });
+        } else if (
+          field.type === "select" &&
+          field.options &&
+          field.apiEndpoint
+        ) {
+          console.log("Master Data fields 2 : ", field.apiEndpoint);
 
           endpoints.push({ key: field.options, url: field.apiEndpoint });
         }
@@ -677,37 +688,50 @@ export default function VoucherForm({
       (type === "purchase" && isMain && fieldName === "itcd" && value) ||
       (type === "transfer" && isMain && fieldName === "itcd" && value) ||
       (type === "saleOrder" && isMain && fieldName === "itcd" && value) ||
-      (type === "purchase" && isMain && fieldName === "itcd" && value) 
+      (type === "grn" && isMain && fieldName === "itcd" && value) ||
+      (type === "dispatch" && isMain && fieldName === "itcd" && value)
     ) {
-
       // For purchase vouchers with PO selected
-  if (type === "purchase" || "sale" && masterData.po_no || masterData.so_no)  {
-    const poItem = masterData.orderDetails?.find(
-      item => item.itcd === Number(value)
-      
-    );
-        console.log("PO Item 1: ", masterData); 
+      if (
+        (type === "purchase" && masterData.po_no) ||
+        (type === "sale" && masterData.so_no) ||
+        (type === "grn" && masterData.po_no) ||
+        (type === "dispatch" && masterData.so_no)
+      ) {
+        const poItem = masterData.orderDetails?.find(
+          (item) => item.itcd === Number(value)
+        );
+        console.log("PO Item 1: ", masterData);
         console.log("PO Item 2: ", value);
 
-    
-    console.log("PO Item: ", poItem);
-    
-    if (poItem) {
-      // Update the line with PO details
-      lines[index] = { 
-        ...lines[index],
-        itcd: value,
-        rate: poItem.rate || 0,
-        // You might want to add original PO quantities for validation
-        ...(type==="purchase" ? {po_qty: (poItem.no_of_packs || 0) * (poItem.qty_per_pack || 0)}
-      
-        : {so_qty: (poItem.no_of_packs || 0) * (poItem.qty_per_pack || 0)}),
-      };
-      
-      if (isMain) setMainLines([...lines]);
-      else setDeductionLines([...lines]);
-    }
-  }
+        console.log("PO Item: ", poItem);
+        console.log("PO Item Rate: ", lines);
+
+        if (poItem) {
+          // Update the line with PO details
+          lines[index] = {
+            ...lines[index],
+            itcd: value,
+            rate: poItem.rate || 0,
+            type: type,
+            // You might want to add original PO quantities for validation
+            ...(type === "purchase" || type === "grn"
+              ? {
+                  po_qty:
+                    (poItem.no_of_packs || 0) * (poItem.qty_per_pack || 0),
+                }
+              : type === "sale" || type === "dispatch"
+              ? {
+                  so_qty:
+                    (poItem.no_of_packs || 0) * (poItem.qty_per_pack || 0),
+                }
+              : {}),
+          };
+
+          if (isMain) setMainLines([...lines]);
+          else setDeductionLines([...lines]);
+        }
+      }
       // Fetch stock for this product
       fetchStockLevels([value]);
     }
@@ -1004,8 +1028,8 @@ export default function VoucherForm({
 
     // ✅ Validate stock for sale transactions
     if (
-      (type === "sale") ||
-      (type === "transfer")
+      type === "sale" ||
+      type === "transfer"
       // || (type === "saleOrder" && isMain && fieldName === "itcd" && value)
     ) {
       const stockErrors = [];
@@ -1061,8 +1085,6 @@ export default function VoucherForm({
     console.log("Errors: ", errors.validation);
     console.log("Errors: ", errors);
 
-    
-
     if (!isValid) {
       toast.error("Please correct the highlighted errors");
       const firstErrorKey = Object.keys(errors.validation)[0];
@@ -1077,7 +1099,7 @@ export default function VoucherForm({
 
     setLoading((prev) => ({ ...prev, submit: true }));
     try {
-          console.log("Errorsw: ", errors);
+      console.log("Errorsw: ", errors);
 
       const formData = prepareFormData();
       const url =
@@ -1145,19 +1167,18 @@ export default function VoucherForm({
   ) => {
     // Special handling for products when PO/SO is selected
     if (optionsType === "products" && formData?.po_no) {
-      console.log("Form Data: ",formData)
+      console.log("Form Data: ", formData);
       return (formData.orderDetails || []).map((line) => ({
         value: line.itcd,
         label: line.items.item || line.itcd,
       }));
     }
     if (optionsType === "products" && formData?.so_no) {
-      return (formData.orderDetails  || []).map((line) => ({
+      return (formData.orderDetails || []).map((line) => ({
         value: line.itcd,
         label: line.items.item || line.itcd,
       }));
     }
-    
 
     console.log("Options Type: ", optionsType);
     return (optionsData[optionsType] || []).map((opt) => ({
@@ -1203,7 +1224,6 @@ export default function VoucherForm({
             fieldConfig.valueKey,
             fieldConfig.nameKey,
             masterData // Pass form data for dynamic options
-
           )}
           placeholder={`Select ${fieldConfig.label}`}
           label={fieldConfig.label}
@@ -1303,41 +1323,59 @@ export default function VoucherForm({
       );
     }
     if (
-  (type === "purchase" && isMain && fieldName === "qty" && line.itcd && line.po_qty) ||
-  (type === "sale" && isMain && fieldName === "qty" && line.itcd && line.so_qty)
-) {
-  const orderedQty = line.po_qty|| line.so_qty || 0;
-  return (
-    <div className="space-y-1">
-      <Label className="text-xs text-gray-700">
-        {fieldConfig.label}
-        {fieldConfig.required && <span className="text-red-500">*</span>}
-      </Label>
-      <div className="flex items-center gap-2">
-        <Input
-          type="number"
-          value={value || ""}
-          onChange={(e) =>
-            handleLineChange(index, fieldName, e.target.value, isMain)
-          } 
-          min={0}
-          max={orderedQty}
-          className="h-9 text-sm w-full"
-        />
-        <div className="text-xs text-gray-500 flex items-center gap-1">
-          <span>of</span>
-          <span className="font-medium">{orderedQty}</span>
-          <span>ordered</span>
+      (type === "purchase" &&
+        isMain &&
+        fieldName === "qty" &&
+        line.itcd &&
+        line.po_qty) ||
+      (type === "grn" &&
+        isMain &&
+        fieldName === "qty" &&
+        line.itcd &&
+        line.po_qty) ||
+      (type === "sale" &&
+        isMain &&
+        fieldName === "qty" &&
+        line.itcd &&
+        line.so_qty) ||
+      (type === "dispatch" &&
+        isMain &&
+        fieldName === "qty" &&
+        line.itcd &&
+        line.so_qty)
+    ) {
+      const orderedQty = line.po_qty || line.so_qty || 0;
+      return (
+        <div className="space-y-1">
+          <Label className="text-xs text-gray-700">
+            {fieldConfig.label}
+            {fieldConfig.required && <span className="text-red-500">*</span>}
+          </Label>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              value={value || ""}
+              onChange={(e) =>
+                handleLineChange(index, fieldName, e.target.value, isMain)
+              }
+              min={0}
+              max={orderedQty}
+              className="h-9 text-sm w-full"
+            />
+            <div className="text-xs text-gray-500 flex items-center gap-1">
+              <span>of</span>
+              <span className="font-medium">{orderedQty}</span>
+              <span>ordered</span>
+            </div>
+          </div>
+          {errors.validation[`main-${index}-${fieldName}`] && (
+            <p className="text-xs text-red-500">
+              {errors.validation[`main-${index}-${fieldName}`]}
+            </p>
+          )}
         </div>
-      </div>
-      {errors.validation[`main-${index}-${fieldName}`] && (
-        <p className="text-xs text-red-500">
-          {errors.validation[`main-${index}-${fieldName}`]}
-        </p>
-      )}
-    </div>
-  );
-}
+      );
+    }
     const inputType =
       fieldConfig.type === "number"
         ? "number"
