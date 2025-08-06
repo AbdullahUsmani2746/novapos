@@ -3,7 +3,6 @@ import React, { useState } from "react";
 
 import { generateVoucherPDF } from "@/components/Template/Payment";
 import { generateUnifiedPDF } from "@/components/Template/UnifiedReport";
-import { generateSalesOrderPDF } from "@/components/Template/SalesOrder";
 import { generateOrderBalancePDF } from "@/components/Template/OrderBalance";
 import { generateSalesBalancePDF } from "@/components/Template/SalesBalance";
 import { generateCustomerAgingPDF } from "@/components/Template/CustomerAging";
@@ -85,12 +84,8 @@ const [isDownloading, setIsDownloading] = useState(false);
     const doc = generateUnifiedPDF(voucher)
     doc.save("delivery-invoice.pdf");
   };
-  const handleDownload6 = () => {
-    const doc = generateSalesOrderPDF()
-    doc.save("sales-order.pdf");
-  };
   const handleDownload7 = () => {
-    // const doc = generateOrderBalancePDF()
+    const doc = generateOrderBalancePDF()
     doc.save("order-balance.pdf");
   };
  const handleDownload8 = async () => {
@@ -129,12 +124,6 @@ const [isDownloading, setIsDownloading] = useState(false);
         </button>
       </div>
       <div className="p-4">
-        <button
-          onClick={handleDownload6}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          sales order
-        </button>
         <button
           onClick={handleDownload7}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

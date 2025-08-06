@@ -1,36 +1,35 @@
 import axios from "axios";
 import { jsPDF } from "jspdf";
 
-export const generateSalesOrderPDF = async (orderData) => {
-
+export const generatePurchaseOrderPDF = async (orderData) => {
   const order = orderData.data[0];
 
-  // ============== ALL VALUES CONSOLIDATED HERE ==============
+  // ============== PDF CONFIGURATION ==============
   const pageWidth = 210;
   const pageHeight = 297;
   const margin = 10;
 
-  // Modern Color Palette
+  // Color Palette
   const colors = {
-    primary: [33, 82, 156], // Dark Blue (Header)
-    secondary: [241, 90, 34], // Orange (Accents)
-    lightBg: [248, 249, 250], // Light Gray (Backgrounds)
-    darkText: [33, 37, 41], // Almost Black (Text)
-    border: [206, 212, 218], // Soft Gray (Borders)
-    success: [40, 167, 69], // Green (Totals)
+    primary: [46, 125, 50], // Green (Header)
+    secondary: [239, 108, 0], // Orange (Accents)
+    lightBg: [248, 249, 250],
+    darkText: [33, 37, 41],
+    border: [206, 212, 218],
+    success: [40, 167, 69],
     white: [255, 255, 255],
   };
 
-  let companyName = ""; // Default value in case of error
+  let companyName = "";
   try {
     const response = await axios.get("/api/setup/companies");
     companyName = response.data.data[0].company;
-    response.data.data[0].company;
   } catch (error) {
     console.error("Error fetching company name:", error);
     companyName = "EASTLAND INDUSTRIES PVT LTD";
   }
-  const documentTitle = "SALE ORDER";
+
+  const documentTitle = "PURCHASE ORDER";
 
   // Format date function
   const formatDate = (dateString) => {
@@ -48,36 +47,36 @@ export const generateSalesOrderPDF = async (orderData) => {
   // Dynamic order details from API
   const orderDetails = {
     date: formatDate(order.dateD),
-    saleOrderNo: order.order_no.toString().padStart(6, "0"),
-    customer: order.acno?.acname || "Unknown Customer",
-    customerRef: order.additional_instructions || "-",
-    paymentTerms: order.payment_terms,
-    deliveryTerms: order.delivery_terms,
-    deliveryLocation: order.delivery_location,
+    poNumber: order.order_no.toString().padStart(6, "0"),
+    vendor: order.acno?.acname || "Unknown Vendor",
+    reference: order.additional_instructions || "-",
+    paymentTerms: order.payment_terms || "-",
+    deliveryTerms: order.delivery_terms || "-",
+    deliveryLocation: order.delivery_location || "-",
     dueDate: formatDate(order.due_date),
   };
 
-  // Process order items from API
+  // Process order items from API (removed unit from here)
   const orderItems = order.orderDetails.map((item, index) => ({
     sNo: (index + 1).toString(),
     prodCode: item.items?.sku || "-",
     productName: item.items?.item || "Unknown Product",
     packing: `${item.no_of_packs}x${item.qty_per_pack}=${item.qty}`,
-    qtyKg: item.qty.toString(),
+    qty: item.qty.toString(),
     rate: item.rate ? `$${item.rate.toFixed(2)}` : "-",
     amount: item.amount ? `$${item.amount.toFixed(2)}` : "-",
   }));
 
-  // Calculate total quantity
+  // Calculate totals
   const totalAmount = order.orderDetails.reduce(
     (sum, item) => sum + (item.amount || 0),
     0
   );
 
-  // ============== PDF GENERATION CODE ==============
+  // ============== PDF GENERATION ==============
   const doc = new jsPDF({ unit: "mm", format: "a4" });
 
-  // Modern Header with square borders
+  // Header with company name and title
   const drawHeader = (yPosition = margin) => {
     const companyHeight = 15;
     doc.setFont("helvetica", "bold");
@@ -102,7 +101,7 @@ export const generateSalesOrderPDF = async (orderData) => {
     doc.setFontSize(16);
     doc.text(documentTitle, pageWidth / 2, titleY + 6.5, { align: "center" });
 
-    // Add a thin underline (straight line)
+    // Underline
     doc.setDrawColor(...colors.secondary);
     doc.setLineWidth(0.5);
     doc.line(
@@ -115,15 +114,13 @@ export const generateSalesOrderPDF = async (orderData) => {
     return titleY + titleHeight;
   };
 
-  // Modern Card-like Details Section with square borders
+  // Order details section (unchanged)
   const drawOrderDetails = (yPosition) => {
-    yPosition += 5; // Add some spacing
-
-    // Create a card container with square corners
+    yPosition += 5;
     doc.setFillColor(...colors.white);
     doc.setDrawColor(...colors.border);
     doc.setLineWidth(0.5);
-    doc.rect(margin, yPosition, pageWidth - 2 * margin, 28, "FD"); // Increased height for additional fields
+    doc.rect(margin, yPosition, pageWidth - 2 * margin, 28, "FD");
 
     const rowHeight = 6;
     const labelWidth = 30;
@@ -133,7 +130,7 @@ export const generateSalesOrderPDF = async (orderData) => {
     doc.setLineWidth(0.2);
     doc.setDrawColor(...colors.border);
 
-    // --- Date Row ---
+    // Date Row
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...colors.primary);
     doc.text("Date", margin + 5, yPosition + 4);
@@ -147,16 +144,16 @@ export const generateSalesOrderPDF = async (orderData) => {
       { align: "center" }
     );
 
-    // --- Sale Order No (right side) ---
+    // PO Number (right side)
     const rightX = pageWidth - margin - labelWidth - valueWidth;
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...colors.primary);
-    doc.text("Sale Order No", rightX + 5, yPosition + 4);
+    doc.text("PO Number", rightX + 5, yPosition + 4);
 
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...colors.secondary);
     doc.text(
-      orderDetails.saleOrderNo,
+      orderDetails.poNumber,
       rightX + labelWidth + 5 + (valueWidth - 5) / 2,
       yPosition + 4,
       { align: "center" }
@@ -164,15 +161,15 @@ export const generateSalesOrderPDF = async (orderData) => {
 
     yPosition += rowHeight;
 
-    // --- Customer Row ---
+    // Vendor Row
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...colors.primary);
-    doc.text("Customer", margin + 5, yPosition + 4);
+    doc.text("Vendor", margin + 5, yPosition + 4);
 
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...colors.darkText);
     doc.text(
-      orderDetails.customer,
+      orderDetails.vendor,
       margin + labelWidth + (pageWidth - 2 * margin - labelWidth) / 2,
       yPosition + 4,
       { align: "center" }
@@ -180,15 +177,15 @@ export const generateSalesOrderPDF = async (orderData) => {
 
     yPosition += rowHeight;
 
-    // --- Customer Ref + Payment Terms Row ---
+    // Reference + Payment Terms Row
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...colors.primary);
-    doc.text("Customer Ref", margin + 5, yPosition + 4);
+    doc.text("Reference", margin + 5, yPosition + 4);
 
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...colors.darkText);
     doc.text(
-      orderDetails.customerRef || "-",
+      orderDetails.reference,
       margin + labelWidth + valueWidth / 2,
       yPosition + 4,
       { align: "center" }
@@ -210,7 +207,7 @@ export const generateSalesOrderPDF = async (orderData) => {
 
     yPosition += rowHeight;
 
-    // --- Delivery Terms + Due Date Row ---
+    // Delivery Terms + Due Date Row
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...colors.primary);
     doc.text("Delivery Terms", margin + 5, yPosition + 4);
@@ -241,10 +238,11 @@ export const generateSalesOrderPDF = async (orderData) => {
     return yPosition + rowHeight + 6;
   };
 
-  // Modern Table with square borders
+  // Table with items (modified to remove unit column)
   const drawTableHeader = (yPosition) => {
     const rowHeight = 7;
-    const colWidths = [10, 23, 85, 22, 15, 15, 20];
+    // Removed unit column width (15) and redistributed to description
+    const colWidths = [10, 23, 87, 20, 15, 15, 20];
     let currentX = margin;
 
     doc.setFont("helvetica", "bold");
@@ -253,6 +251,7 @@ export const generateSalesOrderPDF = async (orderData) => {
     doc.setLineWidth(0.5);
     doc.setDrawColor(...colors.primary);
 
+    // Removed "Unit" from headers
     const headers = [
       "S.No",
       "Prod Code",
@@ -276,7 +275,8 @@ export const generateSalesOrderPDF = async (orderData) => {
   };
 
   const drawTableRow = (item, yPosition, rowHeight = 6) => {
-    const colWidths = [10, 23, 85, 22, 15, 15, 20];
+    // Adjusted column widths to match header (without unit)
+    const colWidths = [10, 23, 87, 20, 15, 15, 20];
     let currentX = margin;
 
     doc.setFont("helvetica", "normal");
@@ -284,12 +284,13 @@ export const generateSalesOrderPDF = async (orderData) => {
     doc.setLineWidth(0.2);
     doc.setDrawColor(...colors.border);
 
+    // Removed unit from values
     const values = [
       item.sNo,
       item.prodCode,
       item.productName,
       item.packing,
-      item.qtyKg,
+      item.qty,
       item.rate,
       item.amount,
     ];
@@ -302,17 +303,15 @@ export const generateSalesOrderPDF = async (orderData) => {
       doc.setFillColor(...rowColor);
       doc.rect(currentX, yPosition, colWidths[index], rowHeight, "FD");
 
-      // Highlight important numeric fields
-      if (index === 4) doc.setTextColor(...colors.secondary); // Qty
-      else if (index === 5 || index === 6)
-        doc.setTextColor(...colors.primary); // Rate/Amount
+      if (index === 5 || index === 6) doc.setTextColor(...colors.primary);
+      else if (index === 4) doc.setTextColor(...colors.secondary);
       else doc.setTextColor(...colors.darkText);
 
-      if (index === 0 || index === 3 || index === 4) {
+      if ([0, 3, 4].includes(index)) {
         doc.text(value, currentX + colWidths[index] / 2, yPosition + 4, {
           align: "center",
         });
-      } else if (index === 5 || index === 6) {
+      } else if ([5, 6].includes(index)) {
         doc.text(value || "-", currentX + colWidths[index] - 2, yPosition + 4, {
           align: "right",
         });
@@ -325,10 +324,10 @@ export const generateSalesOrderPDF = async (orderData) => {
     return yPosition + rowHeight;
   };
 
-  // Highlighted Total Row with square borders
+  // Total row (adjusted for removed column)
   const drawTotal = (yPosition) => {
     const rowHeight = 7;
-    const colWidths = [10, 23, 85, 22, 15, 15, 20];
+    const colWidths = [10, 23, 87, 20, 15, 15, 20];
     let currentX = margin;
 
     doc.setFont("helvetica", "bold");
@@ -350,7 +349,7 @@ export const generateSalesOrderPDF = async (orderData) => {
     // Total amount
     doc.setFillColor(...colors.white);
     doc.rect(currentX, yPosition, colWidths[5] + colWidths[6], rowHeight, "FD");
-    doc.setTextColor(...colors.primary);
+    doc.setTextColor(...colors.success);
     doc.text(
       `$${totalAmount.toFixed(2)}`,
       pageWidth - margin - 5,
@@ -361,19 +360,16 @@ export const generateSalesOrderPDF = async (orderData) => {
     return yPosition + rowHeight;
   };
 
-  // Modern Signature Lines with square borders
+  // Signature section (unchanged)
   const drawSignatures = (yPosition) => {
     yPosition += 160;
-
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...colors.darkText);
 
-    // Signature lines
     doc.setDrawColor(...colors.secondary);
     doc.setLineWidth(0.5);
 
-    // Authorized
     const lineY = yPosition + 15;
     doc.line(margin + 20, lineY, margin + 80, lineY);
     doc.setFont("helvetica", "bold");
@@ -382,9 +378,8 @@ export const generateSalesOrderPDF = async (orderData) => {
       align: "center",
     });
 
-    // Received
     doc.line(pageWidth - margin - 80, lineY, pageWidth - margin - 20, lineY);
-    doc.text("RECEIVED SIGNATURE", pageWidth - margin - 50, lineY + 5, {
+    doc.text("VENDOR SIGNATURE", pageWidth - margin - 50, lineY + 5, {
       align: "center",
     });
   };
