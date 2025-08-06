@@ -284,7 +284,7 @@ export const VOUCHER_CONFIG = {
         calculate: (_, t) => t.mainTotal - t.deductionTotal,
       },
     },
-     balanceCheck: {
+    balanceCheck: {
       condition: async (formData) => {
         // First check if net total is negative
         if (formData.totals.netTotal < 0) return false;
@@ -642,8 +642,8 @@ export const VOUCHER_CONFIG = {
         calculate: (_, t) => t.mainTotal - t.deductionTotal,
       },
     },
-    
-   balanceCheck: {
+
+    balanceCheck: {
       condition: (formData) => formData.totals.netTotal >= 0,
       errorMessage: (formData) =>
         `Net Receipt (${formData.totals.netTotal.toFixed(
@@ -813,15 +813,15 @@ export const VOUCHER_CONFIG = {
         onChange: async (value, formData) => {
           if (!value) return;
           try {
-            const response = await axios.get(
-              `/api/orders/purchaseOrder`
-            );
-            console.log("respo: ",response.data.data)
-            console.log("respoValue: ", value)
-            console.log("respoValue Type: ",typeof value)
+            const response = await axios.get(`/api/orders/purchaseOrder`);
+            console.log("respo: ", response.data.data);
+            console.log("respoValue: ", value);
+            console.log("respoValue Type: ", typeof value);
 
-            const filterResponse = response.data.data.filter(item => item.order_no === Number(value))
-            console.log("filterRespo: ",filterResponse)
+            const filterResponse = response.data.data.filter(
+              (item) => item.order_no === Number(value)
+            );
+            console.log("filterRespo: ", filterResponse);
             return {
               pycd: filterResponse[0].party_code, // Vendor
               godown: filterResponse[0].godown,
@@ -904,9 +904,7 @@ export const VOUCHER_CONFIG = {
         type: "select",
         options: "products",
         apiEndpoint: (formData) =>
-          formData.po_no
-            ? `/api/orders/purchaseOrder`
-            : "/api/setup/items",
+          formData.po_no ? `/api/orders/purchaseOrder` : "/api/setup/items",
         createEndpoint: "/api/setup/items",
         nameKey: "item",
         valueKey: "itcd",
@@ -945,14 +943,14 @@ export const VOUCHER_CONFIG = {
         dependencies: ["no_of_pack", "qty_per_pack"],
         calculate: (v) => v.no_of_pack * v.qty_per_pack,
         validate: (value, line, allLines, formData) => {
-           if (formData.po_no && line.itcd) {
-           const orderedQty = line.po_qty || 0;
+          if (formData.po_no && line.itcd) {
+            const orderedQty = line.po_qty || 0;
             if (value > orderedQty) {
-                 return `Cannot exceed ordered quantity (${orderedQty})`;
-              }
+              return `Cannot exceed ordered quantity (${orderedQty})`;
             }
+          }
           return null;
-        }
+        },
       },
       { name: "rate", label: "Rate", type: "number" },
       {
@@ -1073,15 +1071,15 @@ export const VOUCHER_CONFIG = {
         onChange: async (value, formData) => {
           if (!value) return;
           try {
-            const response = await axios.get(
-              `/api/orders/saleOrder`
-            );
-            console.log("respo: ",response.data.data)
-            console.log("respoValue: ", value)
-            console.log("respoValue Type: ",typeof value)
+            const response = await axios.get(`/api/orders/saleOrder`);
+            console.log("respo: ", response.data.data);
+            console.log("respoValue: ", value);
+            console.log("respoValue Type: ", typeof value);
 
-            const filterResponse = response.data.data.filter(item => item.order_no === Number(value))
-            console.log("filterRespo: ",filterResponse)
+            const filterResponse = response.data.data.filter(
+              (item) => item.order_no === Number(value)
+            );
+            console.log("filterRespo: ", filterResponse);
             return {
               pycd: filterResponse[0].party_code, // Vendor
               godown: filterResponse[0].godown,
@@ -1210,15 +1208,13 @@ export const VOUCHER_CONFIG = {
       },
     ],
     lineFields: [
-       {
+      {
         name: "itcd",
         label: "Product",
         type: "select",
         options: "products",
         apiEndpoint: (formData) =>
-          formData.so_no
-            ? `/api/orders/saleOrder`
-            : "/api/setup/items",
+          formData.so_no ? `/api/orders/saleOrder` : "/api/setup/items",
         createEndpoint: "/api/setup/items",
         nameKey: "item",
         valueKey: "itcd",
@@ -1247,14 +1243,14 @@ export const VOUCHER_CONFIG = {
         dependencies: ["no_of_pack", "qty_per_pack"],
         calculate: (v) => v.no_of_pack * v.qty_per_pack,
         validate: (value, line, allLines, formData) => {
-           if (formData.so_no && line.itcd) {
-           const orderedQty = line.so_qty || 0;
+          if (formData.so_no && line.itcd) {
+            const orderedQty = line.so_qty || 0;
             if (value > orderedQty) {
-                 return `Cannot exceed ordered quantity (${orderedQty})`;
-              }
+              return `Cannot exceed ordered quantity (${orderedQty})`;
             }
+          }
           return null;
-        }
+        },
       },
       { name: "rate", label: "Rate", type: "number" },
       {
@@ -2212,10 +2208,9 @@ export const VOUCHER_CONFIG = {
         value2: "godown",
       },
       // { name: "status", label: "Status", type: "text" },
-
     ],
   },
-grn: {
+  grn: {
     tran_code: 4,
     hasDeductionBlock: false,
     masterFields: [
@@ -2246,15 +2241,15 @@ grn: {
         onChange: async (value, formData) => {
           if (!value) return;
           try {
-            const response = await axios.get(
-              `/api/orders/purchaseOrder`
-            );
-            console.log("respo: ",response.data.data)
-            console.log("respoValue: ", value)
-            console.log("respoValue Type: ",typeof value)
+            const response = await axios.get(`/api/orders/purchaseOrder`);
+            console.log("respo: ", response.data.data);
+            console.log("respoValue: ", value);
+            console.log("respoValue Type: ", typeof value);
 
-            const filterResponse = response.data.data.filter(item => item.order_no === Number(value))
-            console.log("filterRespo: ",filterResponse)
+            const filterResponse = response.data.data.filter(
+              (item) => item.order_no === Number(value)
+            );
+            console.log("filterRespo: ", filterResponse);
             return {
               pycd: filterResponse[0].party_code, // Vendor
               godown: filterResponse[0].godown,
@@ -2337,9 +2332,7 @@ grn: {
         type: "select",
         options: "products",
         apiEndpoint: (formData) =>
-          formData.po_no
-            ? `/api/orders/purchaseOrder`
-            : "/api/setup/items",
+          formData.po_no ? `/api/orders/purchaseOrder` : "/api/setup/items",
         createEndpoint: "/api/setup/items",
         nameKey: "item",
         valueKey: "itcd",
@@ -2378,14 +2371,14 @@ grn: {
         dependencies: ["no_of_pack", "qty_per_pack"],
         calculate: (v) => v.no_of_pack * v.qty_per_pack,
         validate: (value, line, allLines, formData) => {
-           if (formData.po_no && line.itcd) {
-           const orderedQty = line.po_qty || 0;
+          if (formData.po_no && line.itcd) {
+            const orderedQty = line.po_qty || 0;
             if (value > orderedQty) {
-                 return `Cannot exceed ordered quantity (${orderedQty})`;
-              }
+              return `Cannot exceed ordered quantity (${orderedQty})`;
             }
+          }
           return null;
-        }
+        },
       },
       // { name: "rate", label: "Rate", type: "number" },
       // {
@@ -2509,15 +2502,15 @@ grn: {
         onChange: async (value, formData) => {
           if (!value) return;
           try {
-            const response = await axios.get(
-              `/api/orders/saleOrder`
-            );
-            console.log("respo: ",response.data.data)
-            console.log("respoValue: ", value)
-            console.log("respoValue Type: ",typeof value)
+            const response = await axios.get(`/api/orders/saleOrder`);
+            console.log("respo: ", response.data.data);
+            console.log("respoValue: ", value);
+            console.log("respoValue Type: ", typeof value);
 
-            const filterResponse = response.data.data.filter(item => item.order_no === Number(value))
-            console.log("filterRespo: ",filterResponse)
+            const filterResponse = response.data.data.filter(
+              (item) => item.order_no === Number(value)
+            );
+            console.log("filterRespo: ", filterResponse);
             return {
               pycd: filterResponse[0].party_code, // Vendor
               godown: filterResponse[0].godown,
@@ -2600,9 +2593,7 @@ grn: {
         type: "select",
         options: "products",
         apiEndpoint: (formData) =>
-          formData.po_no
-            ? `/api/orders/saleOrder`
-            : "/api/setup/items",
+          formData.po_no ? `/api/orders/saleOrder` : "/api/setup/items",
         createEndpoint: "/api/setup/items",
         nameKey: "item",
         valueKey: "itcd",
@@ -2641,14 +2632,14 @@ grn: {
         dependencies: ["no_of_pack", "qty_per_pack"],
         calculate: (v) => v.no_of_pack * v.qty_per_pack,
         validate: (value, line, allLines, formData) => {
-           if (formData.po_no && line.itcd) {
-           const orderedQty = line.po_qty || 0;
+          if (formData.po_no && line.itcd) {
+            const orderedQty = line.po_qty || 0;
             if (value > orderedQty) {
-                 return `Cannot exceed ordered quantity (${orderedQty})`;
-              }
+              return `Cannot exceed ordered quantity (${orderedQty})`;
             }
+          }
           return null;
-        }
+        },
       },
       // { name: "rate", label: "Rate", type: "number" },
       // {
@@ -2740,6 +2731,4 @@ grn: {
       { name: "total", label: "Total Amount", type: "number", isTotal: true },
     ],
   },
-
-
 };

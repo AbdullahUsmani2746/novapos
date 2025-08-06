@@ -99,7 +99,11 @@ export async function GET(request, { params }) {
         break;
       case "orderBalance":
         data = await getOrderBalanceReport(filters);
-        // summary = calculateOrderBalanceSummary(data);  
+        summary = calculateOrderBalanceSummary(data);  
+        break;
+      case "customerAging":
+        data = await getCustomerAgingReport(filters);
+        summary = calculateCustomerAgingSummary(data);
         break;
       default:
         return NextResponse.json(
@@ -2193,24 +2197,95 @@ async function getOrderBalanceReport(filters) {
   }
 }
 
-// function calculateOrderBalanceSummary(data) {
-//   return {
-//     totalOrders: data?.length,
-//     totalOrdered: data?.reduce((sum, o) => sum + o.totalOrdered, 0),
-//     totalPurchased: data?.reduce((sum, o) => sum + o.totalPurchased, 0),
-//     totalReturned: data?.reduce((sum, o) => sum + o.totalReturned, 0),
-//     totalNetReceived: data?.reduce((sum, o) => sum + o.totalNetReceived, 0),
-//     totalPending: data?.reduce((sum, o) => sum + o.totalPending, 0),
+function calculateOrderBalanceSummary(data) {
+  return {
+    totalOrders: data?.length,
+    totalOrdered: data?.reduce((sum, o) => sum + o.totalOrdered, 0),
+    totalPurchased: data?.reduce((sum, o) => sum + o.totalPurchased, 0),
+    totalReturned: data?.reduce((sum, o) => sum + o.totalReturned, 0),
+    totalNetReceived: data?.reduce((sum, o) => sum + o.totalNetReceived, 0),
+    totalPending: data?.reduce((sum, o) => sum + o.totalPending, 0),
     
-//     // Status-based metrics
-//     completeOrders: data?.filter(o => o.items.every(item => item.status === 'COMPLETE')).length,
-//     partialOrders: data?.filter(o => o.items.some(item => item.status === 'PARTIAL')).length,
-//     pendingOrders: data?.filter(o => o.items.every(item => item.status === 'PENDING')).length,
-//     overReceivedOrders: data?.filter(o => o.items.some(item => item.status === 'OVER_RECEIVED')).length,
+    // Status-based metrics
+    completeOrders: data?.filter(o => o.items.every(item => item.status === 'COMPLETE')).length,
+    partialOrders: data?.filter(o => o.items.some(item => item.status === 'PARTIAL')).length,
+    pendingOrders: data?.filter(o => o.items.every(item => item.status === 'PENDING')).length,
+    overReceivedOrders: data?.filter(o => o.items.some(item => item.status === 'OVER_RECEIVED')).length,
     
-//     // Average completion percentage
-//     averageCompletion: data?.length > 0 
-//       ? data.reduce((sum, o) => sum + (o.totalNetReceived / o.totalOrdered * 100), 0) / data.length 
-//       : 0
-//   };
-// }
+    // Average completion percentage
+    averageCompletion: data?.length > 0 
+      ? data.reduce((sum, o) => sum + (o.totalNetReceived / o.totalOrdered * 100), 0) / data.length 
+      : 0
+  };
+}
+
+// Helper function
+async function getCustomerAgingReport(filters) {
+  const { customer, asOfDate = new Date() } = filters;
+  
+  if (!customer) {
+    throw new Error("Customer is required for aging report");
+  }
+
+  const query = Prisma.sql`
+    WITH invoice_data AS (
+      SELECT
+        tm.tran_id,
+        tm.dateD AS invoice_date,
+        tm.vr_no AS tran_no,
+        tm.credit_days,
+        COALESCE(tm.due_date, tm.dateD + tm.credit_days * INTERVAL '1 day') AS due_date,
+        tm.amount AS invoice_amount,
+        COALESCE(alloc.allocated_amount, 0) AS receipts
+      FROM "TRANSACTIONS_MASTER" tm
+      LEFT JOIN (
+        SELECT
+          t.alloc_tran_id,
+          SUM(t.camt) AS allocated_amount
+        FROM "Transactions" t
+        JOIN "TRANSACTIONS_MASTER" r ON r.tran_id = t.tran_id
+        WHERE r.tran_code = 1
+          AND r.dateD <= ${asOfDate}::date
+        GROUP BY t.alloc_tran_id
+      ) alloc ON alloc.alloc_tran_id = tm.tran_id
+      WHERE tm.tran_code = 6
+        AND tm.pycd = ${customer}
+        AND tm.dateD <= ${asOfDate}::date
+    )
+    SELECT
+      TO_CHAR(invoice_date, 'DD-Mon-YY') AS "Invoice Date",
+      tran_no AS "Tran No",
+      tran_no AS "Invoice No",
+      credit_days AS "CR Days",
+      TO_CHAR(due_date, 'DD-Mon-YY') AS "Due Date",
+      invoice_amount::numeric AS "Invoice Amount",
+      receipts::numeric AS "Receipts",
+      (invoice_amount - receipts)::numeric AS "Outstanding",
+      CASE WHEN ${asOfDate}::date - due_date <= 30 THEN (invoice_amount - receipts) ELSE 0 END::numeric AS "Below 30 Days",
+      CASE WHEN ${asOfDate}::date - due_date BETWEEN 31 AND 45 THEN (invoice_amount - receipts) ELSE 0 END::numeric AS "31 to 45 Days",
+      CASE WHEN ${asOfDate}::date - due_date BETWEEN 46 AND 60 THEN (invoice_amount - receipts) ELSE 0 END::numeric AS "46 to 60 Days",
+      CASE WHEN ${asOfDate}::date - due_date BETWEEN 61 AND 90 THEN (invoice_amount - receipts) ELSE 0 END::numeric AS "61 to 90 Days",
+      CASE WHEN ${asOfDate}::date - due_date BETWEEN 91 AND 120 THEN (invoice_amount - receipts) ELSE 0 END::numeric AS "91 to 120 Days",
+      CASE WHEN ${asOfDate}::date - due_date > 120 THEN (invoice_amount - receipts) ELSE 0 END::numeric AS "Above 120 Days",
+      (${asOfDate}::date - due_date) AS "Total OS Days"
+    FROM invoice_data
+    ORDER BY invoice_date
+  `;
+
+  return await prisma.$queryRaw(query);
+}
+
+// Summary calculation
+function calculateCustomerAgingSummary(data) {
+  return {
+    total_invoice_amount: data.reduce((sum, row) => sum + parseFloat(row['Invoice Amount']), 0),
+    total_receipts: data.reduce((sum, row) => sum + parseFloat(row['Receipts']), 0),
+    total_outstanding: data.reduce((sum, row) => sum + parseFloat(row['Outstanding']), 0),
+    total_below_30: data.reduce((sum, row) => sum + parseFloat(row['Below 30 Days']), 0),
+    total_31_45: data.reduce((sum, row) => sum + parseFloat(row['31 to 45 Days']), 0),
+    total_46_60: data.reduce((sum, row) => sum + parseFloat(row['46 to 60 Days']), 0),
+    total_61_90: data.reduce((sum, row) => sum + parseFloat(row['61 to 90 Days']), 0),
+    total_91_120: data.reduce((sum, row) => sum + parseFloat(row['91 to 120 Days']), 0),
+    total_above_120: data.reduce((sum, row) => sum + parseFloat(row['Above 120 Days']), 0)
+  };
+}
