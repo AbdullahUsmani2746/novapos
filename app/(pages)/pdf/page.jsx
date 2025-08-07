@@ -1,15 +1,15 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 
 import { generateVoucherPDF } from "@/components/Template/Payment";
 import { generateUnifiedPDF } from "@/components/Template/UnifiedReport";
-import { generateSalesOrderPDF } from "@/components/Template/SalesOrder";
 import { generateOrderBalancePDF } from "@/components/Template/OrderBalance";
 import { generateSalesBalancePDF } from "@/components/Template/SalesBalance";
 import { generateCustomerAgingPDF } from "@/components/Template/CustomerAging";
 
 
 const PDF = () => {
+const [isDownloading, setIsDownloading] = useState(false);
 
   const voucher = {
   documentType: 'commission', // or 'delivery' or 'sales'
@@ -84,18 +84,20 @@ const PDF = () => {
     const doc = generateUnifiedPDF(voucher)
     doc.save("delivery-invoice.pdf");
   };
-  const handleDownload6 = () => {
-    const doc = generateSalesOrderPDF()
-    doc.save("sales-order.pdf");
-  };
   const handleDownload7 = () => {
     const doc = generateOrderBalancePDF()
     doc.save("order-balance.pdf");
   };
-  const handleDownload8 = () => {
-    const doc = generateSalesBalancePDF()
+ const handleDownload8 = async () => {
+  setIsDownloading(true);
+  try {
+    const doc = await generateSalesBalancePDF();
+    console.log("Sales Balance PDF generated successfully: ",doc);
     doc.save("salesOrder-balance.pdf");
-  };
+  } finally {
+    setIsDownloading(false);
+  }
+};
   const handleDownload9 = () => {
     const doc = generateCustomerAgingPDF()
     doc.save("customer-aging.pdf");
@@ -122,12 +124,6 @@ const PDF = () => {
         </button>
       </div>
       <div className="p-4">
-        <button
-          onClick={handleDownload6}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          sales order
-        </button>
         <button
           onClick={handleDownload7}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

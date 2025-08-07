@@ -1,6 +1,7 @@
+import axios from "axios";
 import { jsPDF } from "jspdf";
 
-export const generateSalesBalancePDF = () => {
+export const generateSalesBalancePDF = async () => {
   // ============== ALL VALUES CONSOLIDATED HERE ==============
   const pageWidth = 210;
   const pageHeight = 297;
@@ -21,10 +22,30 @@ export const generateSalesBalancePDF = () => {
     highlight: [155, 89, 182], // Purple for highlights
   };
 
-  const companyName = "SIEGWERK PAKISTAN LIMITED";
-  const documentTitle = "Sales Order Balance";
-  const positionDate = "Position Date  30-JUL-25";
-  const reportDate = "Wednesday July 30 2025 1:47 PM";
+  // const companyName = axios.get("api/setup/companies")
+  //   .then((response) => response.data.data[0].company)
+  let companyName = ""; // Default value in case of error
+    try {
+      const response = await axios.get("/api/setup/companies");
+      companyName = response.data.data[0].company;
+      response.data.data[0].company;
+    } catch (error) {
+      console.error("Error fetching company name:", error);
+    }
+  
+
+  // console.log("Company Name:", companyName());
+  // const companyName = "SIEGWERK PAKISTAN LIMITED";
+  const documentTitle = "Order Balance";
+  const positionDate = `Position Date  ${new Date().toLocaleDateString()}`;
+  const reportDate = new Date().toLocaleDateString(
+    "en-US",
+    {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }
+  );
   const pageInfo = "Page 1 of 12";
 
   // Sample data based on the image
@@ -171,10 +192,12 @@ export const generateSalesBalancePDF = () => {
         },
       ],
     },
+    
   ];
 
   // ============== PDF GENERATION CODE ==============
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+
 
   const drawHeader = (yPosition = margin) => {
     // Company name section with dark blue background
@@ -475,5 +498,7 @@ export const generateSalesBalancePDF = () => {
     currentY += 5; // Add some space between customers
   });
 
+
   return doc;
+
 };

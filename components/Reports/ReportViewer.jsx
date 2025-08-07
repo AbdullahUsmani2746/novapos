@@ -179,8 +179,7 @@ const ReportViewer = ({ reportType }) => {
           console.error(`Error loading options for ${filter.name}:`, error);
           options[filter.name] = [];
         }
-      }
-      else if(filter.options && !filter.apiEndpoint) {
+      } else if (filter.options && !filter.apiEndpoint) {
         options[filter.name] = filter.options.map((opt) => ({
           value: opt.value || opt,
           label: opt.label || opt,
@@ -326,657 +325,763 @@ const ReportViewer = ({ reportType }) => {
     }
   };
 
-const exportToExcel = async () => { 
-
-
+  const exportToExcel = async () => {
     const workbook = XLSX.utils.book_new();
 
     // Helper function to handle empty/zero values
     const formatCellValue = (value) => {
-        if (value === null || value === undefined || value === 0 || value === "0") {
-            return "0";
-        }
-        return value;
+      if (
+        value === null ||
+        value === undefined ||
+        value === 0 ||
+        value === "0"
+      ) {
+        return "0";
+      }
+      return value;
     };
 
     // Check if we should show details sheet
-    const showDetails = config.detailColumns && data.some(item => item.transactions);
+    console.log("data: ", !config.showSummary);
+    const showDetails =
+      config.detailColumns && data.some((item) => item.transactions);
 
-    if (showDetails) {
-        // ============ DETAILS SHEET ============
-        const detailData = [];
-        data.forEach((item) => {
-            if (item.transactions?.length > 0) {
-                item.transactions.forEach((detail) => {
-                    const detailRow = {
-                      "Parent Date": formatCellValue(item.dateD) || "",
-                      "Parent Voucher": formatCellValue(item.vr_no) || "",
-                      "Customer": formatCellValue(item.acno.acname) || "",
+    if (showDetails && (!config.showSummary || false)) {
+      // ============ DETAILS SHEET ============
+      const detailData = [];
+      data.forEach((item) => {
+        if (item.transactions?.length > 0) {
+          item.transactions.forEach((detail) => {
+            const detailRow = {
+              Date: formatCellValue(item.dateD) || "",
+              "Vr #": formatCellValue(item.vr_no) || "",
+              "Vendor/Customer": formatCellValue(item.acno.acname) || "",
+            };
+            config.detailColumns.forEach((col) => {
+              detailRow[col.headerName] = col.valueGetter
+                ? formatCellValue(col.valueGetter({ row: detail }))
+                : formatCellValue(detail[col.field]);
+            });
+            detailData.push(detailRow);
+          });
+        }
+      });
 
-                    };
-                    config.detailColumns.forEach((col) => {
-                        detailRow[col.headerName] = col.valueGetter 
-                            ? formatCellValue(col.valueGetter({ row: detail }))
-                            : formatCellValue(detail[col.field]);
-                    });
-                    detailData.push(detailRow);
-                });
-            }
-        });
+      const detailWorksheet = XLSX.utils.json_to_sheet(detailData, {
+        origin: "A3",
+      });
 
-        const detailWorksheet = XLSX.utils.json_to_sheet(detailData, { origin: "A3" });
+      // Add Title (Row 1)
+      XLSX.utils.sheet_add_aoa(detailWorksheet, [[config.title]], {
+        origin: "A1",
+      });
 
-        // Add Title (Row 1)
-        XLSX.utils.sheet_add_aoa(detailWorksheet, [[config.title]], { origin: "A1" });
+      // Add generated date (Row 2)
+      XLSX.utils.sheet_add_aoa(
+        detailWorksheet,
+        [[`Generated on ${format(new Date(), "PPP")}`]],
+        { origin: "A2" }
+      );
 
-        // Add generated date (Row 2)
-        XLSX.utils.sheet_add_aoa(
-            detailWorksheet,
-            [[`Generated on ${format(new Date(), "PPP")}`]],
-            { origin: "A2" }
+      detailWorksheet["!merges"] = [
+        {
+          s: { r: 0, c: 0 },
+          e: { r: 0, c: Object.keys(detailData[0] || {}).length - 1 },
+        },
+        {
+          s: { r: 1, c: 0 },
+          e: { r: 1, c: Object.keys(detailData[0] || {}).length - 1 },
+        },
+      ];
+
+      // Apply styling for header rows
+      ["A1", "A2"].forEach((cellRef, idx) => {
+        if (!detailWorksheet[cellRef]) {
+          detailWorksheet[cellRef] = {
+            v:
+              idx === 0
+                ? config.title
+                : `Generated on ${format(new Date(), "PPP")}`,
+            t: "s",
+          };
+        }
+
+        if (idx === 0) {
+          // Title styling (Row 1)
+          detailWorksheet[cellRef].s = {
+            font: {
+              bold: true,
+              sz: 24,
+              color: { rgb: "FFFFFF" },
+              name: "Calibri",
+              scheme: "major",
+            },
+            fill: {
+              patternType: "solid",
+              fgColor: { rgb: "27AE60" },
+              bgColor: { rgb: "27AE60" },
+            },
+            alignment: {
+              horizontal: "center",
+              vertical: "center",
+              wrapText: true,
+            },
+          };
+
+          if (!detailWorksheet["!rows"]) {
+            detailWorksheet["!rows"] = [];
+          }
+          detailWorksheet["!rows"][0] = { hpt: 40 };
+          detailWorksheet["!rows"][1] = { hpt: 23 };
+        } else {
+          // Date styling (Row 2)
+          detailWorksheet[cellRef].s = {
+            font: {
+              italic: true,
+              sz: 12,
+              color: { rgb: "2C3E50" },
+              name: "Calibri",
+            },
+            fill: {
+              patternType: "solid",
+              fgColor: { rgb: "D6EAF8" },
+              bgColor: { rgb: "D6EAF8" },
+            },
+            alignment: {
+              horizontal: "right",
+              vertical: "center",
+            },
+          };
+        }
+      });
+
+      // Calculate column widths for detail sheet with special handling for item name
+      const calculateColumnWidth = (data, columnKey) => {
+        const headerLength = columnKey.length;
+        const maxContentLength = Math.max(
+          ...data.map((row) =>
+            row[columnKey] ? row[columnKey].toString().length : 0
+          )
         );
 
-        detailWorksheet["!merges"] = [
-            { s: { r: 0, c: 0 }, e: { r: 0, c: Object.keys(detailData[0] || {}).length - 1 } },
-            { s: { r: 1, c: 0 }, e: { r: 1, c: Object.keys(detailData[0] || {}).length - 1 } },
-        ];
+        if (
+          columnKey.toLowerCase().includes("item") ||
+          columnKey.toLowerCase().includes("name")
+        ) {
+          return Math.min(Math.max(headerLength, maxContentLength, 25), 40);
+        }
+        return Math.min(Math.max(headerLength, maxContentLength, 10), 30);
+      };
 
-        // Apply styling for header rows
-        ["A1", "A2"].forEach((cellRef, idx) => {
-            if (!detailWorksheet[cellRef]) {
-                detailWorksheet[cellRef] = {
-                    v: idx === 0 ? config.title : `Generated on ${format(new Date(), "PPP")}`,
-                    t: "s",
-                };
-            }
+      const detailWscols = Object.keys(detailData[0] || {}).map((key) => ({
+        wch:
+          key.toLowerCase().includes("item") ||
+          key.toLowerCase().includes("name")
+            ? 30
+            : calculateColumnWidth(detailData, key),
+      }));
+      detailWorksheet["!cols"] = detailWscols;
 
-            if (idx === 0) {
-                // Title styling (Row 1)
-                detailWorksheet[cellRef].s = {
-                    font: {
-                        bold: true,
-                        sz: 24,
-                        color: { rgb: "FFFFFF" },
-                        name: "Calibri",
-                        scheme: "major",
-                    },
-                    fill: {
-                        patternType: "solid",
-                        fgColor: { rgb: "27AE60" },
-                        bgColor: { rgb: "27AE60" },
-                    },
-                    alignment: {
-                        horizontal: "center",
-                        vertical: "center",
-                        wrapText: true,
-                    },
-                };
-
-                if (!detailWorksheet["!rows"]) {
-                    detailWorksheet["!rows"] = [];
-                }
-                detailWorksheet["!rows"][0] = { hpt: 40 };
-                detailWorksheet["!rows"][1] = { hpt: 23 };
-            } else {
-                // Date styling (Row 2)
-                detailWorksheet[cellRef].s = {
-                    font: {
-                        italic: true,
-                        sz: 12,
-                        color: { rgb: "2C3E50" },
-                        name: "Calibri",
-                    },
-                    fill: {
-                        patternType: "solid",
-                        fgColor: { rgb: "D6EAF8" },
-                        bgColor: { rgb: "D6EAF8" },
-                    },
-                    alignment: {
-                        horizontal: "right",
-                        vertical: "center",
-                    },
-                };
-            }
+      // Set row heights for detail sheet
+      const detailWsrows = [];
+      for (let i = 0; i <= detailData.length + 2; i++) {
+        // +2 for the header rows
+        detailWsrows.push({
+          hpt: i === 0 ? 40 : i === 1 ? 23 : 36, // Title:40, Date:23, Data:36
         });
+      }
+      detailWorksheet["!rows"] = detailWsrows;
 
-        // Calculate column widths for detail sheet with special handling for item name
-        const calculateColumnWidth = (data, columnKey) => {
-            const headerLength = columnKey.length;
-            const maxContentLength = Math.max(
-                ...data.map(row => (row[columnKey] ? row[columnKey].toString().length : 0))
-            );
-            
-            if (columnKey.toLowerCase().includes("item") || columnKey.toLowerCase().includes("name")) {
-                return Math.min(Math.max(headerLength, maxContentLength, 25), 40);
-            }
-            return Math.min(Math.max(headerLength, maxContentLength, 10), 30);
-        };
+      // Add styling to detail sheet
+      const detailRange = XLSX.utils.decode_range(
+        detailWorksheet["!ref"] || "A1"
+      );
+      for (let row = 0; row <= detailRange.e.r; row++) {
+        for (let col = detailRange.s.c; col <= detailRange.e.c; col++) {
+          const cell = XLSX.utils.encode_cell({ r: row, c: col });
+          if (!detailWorksheet[cell]) {
+            detailWorksheet[cell] = { v: "" };
+          }
 
-        const detailWscols = Object.keys(detailData[0] || {}).map(key => ({
-            wch: key.toLowerCase().includes("item") || key.toLowerCase().includes("name")
-                ? 30
-                : calculateColumnWidth(detailData, key)
-        }));
-        detailWorksheet["!cols"] = detailWscols;
+          const borderStyle = {
+            style: "thin",
+            color: { rgb: "000000" },
+          };
 
-        // Set row heights for detail sheet
-        const detailWsrows = [];
-        for (let i = 0; i <= detailData.length + 2; i++) { // +2 for the header rows
-            detailWsrows.push({
-                hpt: i === 0 ? 40 : i === 1 ? 23 : 36 // Title:40, Date:23, Data:36
-            });
+          if (row === 2) {
+            // Header row (now row 3 because of title/date)
+            detailWorksheet[cell].s = {
+              fill: { fgColor: { rgb: "27AE60" } },
+              font: {
+                bold: true,
+                color: { rgb: "FFFFFF" },
+                size: 12,
+              },
+              alignment: {
+                horizontal: "center",
+                vertical: "center",
+                wrapText: true,
+              },
+              border: {
+                top: borderStyle,
+                bottom: borderStyle,
+                left: borderStyle,
+                right: borderStyle,
+              },
+            };
+          } else if (row > 2) {
+            // Data rows
+            detailWorksheet[cell].s = {
+              fill: {
+                fgColor: {
+                  rgb: row % 2 === 0 ? "E8F5E9" : "FFFFFF",
+                },
+              },
+              font: {
+                size: 11,
+                color: { rgb: "000000" },
+              },
+              alignment: {
+                horizontal: "center",
+                vertical: "center",
+                wrapText: true,
+              },
+              border: {
+                top: borderStyle,
+                bottom: borderStyle,
+                left: borderStyle,
+                right: borderStyle,
+              },
+            };
+          }
         }
-        detailWorksheet["!rows"] = detailWsrows;
+      }
 
-        // Add styling to detail sheet
-        const detailRange = XLSX.utils.decode_range(detailWorksheet["!ref"] || "A1");
-        for (let row = 0; row <= detailRange.e.r; row++) {
-            for (let col = detailRange.s.c; col <= detailRange.e.c; col++) {
-                const cell = XLSX.utils.encode_cell({ r: row, c: col });
-                if (!detailWorksheet[cell]) {
-                    detailWorksheet[cell] = { v: "" };
-                }
-
-                const borderStyle = {
-                    style: "thin",
-                    color: { rgb: "000000" }
-                };
-
-                if (row === 2) { // Header row (now row 3 because of title/date)
-                    detailWorksheet[cell].s = {
-                        fill: { fgColor: { rgb: "27AE60" } },
-                        font: {
-                            bold: true,
-                            color: { rgb: "FFFFFF" },
-                            size: 12,
-                        },
-                        alignment: {
-                            horizontal: "center",
-                            vertical: "center",
-                            wrapText: true,
-                        },
-                        border: {
-                            top: borderStyle,
-                            bottom: borderStyle,
-                            left: borderStyle,
-                            right: borderStyle,
-                        },
-                    };
-                } else if (row > 2) { // Data rows
-                    detailWorksheet[cell].s = {
-                        fill: {
-                            fgColor: {
-                                rgb: row % 2 === 0 ? "E8F5E9" : "FFFFFF",
-                            },
-                        },
-                        font: {
-                            size: 11,
-                            color: { rgb: "000000" },
-                        },
-                        alignment: {
-                            horizontal: "center",
-                            vertical: "center",
-                            wrapText: true,
-                        },
-                        border: {
-                            top: borderStyle,
-                            bottom: borderStyle,
-                            left: borderStyle,
-                            right: borderStyle,
-                        },
-                    };
-                }
-            }
-        }
-
-        XLSX.utils.book_append_sheet(workbook, detailWorksheet, "Details");
+      XLSX.utils.book_append_sheet(workbook, detailWorksheet, "Details");
     } else {
-        // ============ SUMMARY SHEET ============
-        const filteredData = config?.dynamicColumns ? data?.items : data
-        const mainData = filteredData.map((item) => {
-            const row = {};
-            allColumns?.forEach((col) => {
-                if (col.valueGetter) {
-                    row[col.headerName] = formatCellValue(col.valueGetter({ row: item }));
-                } else {
-                    row[col.headerName] = formatCellValue(item[col.field]);
-                }
-            });
-            return row;
+      // ============ SUMMARY SHEET ============
+      const filteredData = config?.dynamicColumns ? data?.items : data;
+      const mainData = filteredData.map((item) => {
+        const row = {};
+        allColumns?.forEach((col) => {
+          if (col.valueGetter) {
+            row[col.headerName] = formatCellValue(
+              col.valueGetter({ row: item })
+            );
+          } else {
+            row[col.headerName] = formatCellValue(item[col.field]);
+          }
         });
+        return row;
+      });
 
-        const mainWorksheet = XLSX.utils.json_to_sheet(mainData, { origin: "A3" });
+      const mainWorksheet = XLSX.utils.json_to_sheet(mainData, {
+        origin: "A3",
+      });
 
-        // Add Title (Row 1)
-        XLSX.utils.sheet_add_aoa(mainWorksheet, [[config.title]], { origin: "A1" });
+      // Add Title (Row 1)
+      XLSX.utils.sheet_add_aoa(mainWorksheet, [[config.title]], {
+        origin: "A1",
+      });
 
-        // Add generated date (Row 2)
-        XLSX.utils.sheet_add_aoa(
-            mainWorksheet,
-            [[`Generated on ${format(new Date(), "PPP")}`]],
-            { origin: "A2" }
+      // Add generated date (Row 2)
+      XLSX.utils.sheet_add_aoa(
+        mainWorksheet,
+        [[`Generated on ${format(new Date(), "PPP")}`]],
+        { origin: "A2" }
+      );
+
+      mainWorksheet["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: allColumns.length - 1 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: allColumns.length - 1 } },
+      ];
+
+      // Apply styling for header rows
+      ["A1", "A2"].forEach((cellRef, idx) => {
+        if (!mainWorksheet[cellRef]) {
+          mainWorksheet[cellRef] = {
+            v:
+              idx === 0
+                ? config.title
+                : `Generated on ${format(new Date(), "PPP")}`,
+            t: "s",
+          };
+        }
+
+        if (idx === 0) {
+          // Title styling (Row 1)
+          mainWorksheet[cellRef].s = {
+            font: {
+              bold: true,
+              sz: 24,
+              color: { rgb: "FFFFFF" },
+              name: "Calibri",
+              scheme: "major",
+            },
+            fill: {
+              patternType: "solid",
+              fgColor: { rgb: "4472C4" },
+              bgColor: { rgb: "4472C4" },
+            },
+            alignment: {
+              horizontal: "center",
+              vertical: "center",
+              wrapText: true,
+            },
+          };
+
+          if (!mainWorksheet["!rows"]) {
+            mainWorksheet["!rows"] = [];
+          }
+          mainWorksheet["!rows"][0] = { hpt: 40 };
+          mainWorksheet["!rows"][1] = { hpt: 23 };
+        } else {
+          // Date styling (Row 2)
+          mainWorksheet[cellRef].s = {
+            font: {
+              italic: true,
+              sz: 12,
+              color: { rgb: "2C3E50" },
+              name: "Calibri",
+            },
+            fill: {
+              patternType: "solid",
+              fgColor: { rgb: "D6EAF8" },
+              bgColor: { rgb: "D6EAF8" },
+            },
+            alignment: {
+              horizontal: "right",
+              vertical: "center",
+            },
+          };
+        }
+      });
+
+      // Calculate optimal column widths with special handling for item name
+      const calculateColumnWidth = (data, columnKey) => {
+        const headerLength = columnKey.length;
+        const maxContentLength = Math.max(
+          ...data.map((row) => {
+            const value = row[columnKey];
+            return value ? value.toString().length : 0;
+          })
         );
 
-        mainWorksheet["!merges"] = [
-            { s: { r: 0, c: 0 }, e: { r: 0, c: allColumns.length - 1 } },
-            { s: { r: 1, c: 0 }, e: { r: 1, c: allColumns.length - 1 } },
-        ];
+        if (
+          columnKey.toLowerCase().includes("item") ||
+          columnKey.toLowerCase().includes("name")
+        ) {
+          return Math.min(Math.max(headerLength, maxContentLength, 25), 40);
+        }
+        return Math.min(Math.max(headerLength, maxContentLength, 10), 30);
+      };
 
-        // Apply styling for header rows
-        ["A1", "A2"].forEach((cellRef, idx) => {
-            if (!mainWorksheet[cellRef]) {
-                mainWorksheet[cellRef] = {
-                    v: idx === 0 ? config.title : `Generated on ${format(new Date(), "PPP")}`,
-                    t: "s",
-                };
-            }
+      // Set column widths based on content
+      const wscols = Object.keys(mainData[0] || {}).map((key) => ({
+        wch: calculateColumnWidth(mainData, key),
+      }));
+      mainWorksheet["!cols"] = wscols;
 
-            if (idx === 0) {
-                // Title styling (Row 1)
-                mainWorksheet[cellRef].s = {
-                    font: {
-                        bold: true,
-                        sz: 24,
-                        color: { rgb: "FFFFFF" },
-                        name: "Calibri",
-                        scheme: "major",
-                    },
-                    fill: {
-                        patternType: "solid",
-                        fgColor: { rgb: "4472C4" },
-                        bgColor: { rgb: "4472C4" },
-                    },
-                    alignment: {
-                        horizontal: "center",
-                        vertical: "center",
-                        wrapText: true,
-                    },
-                };
-
-                if (!mainWorksheet["!rows"]) {
-                    mainWorksheet["!rows"] = [];
-                }
-                mainWorksheet["!rows"][0] = { hpt: 40 };
-                mainWorksheet["!rows"][1] = { hpt: 23 };
-            } else {
-                // Date styling (Row 2)
-                mainWorksheet[cellRef].s = {
-                    font: {
-                        italic: true,
-                        sz: 12,
-                        color: { rgb: "2C3E50" },
-                        name: "Calibri",
-                    },
-                    fill: {
-                        patternType: "solid",
-                        fgColor: { rgb: "D6EAF8" },
-                        bgColor: { rgb: "D6EAF8" },
-                    },
-                    alignment: {
-                        horizontal: "right",
-                        vertical: "center",
-                    },
-                };
-            }
+      // Set row heights
+      const wsrows = [];
+      for (let i = 0; i <= mainData.length + 2; i++) {
+        wsrows.push({
+          hpt: i === 0 ? 40 : i === 1 ? 23 : 32,
         });
+      }
+      mainWorksheet["!rows"] = wsrows;
 
-        // Calculate optimal column widths with special handling for item name
-        const calculateColumnWidth = (data, columnKey) => {
-            const headerLength = columnKey.length;
-            const maxContentLength = Math.max(
-                ...data.map((row) => {
-                    const value = row[columnKey];
-                    return value ? value.toString().length : 0;
-                })
-            );
+      // Add borders and styling to all cells
+      const range = XLSX.utils.decode_range(mainWorksheet["!ref"] || "A1");
+      for (let row = 0; row <= range.e.r; row++) {
+        for (let col = range.s.c; col <= range.e.c; col++) {
+          const cell = XLSX.utils.encode_cell({ r: row, c: col });
+          if (!mainWorksheet[cell]) {
+            mainWorksheet[cell] = { v: "" };
+          }
 
-            if (columnKey.toLowerCase().includes("item") || columnKey.toLowerCase().includes("name")) {
-                return Math.min(Math.max(headerLength, maxContentLength, 25), 40);
-            }
-            return Math.min(Math.max(headerLength, maxContentLength, 10), 30);
-        };
+          const borderStyle = {
+            style: "thin",
+            color: { rgb: "000000" },
+          };
 
-        // Set column widths based on content
-        const wscols = Object.keys(mainData[0] || {}).map((key) => ({
-            wch: calculateColumnWidth(mainData, key),
-        }));
-        mainWorksheet["!cols"] = wscols;
-
-        // Set row heights
-        const wsrows = [];
-        for (let i = 0; i <= mainData.length + 2; i++) {
-            wsrows.push({
-                hpt: i === 0 ? 40 : i === 1 ? 23 : 32
-            });
+          if (row === 2) {
+            mainWorksheet[cell].s = {
+              fill: { fgColor: { rgb: "2C3E50" } },
+              font: {
+                bold: true,
+                color: { rgb: "FFFFFF" },
+                size: 12,
+              },
+              alignment: {
+                horizontal: "center",
+                vertical: "center",
+                wrapText: true,
+              },
+              border: {
+                top: borderStyle,
+                bottom: borderStyle,
+                left: borderStyle,
+                right: borderStyle,
+              },
+            };
+          } else if (row > 2) {
+            mainWorksheet[cell].s = {
+              fill: {
+                fgColor: {
+                  rgb: row % 2 === 0 ? "F8F9FA" : "FFFFFF",
+                },
+              },
+              font: {
+                size: 11,
+                color: { rgb: "000000" },
+              },
+              alignment: {
+                horizontal: "center",
+                vertical: "center",
+                wrapText: true,
+              },
+              border: {
+                top: borderStyle,
+                bottom: borderStyle,
+                left: borderStyle,
+                right: borderStyle,
+              },
+            };
+          }
         }
-        mainWorksheet["!rows"] = wsrows;
+      }
 
-        // Add borders and styling to all cells
-        const range = XLSX.utils.decode_range(mainWorksheet["!ref"] || "A1");
-        for (let row = 0; row <= range.e.r; row++) {
-            for (let col = range.s.c; col <= range.e.c; col++) {
-                const cell = XLSX.utils.encode_cell({ r: row, c: col });
-                if (!mainWorksheet[cell]) {
-                    mainWorksheet[cell] = { v: "" };
-                }
-
-                const borderStyle = {
-                    style: "thin",
-                    color: { rgb: "000000" },
-                };
-
-                if (row === 2) {
-                    mainWorksheet[cell].s = {
-                        fill: { fgColor: { rgb: "2C3E50" } },
-                        font: {
-                            bold: true,
-                            color: { rgb: "FFFFFF" },
-                            size: 12,
-                        },
-                        alignment: {
-                            horizontal: "center",
-                            vertical: "center",
-                            wrapText: true,
-                        },
-                        border: {
-                            top: borderStyle,
-                            bottom: borderStyle,
-                            left: borderStyle,
-                            right: borderStyle,
-                        },
-                    };
-                } else if (row > 2) {
-                    mainWorksheet[cell].s = {
-                        fill: {
-                            fgColor: {
-                                rgb: row % 2 === 0 ? "F8F9FA" : "FFFFFF",
-                            },
-                        },
-                        font: {
-                            size: 11,
-                            color: { rgb: "000000" },
-                        },
-                        alignment: {
-                            horizontal: "center",
-                            vertical: "center",
-                            wrapText: true,
-                        },
-                        border: {
-                            top: borderStyle,
-                            bottom: borderStyle,
-                            left: borderStyle,
-                            right: borderStyle,
-                        },
-                    };
-                }
-            }
-        }
-
-        XLSX.utils.book_append_sheet(workbook, mainWorksheet, "Summary");
+      XLSX.utils.book_append_sheet(workbook, mainWorksheet, "Summary");
     }
 
     // Export with timestamped filename
     const timestamp = format(new Date(), "yyyy-MM-dd_HHmm");
     XLSX.writeFile(workbook, `${config.title}_${timestamp}.xlsx`);
-};
+  };
 
-const exportToPDF = async () => {
+  const exportToPDF = async () => {
     try {
-        setIsExporting(true);
+      setIsExporting(true);
 
-        const { jsPDF } = await import("jspdf");
-        const { default: autoTable } = await import("jspdf-autotable");
+      const { jsPDF } = await import("jspdf");
+      const { default: autoTable } = await import("jspdf-autotable");
 
-        // Initialize jsPDF
-        const doc = new jsPDF({
-            orientation: "landscape",
-            unit: "mm",
-            putOnlyUsedFonts: true,
+      // Initialize jsPDF
+      const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        putOnlyUsedFonts: true,
+      });
+
+      // Check if we should show details
+      const showDetails =
+        config.detailColumns && data.some((item) => item.transactions);
+
+      // Common styles configuration
+      const commonStyles = {
+        fontSize: 9, // Reduced font size for better fit
+        font: "helvetica",
+        cellPadding: 1, // Reduced padding
+        textColor: [0, 0, 0],
+        halign: "center",
+        valign: "middle",
+        lineWidth: 0.25,
+        lineColor: [0, 0, 0],
+        overflow: "linebreak",
+        minCellHeight: 5, // Minimum row height
+        lineHeight: 1.2, // Tighter line height
+      };
+
+      if (showDetails && !config.showSummary) {
+        // ============ DETAILS PDF ============
+        const detailData = [];
+        data.forEach((item) => {
+          if (item.transactions?.length > 0) {
+            item.transactions.forEach((detail) => {
+              const detailRow = {
+                Date: formatCellValue(item.dateD) || "0",
+                "Vr #": formatCellValue(item.vr_no) || "0",
+              };
+              config.detailColumns.forEach((col) => {
+                detailRow[col.headerName] = col.valueGetter
+                  ? formatCellValue(col.valueGetter({ row: detail }))
+                  : formatCellValue(detail[col.field]);
+              });
+              detailData.push(detailRow);
+            });
+          }
         });
 
-        // Check if we should show details
-        const showDetails = config.detailColumns && data.some(item => item.transactions);
+        // Add title (green background like Excel)
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18); // Reduced title size
+        doc.setTextColor(255, 255, 255);
+        doc.setFillColor(39, 174, 96); // Green from Excel
+        doc.rect(0, 0, doc.internal.pageSize.width, 12, "F"); // Reduced height
+        doc.text(
+          config.title,
+          doc.internal.pageSize.width / 2,
+          8, // Adjusted position
+          { align: "center" }
+        );
 
-        // Common styles configuration
-        const commonStyles = {
-            fontSize: 9, // Reduced font size for better fit
-            font: "helvetica",
-            cellPadding: 1, // Reduced padding
-            textColor: [0, 0, 0],
+        // Add generated date (light blue background)
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(10); // Reduced font size
+        doc.setTextColor(44, 62, 80); // Dark gray text
+        doc.setFillColor(214, 234, 248); // Light blue from Excel
+        doc.rect(0, 12, doc.internal.pageSize.width, 6, "F"); // Reduced height
+        doc.text(
+          `Generated on ${format(new Date(), "PPP")}`,
+          doc.internal.pageSize.width - 10,
+          15, // Adjusted position
+          { align: "right" }
+        );
+
+        // Prepare headers for detail table
+        const detailHeaders = [
+          { title: "Date", dataKey: "Date", width: 20 },
+          { title: "Vr #", dataKey: "Vr #", width: 20 },
+          ...config.detailColumns.map((col) => ({
+            title: col.headerName,
+            dataKey: col.headerName,
+            width: col.width || 40,
+          })),
+        ];
+
+        // Calculate column widths dynamically
+        const pageWidth = doc.internal.pageSize.width - 100; // minus margins
+        const columnCount = detailHeaders.length;
+        const baseWidth = pageWidth / columnCount;
+
+        const columnStyles = {};
+        detailHeaders.forEach((header, idx) => {
+          // let width = baseWidth;
+          //  if (header.title.toLowerCase()==="product name"
+          //  || header.title.toLowerCase()==="vendor/customer"
+          // ) {
+          // width = 65;
+          // }
+
+          // else if ( header.title.toLowerCase()==="trans type"
+          // ) {
+          // width = 50;
+          // }
+          // else if ( header.title.toLowerCase()==="account"
+          // ) {
+          // width = header.width || 115;
+          // }
+
+          // else if (header.title.toLowerCase()==="invoice no"
+          // || header.title.toLowerCase()==="net amount"
+          // || header.title.toLowerCase()==="debit"
+          // || header.title.toLowerCase()==="opening balance"
+          // || header.title.toLowerCase()==="closing balance"
+          // || header.title.toLowerCase()==="balance"
+          // || header.title.toLowerCase()==="credit") {
+          // width = 40;
+          // }
+          // // Wider for item/name columns
+          // else if (header.title.toLowerCase().includes("item") ||
+          //     header.title.toLowerCase().includes("name")) {
+
+          //     width = Math.min(50, baseWidth * 1.5);
+          // }
+          // // Narrower for date/number columns
+          // else if (header.title.toLowerCase().includes("date") ||
+          //          header.title.toLowerCase().includes("amount") ||
+          //          header.title.toLowerCase().includes("qty")) {
+          //     width = Math.max(15, baseWidth * 0.7);
+          // }
+          columnStyles[idx] = { cellWidth: header.width };
+        });
+
+        // Add detail table
+        autoTable(doc, {
+          head: [detailHeaders.map((h) => h.title)],
+          body: detailData.map((row) =>
+            detailHeaders.map((header) => {
+              const value = row[header.dataKey] || "";
+              return typeof value === "string" ? value.trim() : value;
+            })
+          ),
+          startY: 20, // Adjusted start position
+          margin: { left: 10, right: 10 },
+          styles: commonStyles,
+          headStyles: {
+            fillColor: [39, 174, 96], // Green header like Excel
+            textColor: [255, 255, 255],
+            fontSize: 10, // Reduced font size
+            fontStyle: "bold",
             halign: "center",
-            valign: "middle",
             lineWidth: 0.25,
-            lineColor: [0, 0, 0],
-            overflow: "linebreak",
-            minCellHeight: 5, // Minimum row height
-            lineHeight: 1.2 // Tighter line height
-        };
+          },
+          bodyStyles: {
+            lineWidth: 0.25,
+          },
+          alternateRowStyles: {
+            fillColor: [232, 245, 233], // Light green alternate rows
+          },
+          columnStyles: columnStyles,
+          didDrawCell: (data) => {
+            // Auto adjust row height based on content
+            if (data.cell.raw && data.cell.raw.length > 30) {
+              data.row.height = Math.max(data.row.height, 8); // Set minimum height for long content
+            }
+          },
+        });
+      } else {
+        // ============ SUMMARY PDF ============
+        const filteredData = config?.dynamicColumns ? data?.items : data;
+        const mainData = filteredData.map((item) => {
+          const row = {};
+          allColumns?.forEach((col) => {
+            if (col.valueGetter) {
+              row[col.headerName] = formatCellValue(
+                col.valueGetter({ row: item })
+              );
+            } else {
+              row[col.headerName] = formatCellValue(item[col.field]);
+            }
+          });
+          return row;
+        });
 
-        if (showDetails) {
-            // ============ DETAILS PDF ============
-            const detailData = [];
-            data.forEach((item) => {
-                if (item.transactions?.length > 0) {
-                    item.transactions.forEach((detail) => {
-                        const detailRow = {
-                            "Parent Date": formatCellValue(item.dateD) || "0",
-                            "Parent Voucher": formatCellValue(item.vr_no) || "0",
-                        };
-                        config.detailColumns.forEach((col) => {
-                            detailRow[col.headerName] = col.valueGetter 
-                                ? formatCellValue(col.valueGetter({ row: detail }))
-                                : formatCellValue(detail[col.field]);
-                        });
-                        detailData.push(detailRow);
-                    });
-                }
-            });
+        // Add title (blue background like Excel)
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18); // Reduced title size
+        doc.setTextColor(255, 255, 255);
+        doc.setFillColor(68, 114, 196); // Blue from Excel
+        doc.rect(0, 0, doc.internal.pageSize.width, 12, "F"); // Reduced height
+        doc.text(
+          config.title,
+          doc.internal.pageSize.width / 2,
+          8, // Adjusted position
+          { align: "center" }
+        );
 
-            // Add title (green background like Excel)
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(18); // Reduced title size
-            doc.setTextColor(255, 255, 255);
-            doc.setFillColor(39, 174, 96); // Green from Excel
-            doc.rect(0, 0, doc.internal.pageSize.width, 12, 'F'); // Reduced height
-            doc.text(
-                config.title,
-                doc.internal.pageSize.width / 2,
-                8, // Adjusted position
-                { align: "center" }
-            );
+        // Add generated date (light blue background)
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(10); // Reduced font size
+        doc.setTextColor(44, 62, 80); // Dark gray text
+        doc.setFillColor(214, 234, 248); // Light blue from Excel
+        doc.rect(0, 12, doc.internal.pageSize.width, 6, "F"); // Reduced height
+        doc.text(
+          `Generated on ${format(new Date(), "PPP")}`,
+          doc.internal.pageSize.width - 10,
+          15, // Adjusted position
+          { align: "right" }
+        );
 
-            // Add generated date (light blue background)
-            doc.setFont("helvetica", "italic");
-            doc.setFontSize(10); // Reduced font size
-            doc.setTextColor(44, 62, 80); // Dark gray text
-            doc.setFillColor(214, 234, 248); // Light blue from Excel
-            doc.rect(0, 12, doc.internal.pageSize.width, 6, 'F'); // Reduced height
-            doc.text(
-                `Generated on ${format(new Date(), "PPP")}`,
-                doc.internal.pageSize.width - 10,
-                15, // Adjusted position
-                { align: "right" }
-            );
+        // Prepare headers for main table
+        const mainHeaders = allColumns.map((col) => ({
+          title: col.headerName,
+          dataKey: col.headerName,
+          width: col.width || 40, // Default width if not specified
+        }));
 
-            // Prepare headers for detail table
-            const detailHeaders = [
-                { title: "Parent Date", dataKey: "Parent Date" },
-                { title: "Parent Voucher", dataKey: "Parent Voucher" },
-                ...config.detailColumns.map(col => ({
-                    title: col.headerName,
-                    dataKey: col.headerName
-                }))
-            ];
+        // Calculate column widths dynamically
+        const pageWidth = doc.internal.pageSize.width - 10; // minus margins
+        const columnCount = mainHeaders.length;
+        const baseWidth = pageWidth / columnCount;
 
-            // Calculate column widths dynamically
-            const pageWidth = doc.internal.pageSize.width + 30; // minus margins
-            const columnCount = detailHeaders.length;
-            const baseWidth = pageWidth / columnCount;
-            
-            const columnStyles = {};
-            detailHeaders.forEach((header, idx) => {
-                let width = baseWidth;
-                // Wider for item/name columns
-                if (header.title.toLowerCase().includes("item") || 
-                    header.title.toLowerCase().includes("name")) {
-                    width = Math.min(30, baseWidth * 1.5);
-                }
-                // Narrower for date/number columns
-                else if (header.title.toLowerCase().includes("date") || 
-                         header.title.toLowerCase().includes("amount") ||
-                         header.title.toLowerCase().includes("qty")) {
-                    width = Math.max(15, baseWidth * 0.7);
-                }
-                columnStyles[idx] = { cellWidth: width };
-            });
+        const columnStyles = {};
+        mainHeaders.forEach((header, idx) => {
+          // let width = baseWidth;
+          //  if (header.title.toLowerCase()==="product name"
+          //  || header.title.toLowerCase()==="vendor/customer"
+          // ) {
+          // width = 65;
+          // }
 
-            // Add detail table
-            autoTable(doc, {
-                head: [detailHeaders.map(h => h.title)],
-                body: detailData.map(row => detailHeaders.map(header => row[header.dataKey] || "0")),
-                startY: 20, // Adjusted start position
-                margin: { left: 10, right: 10 },
-                styles: commonStyles,
-                headStyles: {
-                    fillColor: [39, 174, 96], // Green header like Excel
-                    textColor: [255, 255, 255],
-                    fontSize: 10, // Reduced font size
-                    fontStyle: "bold",
-                    halign: "center",
-                    lineWidth: 0.25
-                },
-                bodyStyles: {
-                    lineWidth: 0.25
-                },
-                alternateRowStyles: {
-                    fillColor: [232, 245, 233] // Light green alternate rows
-                },
-                columnStyles: columnStyles,
-                didDrawCell: (data) => {
-                    // Auto adjust row height based on content
-                    if (data.cell.raw && data.cell.raw.length > 30) {
-                        data.row.height = Math.max(data.row.height, 8); // Set minimum height for long content
-                    }
-                }
-            });
-        } else {
-            // ============ SUMMARY PDF ============
-            const filteredData = config?.dynamicColumns ? data?.items : data;
-            const mainData = filteredData.map((item) => {
-                const row = {};
-                allColumns?.forEach((col) => {
-                    if (col.valueGetter) {
-                        row[col.headerName] = formatCellValue(col.valueGetter({ row: item }));
-                    } else {
-                        row[col.headerName] = formatCellValue(item[col.field]);
-                    }
-                });
-                return row;
-            });
+          // else if ( header.title.toLowerCase()==="trans type"
+          // ) {
+          // width = 50;
+          // }
+          // else if ( header.title.toLowerCase()==="account"
+          // ) {
+          // width = header.width || 115;
+          // }
 
-            // Add title (blue background like Excel)
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(18); // Reduced title size
-            doc.setTextColor(255, 255, 255);
-            doc.setFillColor(68, 114, 196); // Blue from Excel
-            doc.rect(0, 0, doc.internal.pageSize.width, 12, 'F'); // Reduced height
-            doc.text(
-                config.title,
-                doc.internal.pageSize.width / 2,
-                8, // Adjusted position
-                { align: "center" }
-            );
+          // else if (header.title.toLowerCase()==="invoice no"
+          // || header.title.toLowerCase()==="net amount"
+          // || header.title.toLowerCase()==="debit"
+          // || header.title.toLowerCase()==="opening balance"
+          // || header.title.toLowerCase()==="closing balance"
+          // || header.title.toLowerCase()==="balance"
+          // || header.title.toLowerCase()==="credit") {
+          // width = 40;
+          // }
+          // // Wider for item/name columns
+          // else if (header.title.toLowerCase().includes("item") ||
+          //     header.title.toLowerCase().includes("name")) {
 
-            // Add generated date (light blue background)
-            doc.setFont("helvetica", "italic");
-            doc.setFontSize(10); // Reduced font size
-            doc.setTextColor(44, 62, 80); // Dark gray text
-            doc.setFillColor(214, 234, 248); // Light blue from Excel
-            doc.rect(0, 12, doc.internal.pageSize.width, 6, 'F'); // Reduced height
-            doc.text(
-                `Generated on ${format(new Date(), "PPP")}`,
-                doc.internal.pageSize.width - 10,
-                15, // Adjusted position
-                { align: "right" }
-            );
+          //     width = Math.min(50, baseWidth * 1.5);
+          // }
+          // // Narrower for date/number columns
+          // else if (header.title.toLowerCase().includes("date") ||
+          //          header.title.toLowerCase().includes("amount") ||
+          //          header.title.toLowerCase().includes("qty")) {
+          //     width = Math.max(15, baseWidth * 0.7);
+          // }
+          columnStyles[idx] = { cellWidth: header.width };
+        });
 
-            // Prepare headers for main table
-            const mainHeaders = allColumns.map(col => ({
-                title: col.headerName,
-                dataKey: col.headerName
-            }));
+        autoTable(doc, {
+          head: [mainHeaders.map((h) => h.title)],
+          body: mainData.map((row) =>
+            mainHeaders.map((header) => {
+              const value = row[header.dataKey] || "";
+              return typeof value === "string" ? value.trim() : value;
+            })
+          ),
+          startY: 20, // Adjusted start position
+          margin: { left: 10, right: 10 },
+          styles: commonStyles,
+          headStyles: {
+            fillColor: [44, 62, 80],
+            textColor: [255, 255, 255],
+            fontSize: 10, // Reduced font size
+            cellPadding: 1,
+            fontStyle: "bold",
+            halign: "center",
+            lineWidth: 0.25,
+          },
+          bodyStyles: {
+            lineWidth: 0.25,
+          },
+          alternateRowStyles: {
+            fillColor: [248, 249, 250],
+          },
+          columnStyles: columnStyles,
+          didDrawCell: (data) => {
+            // Auto adjust row height based on content
+            if (data.cell.raw && data.cell.raw.length > 30) {
+              data.row.height = Math.max(data.row.height, 8); // Set minimum height for long content
+            }
+          },
+        });
+      }
 
-            // Calculate column widths dynamically
-            const pageWidth = doc.internal.pageSize.width - 10; // minus margins
-            const columnCount = mainHeaders.length;
-            const baseWidth = pageWidth / columnCount;
-            
-            const columnStyles = {};
-            mainHeaders.forEach((header, idx) => {
-                let width = baseWidth;
-                // Wider for item/name columns
-                if (header.title.toLowerCase().includes("item") || 
-                    header.title.toLowerCase().includes("name")) {
-                    width = Math.min(30, baseWidth * 1.5);
-                }
-                // Narrower for date/number columns
-                else if (header.title.toLowerCase().includes("date") || 
-                         header.title.toLowerCase().includes("amount") ||
-                         header.title.toLowerCase().includes("qty")) {
-                    width = Math.max(15, baseWidth * 0.7);
-                }
-                columnStyles[idx] = { cellWidth: width };
-            });
-
-           autoTable(doc, {
-    head: [mainHeaders.map(h => h.title)],
-    body: mainData.map(row => mainHeaders.map(header => row[header.dataKey] || "0")),
-    startY: 20, // Adjusted start position
-    margin: { left: 10, right: 10 },
-    styles: commonStyles,
-    headStyles: {
-        fillColor: [44, 62, 80],
-        textColor: [255, 255, 255],
-        fontSize: 10, // Reduced font size
-        fontStyle: "bold",
-        halign: "center",
-        lineWidth: 0.25
-    },
-    bodyStyles: {
-        lineWidth: 0.25
-    },
-    alternateRowStyles: {
-        fillColor: [248, 249, 250]
-    },
-    columnStyles: columnStyles,
-    didDrawCell: (data) => {
-        // Auto adjust row height based on content
-        if (data.cell.raw && data.cell.raw.length > 30) {
-            data.row.height = Math.max(data.row.height, 8); // Set minimum height for long content
-        }
-    }
-});
-
-        }
-
-        // Save with timestamp
-        const timestamp = format(new Date(), "yyyy-MM-dd_HHmm");
-        doc.save(`${config.title}_${timestamp}.pdf`);
+      // Save with timestamp
+      const timestamp = format(new Date(), "yyyy-MM-dd_HHmm");
+      doc.save(`${config.title}_${timestamp}.pdf`);
     } catch (error) {
-        console.error("PDF Export Error:", error);
-        alert("Failed to generate PDF. Please check console for details.");
+      console.error("PDF Export Error:", error);
+      alert("Failed to generate PDF. Please check console for details.");
     } finally {
-        setIsExporting(false);
+      setIsExporting(false);
     }
-};
+  };
 
-// Reuse the same formatCellValue function from Excel export
-const formatCellValue = (value) => {
+  // Reuse the same formatCellValue function from Excel export
+  const formatCellValue = (value) => {
     if (value === null || value === undefined || value === 0 || value === "0") {
-        return "0";
+      return "0";
     }
     return value;
-};
+  };
 
   const exportToCSV = async () => {
     let csvContent = "";
@@ -1293,7 +1398,7 @@ const formatCellValue = (value) => {
     return godowns.map((godown) => ({
       field: `godown_${godown.id}`,
       headerName: godown.godown,
-      width: 120,
+      width: 30,
       type: "number",
       valueGetter: (params) => params.row.godownStocks?.[godown.id] || 0,
     }));

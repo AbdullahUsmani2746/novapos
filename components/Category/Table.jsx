@@ -62,8 +62,8 @@ import axios from "axios";
 import { createPortal } from "react-dom";
 import { generateVoucherPDF } from "@/components/Template/Payment"; // update path as needed
 import { generateUnifiedPDF } from "../Template/UnifiedReport";
-
-// Mock data for demonstration
+import { generateSalesOrderPDF } from "../Template/SalesOrder";
+import { generatePurchaseOrderPDF } from "../Template/PurchaseOrder";
 
 // Status badge component
 const StatusBadge = ({ status }) => {
@@ -613,27 +613,62 @@ export default function VoucherTable({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
 
-  const downloadVoucherPDF = async (tranId, tran_code) => {
+  const downloadVoucherPDF = async (
+    tranId,
+    tran_code,
+    orderId,
+    order_catagory,
+    orderData = null
+  ) => {
     setIsDownloadingPDF(true);
 
     try {
-      const res = await axios.get(`/api/voucher/getById?id=${tranId}`);
-      const data = await res.data.data;
-      console.log("NEW DAT: ", data);
-      const doc = generateVoucherPDF(data);
-      const name =
-        tran_code === 2
-          ? "PaymentVoucher"
-          : tran_code === 1
-          ? "ReceiptVoucher"
-          : "JournalVoucher";
-      doc.save(`${name}.pdf`);
+      // Sales Order
+
+      if (order_catagory === 6) {
+        if (!orderData) {
+          const res = await axios.get(`/api/orders/${orderId}?category=6`);
+          orderData = res.data;
+        }
+        const doc = await generateSalesOrderPDF({ data: [orderData] });
+        doc.save(`SalesOrder_${orderData.order_no}.pdf`);
+      }
+
+      // Purchase Order
+      else if (order_catagory === 4) {
+        if (!orderData) {
+          const res = await axios.get(`/api/orders/${orderId}?category=4`);
+          orderData = res.data;
+        }
+        const doc = await generatePurchaseOrderPDF({ data: [orderData] });
+        doc.save(`PurchaseOrder_${orderData.order_no}.pdf`);
+      }
+
+      // Vouchers
+      else {
+        if (!tranId) {
+          throw new Error("Transaction ID is required for vouchers");
+        }
+        const res = await axios.get(`/api/voucher/getById?id=${tranId}`);
+        const data = await res.data.data;
+
+        const doc = generateVoucherPDF(data);
+        const name =
+          tran_code === 2
+            ? "PaymentVoucher"
+            : tran_code === 1
+            ? "ReceiptVoucher"
+            : "JournalVoucher";
+        doc.save(`${name}_${data.vr_no}.pdf`);
+      }
     } catch (err) {
       console.error("Error downloading PDF:", err);
+      alert(`Failed to download PDF: ${err.message}`);
     } finally {
       setIsDownloadingPDF(false);
     }
   };
+
   // Fetch voucher data with pagination
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -641,7 +676,8 @@ export default function VoucherTable({
     try {
       console.log();
       const api =
-        VOUCHER_CONFIG[type].tran_code === 400 || VOUCHER_CONFIG[type].tran_code===600
+        VOUCHER_CONFIG[type].tran_code === 400 ||
+        VOUCHER_CONFIG[type].tran_code === 600
           ? "/api/orders/"
           : "/api/voucher/";
       const response = await axios.get(`${api}${type}`, {
@@ -717,11 +753,14 @@ export default function VoucherTable({
       "Are you sure you want to delete this voucher?"
     );
     if (!confirmDelete) return;
-    const api = (type !== "purchaseOrder" && type !== "saleOrder") ? "/api/voucher/": "/api/orders/"
+    const api =
+      type !== "purchaseOrder" && type !== "saleOrder"
+        ? "/api/voucher/"
+        : "/api/orders/";
     try {
       const res = await axios.delete(`${api}${type}`, {
         data: {
-          ...((type !== "purchaseOrder" && type !== "saleOrder")
+          ...(type !== "purchaseOrder" && type !== "saleOrder"
             ? { tran_id: rowData.tran_id }
             : { order_no: rowData.order_no }),
         },
@@ -739,7 +778,7 @@ export default function VoucherTable({
 
   const handleModal = (rowData, index) => {
     setSelectedRow(rowData); // Set fresh selectedRow
-    console.log("Rowdata: ",rowData)
+    console.log("Rowdata: ", rowData);
     setFocusedRowIndex(index);
     setIsEditModal(true);
     console.log("Selected Row for Edit:", JSON.stringify(rowData, null, 2)); // Debug
@@ -979,7 +1018,9 @@ export default function VoucherTable({
 
                           {(entry.tran_code === 1 ||
                             entry.tran_code === 2 ||
-                            entry.tran_code === 3) && (
+                            entry.tran_code === 3 ||
+                            entry.order_catagory === 6 ||
+                            entry.order_catagory === 4) && (
                             <Button
                               size="sm"
                               variant="ghost"
@@ -988,8 +1029,14 @@ export default function VoucherTable({
                               onClick={(e) => {
                                 e.stopPropagation();
                                 downloadVoucherPDF(
-                                  entry.tran_id,
-                                  entry.tran_code
+                                  entry.tran_id, // For vouchers
+                                  entry.tran_code, // For vouchers
+                                  entry.order_no, // For orders
+                                  entry.order_catagory, // For orders
+                                  entry.order_catagory === 6 ||
+                                    entry.order_catagory === 4
+                                    ? entry
+                                    : null
                                 );
                               }}
                             >
@@ -1133,7 +1180,7 @@ export default function VoucherTable({
               : {},
 
             lines:
-             type !== "purchaseOrder" && type !== "saleOrder"
+              type !== "purchaseOrder" && type !== "saleOrder"
                 ? selectedRow?.transactions
                     ?.filter((t) => t.sub_tran_id === 1)
                     .map(
