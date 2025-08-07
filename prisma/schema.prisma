@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -36,35 +35,33 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  password      String?
-  image         String?
-  role          Role      @default(CASHIER)
-  isActive      Boolean   @default(true)
-  shiftId       Int?       
-  shift         Shift?    @relation(fields: [shiftId], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  orderMaster   OrderMaster[]
+  id                 String               @id @default(cuid())
+  name               String?
+  email              String               @unique
+  emailVerified      DateTime?
+  password           String?
+  image              String?
+  role               Role                 @default(CASHIER)
+  isActive           Boolean              @default(true)
+  shiftId            Int?
+  shift              Shift?               @relation(fields: [shiftId], references: [id])
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  accounts           Account[]
+  sessions           Session[]
+  orderMaster        OrderMaster[]
   transactionsMaster TransactionsMaster[] @relation("UserTransactions")
 }
 
 model Shift {
-  id          Int      @id @default(autoincrement())
-  name        String
-  startTime   String
-  endTime     String
-  users       User[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  name      String
+  startTime String
+  endTime   String
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
-
-
 
 model VerificationToken {
   identifier String
@@ -84,7 +81,7 @@ enum Role {
 model MBSCD {
   mbscd       String @id @unique @db.VarChar(2)
   mbscdDetail String @db.VarChar(100)
-  bscdItems  BSCD[]
+  bscdItems   BSCD[]
 }
 
 model BSCD {
@@ -154,9 +151,9 @@ model Company {
   godowns            Godown[]
   TransactionsMaster TransactionsMaster[]
   users              Users[]
-  financialYears    FinancialYear[]
+  financialYears     FinancialYear[]
   seasons            Season[]
-  poPrdCats         PoPrdCat[]
+  poPrdCats          PoPrdCat[]
   deliveryModes      DeliveryMode[]
   deliveryTerms      DeliveryTerm[]
   commissionTerms    CommissionTerm[]
@@ -179,70 +176,67 @@ model Department {
 }
 
 model ProductMasterCategory {
-  id         Int     @id @default(autoincrement())
-  pmc_name  String? @db.VarChar(250)
-  productGroups         ProductGroup[]
-
-
+  id            Int            @id @default(autoincrement())
+  pmc_name      String?        @db.VarChar(250)
+  productGroups ProductGroup[]
 }
 
 model ProductGroup {
-  id         Int     @id @default(autoincrement())
-  pg_name  String? @db.VarChar(250)
-  pmc_id    Int
-  productCategories     ProductCategory[] 
-  ProductMasterCategories       ProductMasterCategory @relation(fields: [pmc_id], references: [id])
+  id                      Int                   @id @default(autoincrement())
+  pg_name                 String?               @db.VarChar(250)
+  pmc_id                  Int
+  productCategories       ProductCategory[]
+  ProductMasterCategories ProductMasterCategory @relation(fields: [pmc_id], references: [id])
 }
 
 model ProductCategory {
-  id         Int     @id @default(autoincrement())
-  pc_name  String? @db.VarChar(250)
-  pg_id      Int
-  mainCategories        MainCategory[]
-  ProductGroups         ProductGroup @relation(fields: [pg_id], references: [id])
+  id             Int            @id @default(autoincrement())
+  pc_name        String?        @db.VarChar(250)
+  pg_id          Int
+  mainCategories MainCategory[]
+  ProductGroups  ProductGroup   @relation(fields: [pg_id], references: [id])
 }
 
 model MainCategory {
-  id         Int     @id @default(autoincrement())
-  mc_name  String? @db.VarChar(100)
-  pc_id    Int
-  itemCategories        ItemCategory[]
-  ProductCategories       ProductCategory @relation(fields: [pc_id], references: [id])
+  id                Int             @id @default(autoincrement())
+  mc_name           String?         @db.VarChar(100)
+  pc_id             Int
+  itemCategories    ItemCategory[]
+  ProductCategories ProductCategory @relation(fields: [pc_id], references: [id])
 }
 
 model ItemCategory {
-  id            Int           @id @default(autoincrement())
-  ic_name       String        @db.VarChar(250)
-  mc_id         Int
+  id             Int          @id @default(autoincrement())
+  ic_name        String       @db.VarChar(250)
+  mc_id          Int
   wc_category_id Int?         @unique
-  stock_acno     Int?        @default(4) // New field for stock account number
-  sale_acno      Int?        @default(14)
-  pos_acno       Int?        @default(15)
-  cogs_acno      Int?        
-  sync_status   String?       @default("synced") @db.VarChar(20)
-  last_sync     DateTime?     @default(now())
-  mainCategory  MainCategory  @relation(fields: [mc_id], references: [id])
-  items         Item[]
+  stock_acno     Int?         @default(4) // New field for stock account number
+  sale_acno      Int?         @default(14)
+  pos_acno       Int?         @default(15)
+  cogs_acno      Int?
+  sync_status    String?      @default("synced") @db.VarChar(20)
+  last_sync      DateTime?    @default(now())
+  mainCategory   MainCategory @relation(fields: [mc_id], references: [id])
+  items          Item[]
 }
 
 model Item {
-  itcd         Int        @id @unique @default(autoincrement())
-  item    String?        @db.VarChar(250)
-  ic_id        Int
-  sku           String?    @unique
-  price         Float?
-  stock         Int?
-  description   String?    @db.VarChar(500)
-  wc_product_id Int?       @unique
-  image_url    String?    @db.VarChar(500)  // New field for product image
-  wc_parent_id  Int?
-  sync_status   String?    @default("synced")
-  last_sync     DateTime?
+  itcd           Int            @id @unique @default(autoincrement())
+  item           String?        @db.VarChar(250)
+  ic_id          Int
+  sku            String?        @unique
+  price          Float?
+  stock          Int?
+  description    String?        @db.VarChar(500)
+  wc_product_id  Int?           @unique
+  image_url      String?        @db.VarChar(500) // New field for product image
+  wc_parent_id   Int?
+  sync_status    String?        @default("synced")
+  last_sync      DateTime?
   orderMaster    OrderDetail[]
   itemCategories ItemCategory   @relation(fields: [ic_id], references: [id])
-  Transactions Transactions[]
+  Transactions   Transactions[]
 }
-
 
 model Designation {
   id         Int     @id @default(autoincrement())
@@ -257,48 +251,48 @@ model Godown {
   company_id         Int
   company            Company              @relation(fields: [company_id], references: [id])
   TransactionsMaster TransactionsMaster[]
-  OrderMaster OrderMaster[]
+  OrderMaster        OrderMaster[]
   Transaction        Transactions[]
 }
 
 model FinancialYear {
-  id        Int      @id @default(autoincrement())
-  date_from DateTime
-  date_to   DateTime
-  status    String   @db.Char(50)
+  id         Int      @id @default(autoincrement())
+  date_from  DateTime
+  date_to    DateTime
+  status     String   @db.Char(50)
   company_id Int
-  company    Company @relation(fields: [company_id], references: [id])
+  company    Company  @relation(fields: [company_id], references: [id])
 }
 
 model Season {
-  id        Int      @id @default(autoincrement())
-  date_from DateTime
-  date_to   DateTime
-  status    String   @db.Char(50)
+  id         Int      @id @default(autoincrement())
+  date_from  DateTime
+  date_to    DateTime
+  status     String   @db.Char(50)
   company_id Int
-  company    Company @relation(fields: [company_id], references: [id])
+  company    Company  @relation(fields: [company_id], references: [id])
 }
 
 model PoPrdCat {
-  id            Int    @id @default(autoincrement())
-  category_name String @db.Char(50)
-  company_id Int
-  company    Company @relation(fields: [company_id], references: [id])
+  id            Int     @id @default(autoincrement())
+  category_name String  @db.Char(50)
+  company_id    Int
+  company       Company @relation(fields: [company_id], references: [id])
 }
 
 model DeliveryMode {
-  id            Int    @id @default(autoincrement())
-  delivery_mode String @db.Char(50)
+  id            Int     @id @default(autoincrement())
+  delivery_mode String  @db.Char(50)
   rate_kg       Int
-  company_id Int
-  company    Company @relation(fields: [company_id], references: [id])
+  company_id    Int
+  company       Company @relation(fields: [company_id], references: [id])
 }
 
 model Users {
-  user_id            String               @id @unique @db.VarChar(10)
-  user_name          String?              @db.VarChar(50)
-  company_id         Int
-  company            Company              @relation(fields: [company_id], references: [id])
+  user_id    String  @id @unique @db.VarChar(10)
+  user_name  String? @db.VarChar(50)
+  company_id Int
+  company    Company @relation(fields: [company_id], references: [id])
 }
 
 model Currency {
@@ -308,32 +302,32 @@ model Currency {
 }
 
 model OrderMaster {
-  order_no               Int            @id @default(autoincrement())
-  dateD                  DateTime       @default(now())
-  godown                 Int?
-  userId                 String?        @db.VarChar(25)
-  status                 Int            // 1 or 2
-  due_date               DateTime?
-  party_code             String
-  delivery_terms         String?        @db.VarChar(25)
-  payment_terms          String?        @db.VarChar(25)
-  delivery_location      String?        @db.VarChar(500)
-  order_catagory         Int            // 4 = purchase order, 6 = sales order
+  order_no                Int           @id @default(autoincrement())
+  dateD                   DateTime      @default(now())
+  godown                  Int?
+  userId                  String?       @db.VarChar(25)
+  status                  Int // 1 or 2
+  due_date                DateTime?
+  party_code              String
+  delivery_terms          String?       @db.VarChar(25)
+  payment_terms           String?       @db.VarChar(25)
+  delivery_location       String?       @db.VarChar(500)
+  order_catagory          Int // 4 = purchase order, 6 = sales order
   additional_instructions String?       @db.VarChar(500)
-  godownDetails           Godown?        @relation(fields: [godown], references: [id])
+  godownDetails           Godown?       @relation(fields: [godown], references: [id])
   acno                    ACNO?         @relation(fields: [party_code], references: [acno])
-  users                    User?         @relation(fields: [userId], references: [id])
-  orderDetails           OrderDetail[] 
+  users                   User?         @relation(fields: [userId], references: [id])
+  orderDetails            OrderDetail[]
 }
 
 model OrderDetail {
-  id           Int       @id @default(autoincrement())
+  id           Int         @id @default(autoincrement())
   order_no     Int
   itcd         Int
   no_of_packs  Int
   qty_per_pack Int
-  qty          Int       // Derived from no_of_packs * qty_per_pack (can be computed manually or through trigger)
-  unit         String?   @db.VarChar(25)
+  qty          Int // Derived from no_of_packs * qty_per_pack (can be computed manually or through trigger)
+  unit         String?     @db.VarChar(25)
   rate         Float
   amount       Float
   items        Item        @relation(fields: [itcd], references: [itcd])
@@ -341,31 +335,31 @@ model OrderDetail {
 }
 
 model TransactionsMaster {
-  tran_id       Int           @id @default(autoincrement())
+  tran_id       Int            @id @default(autoincrement())
   company_id    Int?
   dateD         DateTime?
   time          DateTime?
   tran_code     Int?
   vr_no         Int?
   po_no         Int?
-  so_no         Int?           
+  so_no         Int?
   pycd          String?
-  check_no      String?       @map("CHECK_NO")
-  check_date    DateTime?     @map("CHECK_DATE")
-  rmk           String?       @map("RMK")
-  rmk1          String?       @map("RMK1")
-  rmk2          String?       @map("RMK2")
-  rmk3          String?       @map("RMK3")
-  rmk4          String?       @map("RMK4")
-  rmk5          String?       @map("RMK5")
-  userId        String?       @map("USER_ID")
-  invoice_no    String?       @db.Char(150)
+  check_no      String?        @map("CHECK_NO")
+  check_date    DateTime?      @map("CHECK_DATE")
+  rmk           String?        @map("RMK")
+  rmk1          String?        @map("RMK1")
+  rmk2          String?        @map("RMK2")
+  rmk3          String?        @map("RMK3")
+  rmk4          String?        @map("RMK4")
+  rmk5          String?        @map("RMK5")
+  userId        String?        @map("USER_ID")
+  invoice_no    String?        @db.Char(150)
   godown        Int?
   godown2       Int?
-  user          User?         @relation("UserTransactions", fields: [userId], references: [id])
-  company       Company?      @relation(fields: [company_id], references: [id])
-  godownDetails Godown?       @relation(fields: [godown], references: [id])
-  acno          ACNO?         @relation(fields: [pycd], references: [acno])
+  user          User?          @relation("UserTransactions", fields: [userId], references: [id])
+  company       Company?       @relation(fields: [company_id], references: [id])
+  godownDetails Godown?        @relation(fields: [godown], references: [id])
+  acno          ACNO?          @relation(fields: [pycd], references: [acno])
   transactions  Transactions[]
   wc_order_id   Int?           @unique
   sync_status   String?        @default("synced") @db.VarChar(20)
@@ -377,12 +371,12 @@ model TransactionsMaster {
 
 model Transactions {
   id                 Int                @id @default(autoincrement())
-  tran_id            Int               
+  tran_id            Int
   acno               String?
   itcd               Int?
   ccno               Int?
-  po_qty            Float?             // Add this line to track original PO quantity for purchase
-  so_qty            Float?             // Add this line to track original SO quantity for sales
+  po_qty             Float? // Add this line to track original PO quantity for purchase
+  so_qty             Float? // Add this line to track original SO quantity for sales
   narration1         String?            @db.Char(150)
   narration2         String?            @db.Char(150)
   narration3         String?            @db.Char(150)
@@ -395,89 +389,171 @@ model Transactions {
   damt               Float?
   camt               Float?
   qty                Float?
-  original_qty       Float?             // Add this line to track original quantity for returns
+  original_qty       Float? // Add this line to track original quantity for returns
   rate               Float?
   wht_rate           Float?
   st_rate            Float?
   godown             Int?
   invoice_no         String?            @db.Char(150)
-  sub_tran_id        Int?                @default(1)
-  currency           Int?  
-  gross_amount       Float?           
+  sub_tran_id        Int?               @default(1)
+  currency           Int?
+  gross_amount       Float?
   fc_amount          Float?
   no_of_pack         Float?
   qty_per_pack       Float?
   st_amount          Float?
   additional_tax     Float?
-  acnoDetails        ACNO?               @relation(fields: [acno], references: [acno])
-  costCenter         CostCenter?         @relation(fields: [ccno], references: [ccno])
-  currencyDetails    Currency?           @relation(fields: [currency], references: [id])
-  godownDetails      Godown?             @relation(fields: [godown], references: [id])
-  itemDetails        Item?               @relation(fields: [itcd], references: [itcd])
+  acnoDetails        ACNO?              @relation(fields: [acno], references: [acno])
+  costCenter         CostCenter?        @relation(fields: [ccno], references: [ccno])
+  currencyDetails    Currency?          @relation(fields: [currency], references: [id])
+  godownDetails      Godown?            @relation(fields: [godown], references: [id])
+  itemDetails        Item?              @relation(fields: [itcd], references: [itcd])
   transactionsMaster TransactionsMaster @relation(fields: [tran_id], references: [tran_id])
 }
 
 model DeliveryTerm {
-  id            Int    @id @default(autoincrement())
-  delivery_term String @db.Char(50)
-  company_id Int
-  company    Company @relation(fields: [company_id], references: [id])
+  id            Int     @id @default(autoincrement())
+  delivery_term String  @db.Char(50)
+  company_id    Int
+  company       Company @relation(fields: [company_id], references: [id])
 }
 
 model CommissionTerm {
-  id            Int    @id @default(autoincrement())
-  commission_term String @db.Char(50)
-  company_id Int
-  company    Company @relation(fields: [company_id], references: [id])
+  id              Int     @id @default(autoincrement())
+  commission_term String  @db.Char(50)
+  company_id      Int
+  company         Company @relation(fields: [company_id], references: [id])
 }
 
 model Employee {
-  id               String     @id @default(uuid()) @map("id")
-  first_name       String     @map("first_name")
-  middle_name      String?    @map("middle_name")
-  surname          String     @map("surname")
-  dob              DateTime   @map("dob")
-  gender           Gender?    @map("gender")
-  phone_number     String     @map("phone_number")
-  npf_number       String     @map("npf_number")
-  email_address    String     @map("email_address")
-  village          String     @map("village")
-  status           Status?    @map("status")
-  hire_date        DateTime   @map("hire_date")
-  job_title        String     @map("job_title")
-  department       String     @map("department")
-  work_location    String     @map("work_location")
-  manager_id       String?    @map("manager_id")
-  manager          Manager?   @relation(fields: [manager_id], references: [id])
-  client_id        String     @map("client_id")
-  employer         Employer   @relation(fields: [client_id], references: [employer_id])
-  employee_id      String     @unique @map("employee_id")
-  payment_method   PaymentMethod? @map("payment_method")
-  bank_name        String?    @map("bank_name")
-  account_name     String?    @map("account_name")
-  account_number   String?    @map("account_number")
-  pay_type         PayType?   @map("pay_type")
-  rate_per_hour    Float      @map("rate_per_hour")
-  pay_frequency    PayFrequency? @map("pay_frequency")
-  employee_type    String     @map("employee_type")
-  cost_center      String     @map("cost_center")
-  allownces        Json       @map("allownces")
-  allownce_eligible Boolean    @default(false) @map("allownce_eligible")
-  deductions       Json       @map("deductions")
-  leaves           Leave[]
-  profile_image    String?    @map("profile_image")
-  documents        Document[]
-  created_on       DateTime   @default(now()) @map("created_on")
-  updated_on       DateTime   @updatedAt @map("updated_on")
-  company_id Int
-  company    Company @relation(fields: [company_id], references: [id])
+  id                String         @id @default(uuid()) @map("id")
+  first_name        String         @map("first_name")
+  middle_name       String?        @map("middle_name")
+  surname           String         @map("surname")
+  dob               DateTime       @map("dob")
+  gender            Gender?        @map("gender")
+  phone_number      String         @map("phone_number")
+  npf_number        String         @map("npf_number")
+  email_address     String         @map("email_address")
+  village           String         @map("village")
+  status            Status?        @map("status")
+  hire_date         DateTime       @map("hire_date")
+  jobTitleId        Int            @map("job_title_id")
+  jobTitle          JobTitle       @relation(fields: [jobTitleId], references: [id])
+  department        String         @map("department")
+  workLocationId    Int
+  workLocation      WorkLocation   @relation(fields: [workLocationId], references: [id])
+  manager_id        String?        @map("manager_id")
+  manager           Manager?       @relation(fields: [manager_id], references: [id])
+  client_id         String         @map("client_id")
+  employer          Employer       @relation(fields: [client_id], references: [employer_id])
+  employee_id       String         @unique @map("employee_id")
+  payment_method    PaymentMethod? @map("payment_method")
+  bank_name         String?        @map("bank_name")
+  account_name      String?        @map("account_name")
+  account_number    String?        @map("account_number")
+  pay_type          PayType?       @map("pay_type")
+  rate_per_hour     Float          @map("rate_per_hour")
+  pay_frequency     PayFrequency?  @map("pay_frequency")
+  employeeTypeId    Int?
+  employeeType      EmployeeType?  @relation(fields: [employeeTypeId], references: [id])
+  cost_center       String         @map("cost_center")
+  allownces         Json           @map("allownces")
+  allownce_eligible Boolean        @default(false) @map("allownce_eligible")
+  deductions        Deduction[]
+  leaves            Leave[]
+  profile_image     String?        @map("profile_image")
+  documents         Document[]
+  created_on        DateTime       @default(now()) @map("created_on")
+  updated_on        DateTime       @updatedAt @map("updated_on")
+  company_id        Int
+  company           Company        @relation(fields: [company_id], references: [id])
+}
+
+model JobTitle {
+  id                    Int        @id @default(autoincrement())
+  job_title             String     @db.VarChar(150)
+  job_title_description String     @db.VarChar(150)
+  departmentId          Int
+  employerId            String     @db.VarChar(12)
+  employees             Employee[]
+}
+
+model EmployeeType {
+  id                        Int      @id @default(autoincrement())
+  employee_type             String   @db.VarChar(150)
+  employee_type_description String   @db.VarChar(150)
+  employerId                String   @db.VarChar(12)
+  employer                  Employer @relation(fields: [employerId], references: [employer_id])
+
+  employees Employee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("employee_types")
+}
+
+model Allownce {
+  id                   Int      @id @default(autoincrement())
+  allownce             String   @db.VarChar(150)
+  allownce_description String   @db.VarChar(150)
+  rate                 String   @db.VarChar(150)
+  employerId           String   @db.VarChar(12)
+  employer             Employer @relation(fields: [employerId], references: [employer_id])
+
+  @@map("allownces")
+}
+
+model WorkLocation {
+  id                        Int    @id @default(autoincrement())
+  work_location             String @db.VarChar(150)
+  work_location_description String @db.VarChar(150)
+  employerId                String @db.VarChar(150)
+
+  // Relations
+  employees Employee[]
+}
+
+model Bank {
+  id               Int      @id @default(autoincrement())
+  bank             String   @db.VarChar(150)
+  bank_description String   @db.VarChar(150)
+  employerId       String   @db.VarChar(12)
+  employer         Employer @relation(fields: [employerId], references: [employer_id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("banks")
+}
+
+model Deduction {
+  id                   Int                @id @default(autoincrement())
+  title                String             @db.VarChar(150)
+  email                String             @db.VarChar(150)
+  phoneNumber          String             @db.VarChar(20)
+  address              String             @db.VarChar(200)
+  holdingAccount       HoldingAccountType
+  calculation          CalculationType
+  payslipYTD           Boolean            @default(false)
+  statutory            Boolean            @default(false)
+  bank                 BankType
+  accountName          String             @db.VarChar(150)
+  accountNumber        String             @db.VarChar(50)
+  country              String             @db.VarChar(100)
+  employerNumberAtFund String             @db.VarChar(100)
+  employee             Employee           @relation(fields: [employee_id], references: [id])
+  employee_id          String             @map("employee_id")
+
+  @@map("deductions")
 }
 
 model Leave {
-  id         String   @id @default(uuid())
-  leave_id   String   @map("leave_id")
-  available  Float    @map("available")
-  employee   Employee @relation(fields: [employee_id], references: [id])
+  id          String   @id @default(uuid())
+  leave_id    String   @map("leave_id")
+  available   Float    @map("available")
+  employee    Employee @relation(fields: [employee_id], references: [id])
   employee_id String   @map("employee_id")
 }
 
@@ -496,8 +572,49 @@ model Manager {
 }
 
 model Employer {
-  employer_id String     @id @map("employer_id")
-  employees   Employee[]
+  employer_id   String         @id @map("employer_id")
+  employees     Employee[]
+  allownces     Allownce[]
+  banks         Bank[]
+  employeeTypes EmployeeType[]
+}
+
+model PeriodicAttendance {
+  id                   Int     @id @default(autoincrement())
+  clientId             Int
+  employeeId           Int
+  dateRange            String
+  totalBreakHours      String  @default("0")
+  totalWorkingHours    String
+  totalDoubleTimeHours String  @default("0")
+  numberOfDays         String  @default("0")
+  status               String
+  rejectionReason      String? // Only required if status is Rejected
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum HoldingAccountType {
+  Bank
+  Wages
+  Savings
+  Loans
+}
+
+enum CalculationType {
+  Amount_Per_Pay_Period
+  Percentage
+  Time_x_Rate
+  Earning_Rate
+}
+
+enum BankType {
+  ANZ
+  BSP
+  NBS
+  SCB
+  Others_Overseas
 }
 
 enum Gender {
