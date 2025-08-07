@@ -303,6 +303,8 @@ export async function POST(req, { params }) {
     if ([1, 2, 4, 6, 9, 10].includes(tran_code)) {
       let totalDamt = 0;
       let totalCamt = 0;
+      let totalDeDamt = 0;
+      let totalDeCamt = 0;
 
       // Lines totals
       for (const line of lines) {
@@ -310,13 +312,14 @@ export async function POST(req, { params }) {
         totalDamt += line.type === "grn" ? parseFloat(line.qty || 0)*parseFloat(line.rate || 0)  : parseFloat(line.damt || 0);
         totalCamt += line.type === "dispatch" ? parseFloat(line.qty || 0)*parseFloat(line.rate || 0) : parseFloat(line.camt || 0);
       }
+  
 
       // Deductions for tran_code 1 and 2
       if ([1, 2].includes(tran_code) && Array.isArray(deductions)) {
         for (const deduction of deductions) {
-          if (tran_code === 1) {
+          if (tran_code === 2) {
             totalCamt += parseFloat(deduction.camt || 0);
-          } else if (tran_code === 2) {
+          } else if (tran_code === 1) {
             totalDamt += parseFloat(deduction.damt || 0);
           }
         }

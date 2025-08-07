@@ -110,7 +110,7 @@ export const REPORT_CONFIG = {
     exportOptions: {
       pdf: true,
       excel: true,
-      
+      csv: true,
     },
   },
   purchaseReturn: {
@@ -223,7 +223,7 @@ export const REPORT_CONFIG = {
     exportOptions: {
       pdf: true,
       excel: true,
-      
+      csv: true,
     },
   },
   sale: {
@@ -336,7 +336,7 @@ export const REPORT_CONFIG = {
     exportOptions: {
       pdf: true,
       excel: true,
-      
+      csv: true,
     },
   },
   payment: {
@@ -377,7 +377,7 @@ export const REPORT_CONFIG = {
       },
       { field: "total_net", label: "Total Net Amount", type: "currency" },
     ],
-    exportOptions: { pdf: true, excel: true},
+    exportOptions: { pdf: true, excel: true, csv: true },
   },
   receipt: {
     title: "Receipt Report",
@@ -417,7 +417,7 @@ export const REPORT_CONFIG = {
       },
       { field: "total_net", label: "Total Net Amount", type: "currency" },
     ],
-    exportOptions: { pdf: true, excel: true},
+    exportOptions: { pdf: true, excel: true, csv: true },
   },
   journal: {
     title: "Journal Voucher Report",
@@ -443,7 +443,7 @@ export const REPORT_CONFIG = {
       { field: "total_damt", label: "Total Debit", type: "currency" },
       { field: "total_camt", label: "Total Credit", type: "currency" },
     ],
-    exportOptions: { pdf: true, excel: true},
+    exportOptions: { pdf: true, excel: true, csv: true },
   },
   saleReturn: {
     title: "Sales Return Report",
@@ -555,7 +555,7 @@ export const REPORT_CONFIG = {
     exportOptions: {
       pdf: true,
       excel: true,
-      
+      csv: true,
     },
   },
   stock: {
@@ -713,6 +713,41 @@ export const REPORT_CONFIG = {
       // },
     ],
 
+    // Column Groups for better organization
+    // columnGroups: [
+    //   {
+    //     groupId: "basic",
+    //     headerName: "Basic Info",
+    //     children: ["item", "sku", "category"]
+    //   },
+    //   {
+    //     groupId: "stock",
+    //     headerName: "Current Stock",
+    //     children: ["currentStock", "currentStockValue", "potentialSaleValue"]
+    //   },
+    //   {
+    //     groupId: "purchase",
+    //     headerName: "Purchase Analysis",
+    //     children: ["netPurchased", "avgPurchaseRate", "netPurchaseValue"]
+    //   },
+    //   {
+    //     groupId: "sales",
+    //     headerName: "Sales Analysis",
+    //     children: ["netSold", "avgSaleRate", "netSaleValue"]
+    //   },
+    //   {
+    //     groupId: "performance",
+    //     headerName: "Performance Metrics",
+    //     children: ["profitMargin", "stockTurnover"]
+    //   },
+    //   {
+    //     groupId: "transactions",
+    //     headerName: "Transaction Summary",
+    //     children: ["purchaseCount", "saleCount", "returnCount"]
+    //   }
+    // ],
+
+    // Default visible columns (others can be toggled)
     defaultVisibleColumns: [
       "item",
       "sku",
@@ -772,6 +807,10 @@ export const REPORT_CONFIG = {
             summaryOnly: true,
           },
         ],
+      },
+      csv: {
+        enabled: true,
+        filename: "stock_analysis_report",
       },
     },
 
@@ -902,7 +941,7 @@ export const REPORT_CONFIG = {
     exportOptions: {
       pdf: true,
       excel: true,
-      
+      csv: true,
     },
   },
   tradingMargin: {
@@ -953,7 +992,7 @@ export const REPORT_CONFIG = {
       {
         field: "category",
         headerName: "Cat",
-        width: 20,
+        width: 200,
         valueGetter: (params) =>
           params.row.itemDetails?.itemCategories?.ic_name || "",
       },
@@ -962,55 +1001,55 @@ export const REPORT_CONFIG = {
       {
         field: "purchase_qty",
         headerName: "Pur Qty",
-        width:15,
+        width: 130,
         type: "number",
       },
       {
         field: "purchase_amount",
         headerName: "Pur Amt",
-        width:15,
+        width: 150,
         type: "currency",
       },
       {
         field: "purchase_return_qty",
         headerName: "P.R Qty",
-        width:15,
+        width: 160,
         type: "number",
       },
       {
         field: "purchase_return_amount",
         headerName: "P.R Amt",
-        width:15,
+        width: 170,
         type: "currency",
       },
 
       // --- Sales ---
-      { field: "sale_qty", headerName: "Sa Qty", width:15, type: "number" },
+      { field: "sale_qty", headerName: "Sa Qty", width: 120, type: "number" },
       {
         field: "sale_amount",
         headerName: "Sa Amt",
-        width:15,
+        width: 150,
         type: "currency",
       },
       {
         field: "sale_return_qty",
         headerName: "S.R Qty",
-        width:15,
+        width: 150,
         type: "number",
       },
       {
         field: "sale_return_amount",
         headerName: "S.R Amt",
-        width:15,
+        width: 160,
         type: "currency",
       },
 
       // --- POS ---
-      { field: "pos_qty", headerName: "Pos Qty", width:15, type: "number" },
+      { field: "pos_qty", headerName: "Pos Qty", width: 110, type: "number" },
       {
         field: "pos_amount",
         headerName: "POS Amt",
-        width:15,
+        width: 140,
         type: "currency",
       },
 
@@ -1018,33 +1057,21 @@ export const REPORT_CONFIG = {
       {
         field: "avg_purchase_rate",
         headerName: "Avg P.Rate",
-        width:15,
+        width: 150,
         type: "currency",
-        valueGetter: (params) =>
-          params.row.avg_purchase_rate
-            ? `${params.row.avg_purchase_rate.toFixed(2)}`
-            : "0",
       },
       {
         field: "avg_sale_rate",
         headerName: "Avg S.Rate",
-        width:20,
+        width: 150,
         type: "currency",
-        valueGetter: (params) =>
-          params.row.avg_sale_rate
-            ? `${params.row.avg_sale_rate.toFixed(2)}`
-            : "0",
       },
-      // { field: "margin", headerName: "Margin", width: 120, type: "currency" },
+      { field: "margin", headerName: "Margin", width: 120, type: "currency" },
       {
         field: "margin_percent",
         headerName: "Margin %",
         width: 20,
         type: "percent",
-        valueGetter: (params) =>
-          params.row.margin_percent
-            ? `${(params.row.margin_percent).toFixed(2)}%`
-            : "0%",
       },
     ],
     summaryFields: [
@@ -1099,7 +1126,7 @@ export const REPORT_CONFIG = {
     exportOptions: {
       pdf: true,
       excel: true,
-      
+      csv: true,
     },
   },
   stockLedger: {
@@ -1199,7 +1226,7 @@ export const REPORT_CONFIG = {
     exportOptions: {
       pdf: true,
       excel: true,
-      
+      csv: true,
     },
   },
   posTransactions: {
@@ -1320,7 +1347,7 @@ export const REPORT_CONFIG = {
     exportOptions: {
       pdf: true,
       excel: true,
-      
+      csv: true,
     },
   },
   accountLedger: {
@@ -1399,7 +1426,7 @@ export const REPORT_CONFIG = {
       { field: "camt", headerName: "Amount", width: 150, type: "currency" },
     ],
 
-    exportOptions: { pdf: true, excel: true},
+    exportOptions: { pdf: true, excel: true, csv: true },
   },
 
   accountsActivity: {
@@ -1446,7 +1473,7 @@ export const REPORT_CONFIG = {
         type: "currency",
       },
     ],
-    exportOptions: { pdf: true, excel: true},
+    exportOptions: { pdf: true, excel: true, csv: true },
   },
 
   trialBalance: {
@@ -1474,7 +1501,7 @@ export const REPORT_CONFIG = {
         field: "total_credit",
         label: "Total Credit",
         type: "currency",
-      },  
+      },
     ],
     drillDown: {
       enabled: true,
@@ -1493,7 +1520,7 @@ export const REPORT_CONFIG = {
           row.acno
         }&dateFrom=2000-01-01T11%3A00%3A00.000Z&dateTo=${new Date(filters.dateTo).toISOString()}`,
     },
-    exportOptions: { pdf: true, excel: true},
+    exportOptions: { pdf: true, excel: true, csv: true },
   },
   // config.js
   stockMetrics: {
@@ -1542,11 +1569,11 @@ export const REPORT_CONFIG = {
     exportOptions: {
       pdf: true,
       excel: true,
-      
+      csv: true,
     },
   },
 
-  orderBalance: {
+ orderBalance: {
     title: "Order Balance Report",
     apiEndpoint: "/api/reports/orderBalance",
     description: "Shows the balance between ordered and received/delivered quantities",
@@ -1600,5 +1627,107 @@ export const REPORT_CONFIG = {
       excel: true,
       
     },
-  }
+  },
+  customerAging: {
+  title: "Customer Aging Report",
+  description: "Aging analysis of customer accounts to track outstanding balances by time periods",
+  apiEndpoint: "/api/reports/customerAging",
+  filters: [
+    { 
+      name: "reportDate", 
+      label: "As of Date", 
+      type: "date", 
+      required: true 
+    },
+    {
+      name: "customer",
+      label: "Customer",
+      type: "select",
+      nameKey: "acname",
+      valueKey: "acno",
+      options: "accounts",
+      apiEndpoint: "/api/accounts/acno?macno=001",
+      required: true,
+    },
+  ],
+  columns: [
+    { field: "customerName", headerName: "Customer", width: 200 },
+    { field: "invoiceNo", headerName: "Invoice No", width: 120 },
+    { field: "invoiceDate", headerName: "Invoice Date", width: 120, 
+      valueGetter: (params) => new Date(params.row.invoiceDate).toLocaleDateString() 
+    },
+    { field: "dueDate", headerName: "Due Date", width: 120, 
+      valueGetter: (params) => new Date(params.row.dueDate).toLocaleDateString() 
+    },
+    { field: "invoiceAmount", headerName: "Invoice Amount", width: 150, type: "currency" },
+    { field: "outstandingAmount", headerName: "Outstanding", width: 150, type: "currency" },
+    { field: "daysOutstanding", headerName: "Days Outstanding", width: 130, type: "number" },
+    { field: "currentAmount", headerName: "Current", width: 120, type: "currency" },
+    { field: "days1To30", headerName: "1-30 Days", width: 120, type: "currency" },
+    { field: "days31To60", headerName: "31-60 Days", width: 120, type: "currency" },
+    { field: "days61To90", headerName: "61-90 Days", width: 120, type: "currency" },
+    { field: "days91To120", headerName: "91-120 Days", width: 130, type: "currency" },
+    { field: "daysOver120", headerName: "Over 120 Days", width: 130, type: "currency" },
+  ],
+  summaryFields: [
+    {
+      field: "totalInvoiceAmount",
+      label: "Total Invoice Amount",
+      type: "currency",
+    },
+    {
+      field: "totalOutstanding",
+      label: "Total Outstanding",
+      type: "currency",
+    },
+    {
+      field: "currentAmount",
+      label: "Current (Not Due)",
+      type: "currency",
+    },
+    {
+      field: "days1To30",
+      label: "1-30 Days",
+      type: "currency",
+    },
+    {
+      field: "days31To60",
+      label: "31-60 Days",
+      type: "currency",
+    },
+    {
+      field: "days61To90",
+      label: "61-90 Days",
+      type: "currency",
+    },
+    {
+      field: "days91To120",
+      label: "91-120 Days",
+      type: "currency",
+    },
+    {
+      field: "daysOver120",
+      label: "Over 120 Days",
+      type: "currency",
+    },
+    {
+      field: "averageDaysOutstanding",
+      label: "Average Days Outstanding",
+      type: "number",
+    },
+  ],
+  drillDown: {
+    enabled: true,
+    label: "View Customer Ledger",
+    modalTitle: "View Customer Account Details",
+    linkBuilder: (row, filters) =>
+      `/accounting/reports/accountLedger?account=${
+        row.customer || row.customerCode
+      }&dateFrom=2000-01-01T11%3A00%3A00.000Z&dateTo=${new Date(filters.reportDate).toISOString()}`,
+  },
+  exportOptions: { 
+    pdf: true, 
+    excel: true
+  },
+}
 };

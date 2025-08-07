@@ -99,7 +99,11 @@ export async function GET(request, { params }) {
         break;
       case "orderBalance":
         data = await getOrderBalanceReport(filters);
-        // summary = calculateOrderBalanceSummary(data);  
+        summary = calculateOrderBalanceSummary(data);
+        break;
+      case "customerAging":
+        data = await getCustomerAgingReport(filters);
+        summary = calculateAgingSummary(data);
         break;
       default:
         return NextResponse.json(
@@ -438,23 +442,23 @@ async function getStockReport(filters) {
   }
 
   // Note: We'll handle showZero filter after calculating actual stock
-  
+
   const items = await prisma.item.findMany({
     where,
     include: {
       itemCategories: true,
       Transactions: {
         include: {
-          transactionsMaster: true
+          transactionsMaster: true,
         },
         where: {
           transactionsMaster: {
             tran_code: {
-              in: [4, 5, 6, 9, 10] // Purchase, POS, Sale, Purchase Return, Sale Return
-            }
-          }
-        }
-      }
+              in: [4, 5, 6, 9, 10], // Purchase, POS, Sale, Purchase Return, Sale Return
+            },
+          },
+        },
+      },
     },
     orderBy: {
       item: "asc",
@@ -462,43 +466,53 @@ async function getStockReport(filters) {
   });
 
   // Process each item to calculate stock values with raw query
-  const processedItems = await Promise.all(items.map(async item => {
-    let totalPurchaseQty = 0;
-    let totalPurchaseValue = 0;
-    let totalSaleQty = 0;
-    let totalSaleValue = 0;
-    let avgPurchaseRate = 0;
-    let avgSaleRate = 0;
+  const processedItems = await Promise.all(
+    items.map(async (item) => {
+      let totalPurchaseQty = 0;
+      let totalPurchaseValue = 0;
+      let totalSaleQty = 0;
+      let totalSaleValue = 0;
+      let avgPurchaseRate = 0;
+      let avgSaleRate = 0;
 
-    // Calculate actual stock using raw query for each godown
-    let actualStock = 0;
-    
-    // If you have a specific godown, use it. Otherwise, you might need to sum across all godowns
-    // For now, I'll assume you want to calculate for a specific godown or all godowns
-    if (filters.godown) {
-      console.log("NOpw",filters.godown, item)
-      const stockResult = await prisma.$queryRaw`
+      // Calculate actual stock using raw query for each godown
+      let actualStock = 0;
+
+      // If you have a specific godown, use it. Otherwise, you might need to sum across all godowns
+      // For now, I'll assume you want to calculate for a specific godown or all godowns
+      if (filters.godown) {
+        console.log("NOpw", filters.godown, item);
+        const stockResult = await prisma.$queryRaw`
         SELECT SUM(
           CASE 
-            WHEN tm.tran_code IN (4, 10, 12) AND tm.godown = ${Number(filters.godown)} THEN t.qty  -- Purchase, Sale Return (add to stock)
-            WHEN tm.tran_code IN (6, 9, 5) AND tm.godown = ${Number(filters.godown)} THEN -t.qty  -- Sale, Purchase Return (remove from stock)
-            WHEN tm.tran_code = 11 AND tm.godown = ${Number(filters.godown)} THEN -t.qty  -- Transfer out
-            WHEN tm.tran_code = 11 AND tm.godown2 = ${Number(filters.godown)} THEN t.qty   -- Transfer in
+            WHEN tm.tran_code IN (4, 10, 12) AND tm.godown = ${Number(
+              filters.godown
+            )} THEN t.qty  -- Purchase, Sale Return (add to stock)
+            WHEN tm.tran_code IN (6, 9, 5) AND tm.godown = ${Number(
+              filters.godown
+            )} THEN -t.qty  -- Sale, Purchase Return (remove from stock)
+            WHEN tm.tran_code = 11 AND tm.godown = ${Number(
+              filters.godown
+            )} THEN -t.qty  -- Transfer out
+            WHEN tm.tran_code = 11 AND tm.godown2 = ${Number(
+              filters.godown
+            )} THEN t.qty   -- Transfer in
             ELSE 0
           END
         ) as stock
         FROM "Transactions" t
         JOIN "TRANSACTIONS_MASTER" tm ON t.tran_id = tm.tran_id
         WHERE t.itcd = ${item.itcd} 
-        AND (tm.godown = ${Number(filters.godown)} OR tm.godown2 = ${Number(filters.godown)})
+        AND (tm.godown = ${Number(filters.godown)} OR tm.godown2 = ${Number(
+          filters.godown
+        )})
       `;
-          console.log("Acutal Stock: ",stockResult)
+        console.log("Acutal Stock: ", stockResult);
 
-      actualStock = stockResult[0]?.stock || 0;
-
-    } else {
-      // If no specific godown, calculate total stock across all godowns
-      const stockResult = await prisma.$queryRaw`
+        actualStock = stockResult[0]?.stock || 0;
+      } else {
+        // If no specific godown, calculate total stock across all godowns
+        const stockResult = await prisma.$queryRaw`
         SELECT SUM(
           CASE 
             WHEN tm.tran_code IN (4, 10, 12) THEN t.qty  -- Purchase, Sale Return (add to stock)
@@ -511,100 +525,112 @@ async function getStockReport(filters) {
         JOIN "TRANSACTIONS_MASTER" tm ON t.tran_id = tm.tran_id
         WHERE t.itcd = ${item.itcd}
       `;
-      actualStock = stockResult[0]?.stock || 0;
-    }
-
-
-    // Process transactions for each item (keeping existing logic)
-    item.Transactions.forEach(transaction => {
-      const tranCode = transaction.transactionsMaster.tran_code;
-      const qty = transaction.qty || 0;
-      const rate = transaction.rate || 0;
-      const amount = qty * rate;
-      const damt = transaction.damt || 0;
-      const camt = transaction.camt || 0;
-
-      switch (tranCode) {
-        case 4: // Purchase
-          totalPurchaseQty += qty;
-          totalPurchaseValue += damt;
-          break;
-        
-        case 5: // POS (treating as sale)
-        case 6: // Sale
-          totalSaleQty += qty;
-          totalSaleValue += camt;
-          break;
-        
-        case 9: // Purchase Return (subtract from purchase)
-          totalPurchaseQty -= qty;
-          totalPurchaseValue -= camt;
-          break;
-        
-        case 10: // Sale Return (subtract from sale)
-          totalSaleQty -= qty;
-          totalSaleValue -= damt;
-          break;
+        actualStock = stockResult[0]?.stock || 0;
       }
-    });
 
-    // Calculate average rates
-    if (totalPurchaseQty > 0) {
-      avgPurchaseRate = totalPurchaseValue / totalPurchaseQty;
-    }
-    
-    if (totalSaleQty > 0) {
-      avgSaleRate = totalSaleValue / totalSaleQty;
-    }
+      // Process transactions for each item (keeping existing logic)
+      item.Transactions.forEach((transaction) => {
+        const tranCode = transaction.transactionsMaster.tran_code;
+        const qty = transaction.qty || 0;
+        const rate = transaction.rate || 0;
+        const amount = qty * rate;
+        const damt = transaction.damt || 0;
+        const camt = transaction.camt || 0;
 
-    // Calculate current stock value based on purchase rate (using actual calculated stock)
-    const currentStockValue = actualStock * avgPurchaseRate;
-    
-    // Calculate potential sale value of current stock
-    const potentialSaleValue = actualStock * avgSaleRate;
-    
-    // Calculate profit margin
-    const profitMargin = avgSaleRate > 0 && avgPurchaseRate > 0 
-      ? ((avgSaleRate - avgPurchaseRate) / avgPurchaseRate) * 100 
-      : 0;
+        switch (tranCode) {
+          case 4: // Purchase
+            totalPurchaseQty += qty;
+            totalPurchaseValue += damt;
+            break;
 
-    return {
-      ...item,
-      actualStock: actualStock, // Add the calculated stock to the item
-      stockAnalysis: {
-        currentStock: actualStock, // Use calculated stock instead of item.stock
-        currentStockValue: parseFloat(currentStockValue.toFixed(2)),
-        potentialSaleValue: parseFloat(potentialSaleValue.toFixed(2)),
-        
-        // Purchase data
-        totalPurchased: parseFloat(totalPurchaseQty.toFixed(2)),
-        totalPurchaseValue: parseFloat(totalPurchaseValue.toFixed(2)),
-        avgPurchaseRate: parseFloat(avgPurchaseRate.toFixed(2)),
-        
-        // Sale data
-        totalSold: parseFloat(totalSaleQty.toFixed(2)),
-        totalSaleValue: parseFloat(totalSaleValue.toFixed(2)),
-        avgSaleRate: parseFloat(avgSaleRate.toFixed(2)),
-        
-        // Analysis
-        profitMargin: parseFloat(profitMargin.toFixed(2)),
-        stockTurnover: totalPurchaseQty > 0 ? parseFloat((totalSaleQty / totalPurchaseQty * 100).toFixed(2)) : 0,
-        
-        // Transaction summary
-        transactionSummary: {
-          purchases: item.Transactions.filter(t => t.transactionsMaster.tran_code === 4).length,
-          sales: item.Transactions.filter(t => [5, 6].includes(t.transactionsMaster.tran_code)).length,
-          purchaseReturns: item.Transactions.filter(t => t.transactionsMaster.tran_code === 9).length,
-          saleReturns: item.Transactions.filter(t => t.transactionsMaster.tran_code === 10).length
+          case 5: // POS (treating as sale)
+          case 6: // Sale
+            totalSaleQty += qty;
+            totalSaleValue += camt;
+            break;
+
+          case 9: // Purchase Return (subtract from purchase)
+            totalPurchaseQty -= qty;
+            totalPurchaseValue -= camt;
+            break;
+
+          case 10: // Sale Return (subtract from sale)
+            totalSaleQty -= qty;
+            totalSaleValue -= damt;
+            break;
         }
+      });
+
+      // Calculate average rates
+      if (totalPurchaseQty > 0) {
+        avgPurchaseRate = totalPurchaseValue / totalPurchaseQty;
       }
-    };
-  }));
+
+      if (totalSaleQty > 0) {
+        avgSaleRate = totalSaleValue / totalSaleQty;
+      }
+
+      // Calculate current stock value based on purchase rate (using actual calculated stock)
+      const currentStockValue = actualStock * avgPurchaseRate;
+
+      // Calculate potential sale value of current stock
+      const potentialSaleValue = actualStock * avgSaleRate;
+
+      // Calculate profit margin
+      const profitMargin =
+        avgSaleRate > 0 && avgPurchaseRate > 0
+          ? ((avgSaleRate - avgPurchaseRate) / avgPurchaseRate) * 100
+          : 0;
+
+      return {
+        ...item,
+        actualStock: actualStock, // Add the calculated stock to the item
+        stockAnalysis: {
+          currentStock: actualStock, // Use calculated stock instead of item.stock
+          currentStockValue: parseFloat(currentStockValue.toFixed(2)),
+          potentialSaleValue: parseFloat(potentialSaleValue.toFixed(2)),
+
+          // Purchase data
+          totalPurchased: parseFloat(totalPurchaseQty.toFixed(2)),
+          totalPurchaseValue: parseFloat(totalPurchaseValue.toFixed(2)),
+          avgPurchaseRate: parseFloat(avgPurchaseRate.toFixed(2)),
+
+          // Sale data
+          totalSold: parseFloat(totalSaleQty.toFixed(2)),
+          totalSaleValue: parseFloat(totalSaleValue.toFixed(2)),
+          avgSaleRate: parseFloat(avgSaleRate.toFixed(2)),
+
+          // Analysis
+          profitMargin: parseFloat(profitMargin.toFixed(2)),
+          stockTurnover:
+            totalPurchaseQty > 0
+              ? parseFloat(((totalSaleQty / totalPurchaseQty) * 100).toFixed(2))
+              : 0,
+
+          // Transaction summary
+          transactionSummary: {
+            purchases: item.Transactions.filter(
+              (t) => t.transactionsMaster.tran_code === 4
+            ).length,
+            sales: item.Transactions.filter((t) =>
+              [5, 6].includes(t.transactionsMaster.tran_code)
+            ).length,
+            purchaseReturns: item.Transactions.filter(
+              (t) => t.transactionsMaster.tran_code === 9
+            ).length,
+            saleReturns: item.Transactions.filter(
+              (t) => t.transactionsMaster.tran_code === 10
+            ).length,
+          },
+        },
+      };
+    })
+  );
 
   // Apply showZero filter after calculating actual stock
   let filteredItems = processedItems;
   if (filters.showZero === "false") {
-    filteredItems = processedItems.filter(item => item.actualStock > 0);
+    filteredItems = processedItems.filter((item) => item.actualStock > 0);
   }
 
   return filteredItems;
@@ -613,9 +639,12 @@ async function getStockReport(filters) {
 function calculateStockSummary(data) {
   return {
     total_items: data.length,
-    total_stock: data.reduce((sum, item) => sum + (item.stockAnalysis.currentStock || 0), 0),
+    total_stock: data.reduce(
+      (sum, item) => sum + (item.stockAnalysis.currentStock || 0),
+      0
+    ),
     total_value: data.reduce(
-      (sum, item) => sum + (item.stockAnalysis.currentStockValue || 0), 
+      (sum, item) => sum + (item.stockAnalysis.currentStockValue || 0),
       0
     ),
   };
@@ -712,7 +741,7 @@ async function getStockActivityReport(filters) {
           sale_qty: 0,
           sale_ret_qty: 0,
           pos_qty: 0,
-          pos_ret_qty:0,
+          pos_ret_qty: 0,
           transfer_in_qty: 0,
           transfer_out_qty: 0,
         };
@@ -779,18 +808,31 @@ async function getStockActivityReport(filters) {
 }
 
 function calculateStockActivitySummary(data) {
-  const total_in = data
-    .reduce((sum, item) => sum + (item.purchase_qty || 0) + (item.pos_ret_qty || 0) + (item.transfer_in_qty || 0)+(item.sale_ret_qty || 0), 0);
+  const total_in = data.reduce(
+    (sum, item) =>
+      sum +
+      (item.purchase_qty || 0) +
+      (item.pos_ret_qty || 0) +
+      (item.transfer_in_qty || 0) +
+      (item.sale_ret_qty || 0),
+    0
+  );
 
-  const total_out = data
-        .reduce((sum, item) => sum + (item.sale_qty || 0) + (item.pos_qty || 0) + (item.transfer_out_qty || 0) +(item.purchase_ret_qty || 0), 0);
+  const total_out = data.reduce(
+    (sum, item) =>
+      sum +
+      (item.sale_qty || 0) +
+      (item.pos_qty || 0) +
+      (item.transfer_out_qty || 0) +
+      (item.purchase_ret_qty || 0),
+    0
+  );
 
-
-    const total_stock = data.reduce((sum,total)=>sum + total.stock_balance,0)
+  const total_stock = data.reduce((sum, total) => sum + total.stock_balance, 0);
   return {
     total_stock,
     total_in,
-    total_out
+    total_out,
   };
 }
 
@@ -1011,17 +1053,14 @@ async function getStockLedgerReport(filters) {
         itcd: parseInt(filters.item),
       },
     },
-    OR: [
-    { godown: godownValue },
-    { godown2: godownValue },
-  ],
+    OR: [{ godown: godownValue }, { godown2: godownValue }],
   };
 
   // if (filters.godown) {
   //   where.godown = parseInt(filters.godown);
   // }
 
-    console.log("Transaction: ")
+  console.log("Transaction: ");
 
   const transactions = await prisma.transactionsMaster.findMany({
     where,
@@ -1044,7 +1083,7 @@ async function getStockLedgerReport(filters) {
   // Format the data
   const ledgerData = [];
   let runningBalance = openingBalance;
-  console.log("Transaction: ",transactions)
+  console.log("Transaction: ", transactions);
 
   // Add opening balance row
   ledgerData.push({
@@ -1073,22 +1112,24 @@ async function getStockLedgerReport(filters) {
         if (t.tran_code === 4 || t.tran_code === 10 || t.tran_code === 12) {
           // Purchase or Sale Return (add to stock)
           qtyIn = line.qty || 0;
-        } else if (t.tran_code === 6 || t.tran_code === 9 || t.tran_code === 5) {
+        } else if (
+          t.tran_code === 6 ||
+          t.tran_code === 9 ||
+          t.tran_code === 5
+        ) {
           // Sale or Purchase Return (remove from stock)
           qtyOut = line.qty || 0;
         } else if (t.tran_code === 11) {
           // Transfer handling
           if (filters.godown) {
-           if (t.godown2 === parseInt(filters.godown)) {
+            if (t.godown2 === parseInt(filters.godown)) {
               // Transfer in to this godown
               qtyIn = line.qty || 0;
-                            console.log("QTY IN :",qtyIn)
-
-            }
-            else if (t.godown === parseInt(filters.godown)) {
+              console.log("QTY IN :", qtyIn);
+            } else if (t.godown === parseInt(filters.godown)) {
               // Transfer out from this godown
               qtyOut = line.qty || 0;
-            } 
+            }
           }
           // If no specific godown, transfers cancel out in ledger
         }
@@ -1100,7 +1141,7 @@ async function getStockLedgerReport(filters) {
           transaction_no: t.vr_no,
           transaction_type: getTransactionTypeLabel(t.tran_code),
           vendor_customer: t.acno?.acname || "",
-          transactions:Array(line),
+          transactions: Array(line),
           opening_qty: opening,
           qty_in: qtyIn,
           qty_out: qtyOut,
@@ -1121,16 +1162,23 @@ async function getOpeningBalanceRaw(itemId, godown, dateFrom, dateTo) {
   const fromDate = new Date(dateFrom);
   const toDate = new Date(dateTo);
 
-
   if (godown) {
-    console.log("Godwon: ",godown,itcd,fromDate)
+    console.log("Godwon: ", godown, itcd, fromDate);
     const stockResult = await prisma.$queryRaw`
       SELECT SUM(
         CASE 
-          WHEN tm.tran_code IN (4, 10, 12) AND tm.godown = ${Number(godown)} THEN t.qty  -- Purchase, Sale Return (add to stock)
-          WHEN tm.tran_code IN (6, 9, 5) AND tm.godown = ${Number(godown)} THEN -t.qty  -- Sale, Purchase Return (remove from stock)
-          WHEN tm.tran_code = 11 AND tm.godown = ${Number(godown)} THEN -t.qty  -- Transfer out
-          WHEN tm.tran_code = 11 AND tm.godown2 = ${Number(godown)} THEN t.qty   -- Transfer in
+          WHEN tm.tran_code IN (4, 10, 12) AND tm.godown = ${Number(
+            godown
+          )} THEN t.qty  -- Purchase, Sale Return (add to stock)
+          WHEN tm.tran_code IN (6, 9, 5) AND tm.godown = ${Number(
+            godown
+          )} THEN -t.qty  -- Sale, Purchase Return (remove from stock)
+          WHEN tm.tran_code = 11 AND tm.godown = ${Number(
+            godown
+          )} THEN -t.qty  -- Transfer out
+          WHEN tm.tran_code = 11 AND tm.godown2 = ${Number(
+            godown
+          )} THEN t.qty   -- Transfer in
           ELSE 0
         END
       ) as stock
@@ -1140,7 +1188,7 @@ async function getOpeningBalanceRaw(itemId, godown, dateFrom, dateTo) {
       AND tm."dateD" <= ${fromDate}::timestamp
       AND (tm.godown2 = ${Number(godown)} OR tm.godown = ${Number(godown)})
     `;
-    console.log(stockResult)
+    console.log(stockResult);
     return stockResult[0]?.stock || 0;
   } else {
     // Calculate opening balance across all godowns
@@ -1309,21 +1357,21 @@ function getTransactionCodesForType(type) {
 }
 
 // Helper function to get transaction type label
-  function getTransactionTypeLabel(tranCode, subTranId = null) {
-    const tranTypes = {
-      1: subTranId === 2 ? "Receipt Deduction" : "Receipt",
-      2: subTranId === 2 ? "Payment Deduction" : "Payment", 
-      3: "Journal",
-      4: "Purchase Invoice",
-      5: "POS",
-      6: "Sale Invoice",
-      9: "Purchase Return",
-      10: "Sale Return",
-      11:"Inter-Godown Transfer",
-      12:"POS Sale Return"
-    };
-    return tranTypes[tranCode] || "Unknown";
-  }
+function getTransactionTypeLabel(tranCode, subTranId = null) {
+  const tranTypes = {
+    1: subTranId === 2 ? "Receipt Deduction" : "Receipt",
+    2: subTranId === 2 ? "Payment Deduction" : "Payment",
+    3: "Journal",
+    4: "Purchase Invoice",
+    5: "POS",
+    6: "Sale Invoice",
+    9: "Purchase Return",
+    10: "Sale Return",
+    11: "Inter-Godown Transfer",
+    12: "POS Sale Return",
+  };
+  return tranTypes[tranCode] || "Unknown";
+}
 
 async function getOpeningStock(productId, godownId, dateFrom) {
   console.log("Getting opening stock...");
@@ -1423,42 +1471,43 @@ async function getTransactionReport(tran_code, filters) {
   });
 
   return transactions.map((t) => {
-  let totalDamt = 0;
-  let totalCamt = 0;
+    let totalDamt = 0;
+    let totalCamt = 0;
 
-  // Loop through child transactions
-  t.transactions?.filter(t=>t.sub_tran_id!==3).forEach((tran) => {
-   
-      totalDamt += tran.damt || 0;
-      totalCamt += tran.camt || 0;
-    
+    // Loop through child transactions
+    t.transactions
+      ?.filter((t) => t.sub_tran_id !== 3)
+      .forEach((tran) => {
+        totalDamt += tran.damt || 0;
+        totalCamt += tran.camt || 0;
+      });
+
+    // Optionally calculate net amount
+    let netAmount;
+    if (t.tran_code === 1) {
+      netAmount = totalCamt - totalDamt; // For receipts, net is credit - debit
+    } else if (t.tran_code === 2) {
+      netAmount = totalDamt - totalCamt; // For payments, net is debit - credit
+    }
+
+    return {
+      date: new Date(t.dateD).toLocaleDateString(),
+      vr_no: t.vr_no || "",
+      account: t.acno?.acname || "",
+      amount: netAmount || 0,
+      damt: totalDamt,
+      camt: totalCamt,
+      narration: t.rmk || t.rmk1 || "",
+    };
   });
-
-  // Optionally calculate net amount
-  let netAmount;
-  if (t.tran_code === 1){
-
-    netAmount = totalCamt - totalDamt; // For receipts, net is credit - debit
-  }
-  else if (t.tran_code === 2) {
-    netAmount = totalDamt - totalCamt; // For payments, net is debit - credit
-  } 
-
-  return {
-    date: new Date(t.dateD).toLocaleDateString(),
-    vr_no: t.vr_no || "",
-    account: t.acno?.acname || "",
-    amount: netAmount || 0,
-    damt: totalDamt,
-    camt: totalCamt,
-    narration: t.rmk || t.rmk1 ||"",
-  };
-});
-
 }
 
 function calculateTransactionSummary(data) {
-  console.log("Calculating transaction summary for", data.length, "transactions");
+  console.log(
+    "Calculating transaction summary for",
+    data.length,
+    "transactions"
+  );
 
   const totalDamt = data.reduce((sum, t) => sum + (t.damt || 0), 0);
   const totalCamt = data.reduce((sum, t) => sum + (t.camt || 0), 0);
@@ -1486,13 +1535,13 @@ export async function getAccountLedger(filters) {
     where: {
       transactionsMaster: {
         dateD: {
-          lt: new Date(dateFrom)
+          lt: new Date(dateFrom),
         },
         tran_code: {
-          in: [1, 2, 3, 4, 5, 6, 9, 10, 12] // Added new transaction codes
-        }
+          in: [1, 2, 3, 4, 5, 6, 9, 10, 12], // Added new transaction codes
+        },
       },
-      acno: accountNo
+      acno: accountNo,
     },
     select: {
       damt: true,
@@ -1500,10 +1549,10 @@ export async function getAccountLedger(filters) {
       sub_tran_id: true,
       transactionsMaster: {
         select: {
-          tran_code: true
-        }
-      }
-    }
+          tran_code: true,
+        },
+      },
+    },
   });
 
   // Calculate opening balance
@@ -1511,47 +1560,60 @@ export async function getAccountLedger(filters) {
     let debitAmount = 0;
     let creditAmount = 0;
 
-    if (txn.transactionsMaster.tran_code === 1) { // Receipt Voucher
-      if (txn.sub_tran_id === 3) { // Auto entry
+    if (txn.transactionsMaster.tran_code === 1) {
+      // Receipt Voucher
+      if (txn.sub_tran_id === 3) {
+        // Auto entry
+        debitAmount = txn.damt || 0;
+      } else if (txn.sub_tran_id === 1) {
+        // Main entry
+        creditAmount = txn.camt || 0;
+      } else if (txn.sub_tran_id === 2) {
+        // Deduction entry
         debitAmount = txn.damt || 0;
       }
-      else if (txn.sub_tran_id === 1) { // Main entry
-         creditAmount = txn.camt || 0;
-      } else if (txn.sub_tran_id === 2) { // Deduction entry
-        debitAmount = txn.damt || 0;
-      }
-    } else if (txn.transactionsMaster.tran_code === 2) { // Payment Voucher
-      if (txn.sub_tran_id === 3) { // Auto entry
+    } else if (txn.transactionsMaster.tran_code === 2) {
+      // Payment Voucher
+      if (txn.sub_tran_id === 3) {
+        // Auto entry
         creditAmount = txn.camt || 0;
       }
-      if (txn.sub_tran_id === 1) { // Main entry
+      if (txn.sub_tran_id === 1) {
+        // Main entry
         debitAmount = txn.damt || 0;
-      } else if (txn.sub_tran_id === 2) { // Deduction entry
+      } else if (txn.sub_tran_id === 2) {
+        // Deduction entry
         creditAmount = txn.camt || 0;
-      }
-      else if (txn.sub_tran_id === 3) { // Deduction entry
+      } else if (txn.sub_tran_id === 3) {
+        // Deduction entry
         debitAmount = txn.camt || 0;
       }
-    } else if (txn.transactionsMaster.tran_code === 3) { // Journal Voucher
+    } else if (txn.transactionsMaster.tran_code === 3) {
+      // Journal Voucher
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
-    } else if (txn.transactionsMaster.tran_code === 4) { // Purchase Invoice
+    } else if (txn.transactionsMaster.tran_code === 4) {
+      // Purchase Invoice
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
-    } else if (txn.transactionsMaster.tran_code === 5) { // POS
+    } else if (txn.transactionsMaster.tran_code === 5) {
+      // POS
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
-    } else if (txn.transactionsMaster.tran_code === 12) { // POS SAlE RETURN
+    } else if (txn.transactionsMaster.tran_code === 12) {
+      // POS SAlE RETURN
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
-    } 
-    else if (txn.transactionsMaster.tran_code === 6) { // Sale Invoice
+    } else if (txn.transactionsMaster.tran_code === 6) {
+      // Sale Invoice
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
-    } else if (txn.transactionsMaster.tran_code === 9) { // Purchase Return
+    } else if (txn.transactionsMaster.tran_code === 9) {
+      // Purchase Return
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
-    } else if (txn.transactionsMaster.tran_code === 10) { // Sale Return
+    } else if (txn.transactionsMaster.tran_code === 10) {
+      // Sale Return
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
     }
@@ -1565,38 +1627,38 @@ export async function getAccountLedger(filters) {
       transactionsMaster: {
         dateD: {
           gte: new Date(dateFrom),
-          lte: new Date(dateTo)
+          lte: new Date(dateTo),
         },
         tran_code: {
-          in: [1, 2, 3, 4, 5, 6, 9, 10, 12] // Added new transaction codes
-        }
+          in: [1, 2, 3, 4, 5, 6, 9, 10, 12], // Added new transaction codes
+        },
       },
-      acno: accountNo
+      acno: accountNo,
     },
     include: {
-      itemDetails:true,
+      itemDetails: true,
 
       transactionsMaster: {
         select: {
           dateD: true,
           vr_no: true,
           tran_code: true,
-          rmk: true
-        }
-      }
+          rmk: true,
+        },
+      },
     },
     orderBy: [
       {
         transactionsMaster: {
-          dateD: 'asc'
-        }
+          dateD: "asc",
+        },
       },
       {
         transactionsMaster: {
-          vr_no: 'asc'
-        }
-      }
-    ]
+          vr_no: "asc",
+        },
+      },
+    ],
   });
 
   // 3. Add running balance
@@ -1621,67 +1683,81 @@ export async function getAccountLedger(filters) {
     let creditAmount = 0;
     let entryType = "";
 
-    if (txn.transactionsMaster.tran_code === 1) { // Receipt Voucher
-      if (txn.sub_tran_id === 1) { // Main entry
+    if (txn.transactionsMaster.tran_code === 1) {
+      // Receipt Voucher
+      if (txn.sub_tran_id === 1) {
+        // Main entry
         creditAmount = txn.camt || 0;
         entryType = "Receipt";
-      } if (txn.sub_tran_id === 3) { // Main entry
+      }
+      if (txn.sub_tran_id === 3) {
+        // Main entry
         debitAmount = txn.damt || 0;
         entryType = "Receipt";
-      }
-       else if (txn.sub_tran_id === 2) { // Deduction entry
+      } else if (txn.sub_tran_id === 2) {
+        // Deduction entry
         debitAmount = txn.damt || 0;
         entryType = "Receipt Deduction";
       }
-    } else if (txn.transactionsMaster.tran_code === 2) { // Payment Voucher
-      if (txn.sub_tran_id === 1) { // Main entry
+    } else if (txn.transactionsMaster.tran_code === 2) {
+      // Payment Voucher
+      if (txn.sub_tran_id === 1) {
+        // Main entry
         debitAmount = txn.damt || 0;
         entryType = "Payment";
-      } else if (txn.sub_tran_id === 2) { // Deduction entry
+      } else if (txn.sub_tran_id === 2) {
+        // Deduction entry
         creditAmount = txn.camt || 0;
         entryType = "Payment Deduction";
-      }if (txn.sub_tran_id === 3) { // Main entry
+      }
+      if (txn.sub_tran_id === 3) {
+        // Main entry
         debitAmount = txn.camt || 0;
         entryType = "Payment";
       }
-    } else if (txn.transactionsMaster.tran_code === 3) { // Journal Voucher
+    } else if (txn.transactionsMaster.tran_code === 3) {
+      // Journal Voucher
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
       entryType = "Journal";
-    } else if (txn.transactionsMaster.tran_code === 4) { // Purchase Invoice
+    } else if (txn.transactionsMaster.tran_code === 4) {
+      // Purchase Invoice
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
       entryType = "Purchase Invoice";
-    } else if (txn.transactionsMaster.tran_code === 5) { // POS
+    } else if (txn.transactionsMaster.tran_code === 5) {
+      // POS
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
       entryType = "POS";
-    }
-    else if (txn.transactionsMaster.tran_code === 12) { // POS Return
+    } else if (txn.transactionsMaster.tran_code === 12) {
+      // POS Return
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
       entryType = "POS Return";
-    }
-     else if (txn.transactionsMaster.tran_code === 6) { // Sale Invoice
+    } else if (txn.transactionsMaster.tran_code === 6) {
+      // Sale Invoice
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
       entryType = "Sale Invoice";
-    } else if (txn.transactionsMaster.tran_code === 9) { // Purchase Return
+    } else if (txn.transactionsMaster.tran_code === 9) {
+      // Purchase Return
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
       entryType = "Purchase Return";
-    } else if (txn.transactionsMaster.tran_code === 10) { // Sale Return
+    } else if (txn.transactionsMaster.tran_code === 10) {
+      // Sale Return
       debitAmount = txn.damt || 0;
       creditAmount = txn.camt || 0;
       entryType = "Sale Return";
     }
 
     runningBalance += debitAmount - creditAmount;
-    
+
     ledgerEntries.push({
       date: new Date(txn.transactionsMaster.dateD).toLocaleDateString(),
       vr_no: txn.transactionsMaster.vr_no,
-      transactions:Array(txn),
+      transactions: Array(txn),
       tran_type: entryType,
       narration: txn.narration1 || txn.transactionsMaster.rmk || "",
       debit: debitAmount > 0 ? debitAmount : null,
@@ -1708,43 +1784,56 @@ function calculateAmounts(transaction) {
   let debitAmount = 0;
   let creditAmount = 0;
 
-  if (transactionsMaster.tran_code === 1) { // Receipt Voucher
-    if (sub_tran_id === 1) { // Main entry
-       creditAmount = camt || 0;
-    } else if (sub_tran_id === 2) { // Deduction entry
-       debitAmount= damt || 0;
-    }else if (sub_tran_id === 3) { // Deduction entry
-        debitAmount = damt || 0;
-      }
-  } else if (transactionsMaster.tran_code === 2) { // Payment Voucher
-    if (sub_tran_id === 1) { // Main entry
-      debitAmount = damt || 0;
-    } else if (sub_tran_id === 2) { // Deduction entry
+  if (transactionsMaster.tran_code === 1) {
+    // Receipt Voucher
+    if (sub_tran_id === 1) {
+      // Main entry
       creditAmount = camt || 0;
-    }else if (sub_tran_id === 3) { // Deduction entry
-        creditAmount = camt || 0;
-      }
-  } else if (transactionsMaster.tran_code === 3) { // Journal Voucher
+    } else if (sub_tran_id === 2) {
+      // Deduction entry
+      debitAmount = damt || 0;
+    } else if (sub_tran_id === 3) {
+      // Deduction entry
+      debitAmount = damt || 0;
+    }
+  } else if (transactionsMaster.tran_code === 2) {
+    // Payment Voucher
+    if (sub_tran_id === 1) {
+      // Main entry
+      debitAmount = damt || 0;
+    } else if (sub_tran_id === 2) {
+      // Deduction entry
+      creditAmount = camt || 0;
+    } else if (sub_tran_id === 3) {
+      // Deduction entry
+      creditAmount = camt || 0;
+    }
+  } else if (transactionsMaster.tran_code === 3) {
+    // Journal Voucher
     debitAmount = damt || 0;
     creditAmount = camt || 0;
-  } else if (transactionsMaster.tran_code === 4) { // Purchase Invoice
+  } else if (transactionsMaster.tran_code === 4) {
+    // Purchase Invoice
     debitAmount = damt || 0;
     creditAmount = camt || 0;
-  } else if (transactionsMaster.tran_code === 5) { // POS
+  } else if (transactionsMaster.tran_code === 5) {
+    // POS
     debitAmount = damt || 0;
     creditAmount = camt || 0;
-  }
-   else if (transactionsMaster.tran_code === 12) { // POS SALE RETURN
+  } else if (transactionsMaster.tran_code === 12) {
+    // POS SALE RETURN
     debitAmount = damt || 0;
     creditAmount = camt || 0;
-  }
-   else if (transactionsMaster.tran_code === 6) { // Sale Invoice
+  } else if (transactionsMaster.tran_code === 6) {
+    // Sale Invoice
     debitAmount = damt || 0;
     creditAmount = camt || 0;
-  } else if (transactionsMaster.tran_code === 9) { // Purchase Return
+  } else if (transactionsMaster.tran_code === 9) {
+    // Purchase Return
     debitAmount = damt || 0;
     creditAmount = camt || 0;
-  } else if (transactionsMaster.tran_code === 10) { // Sale Return
+  } else if (transactionsMaster.tran_code === 10) {
+    // Sale Return
     debitAmount = damt || 0;
     creditAmount = camt || 0;
   }
@@ -1754,19 +1843,19 @@ function calculateAmounts(transaction) {
 
 async function getAccountActivity(filters) {
   const { dateFrom, dateTo } = filters;
-  
+
   const accounts = await prisma.aCNO.findMany({
     select: {
       acno: true,
-      acname: true
-    }
+      acname: true,
+    },
   });
-  
+
   const activityData = [];
-  
+
   for (const acc of accounts) {
     const acno = acc.acno;
-    
+
     // Opening balance BEFORE dateFrom
     const openingEntries = await prisma.transactions.findMany({
       where: {
@@ -1774,30 +1863,30 @@ async function getAccountActivity(filters) {
         transactionsMaster: {
           dateD: { lt: new Date(dateFrom) },
           tran_code: {
-            in: [1, 2, 3, 4, 5, 6, 9, 10, 12] // Added new transaction codes
-          }
+            in: [1, 2, 3, 4, 5, 6, 9, 10, 12], // Added new transaction codes
+          },
         },
       },
-      include: { 
+      include: {
         transactionsMaster: {
           select: {
-            tran_code: true
-          }
-        }
+            tran_code: true,
+          },
+        },
       },
     });
-    
+
     let openingDebit = 0;
     let openingCredit = 0;
-    
+
     openingEntries.forEach((t) => {
       const { debitAmount, creditAmount } = calculateAmounts(t);
       openingDebit += debitAmount;
       openingCredit += creditAmount;
     });
-    
+
     let openingBalance = openingDebit - openingCredit;
-    
+
     // Transactions within range
     const periodEntries = await prisma.transactions.findMany({
       where: {
@@ -1808,32 +1897,37 @@ async function getAccountActivity(filters) {
             lte: new Date(dateTo),
           },
           tran_code: {
-            in: [1, 2, 3, 4, 5, 6, 9, 10, 12] // Added new transaction codes
-          }
+            in: [1, 2, 3, 4, 5, 6, 9, 10, 12], // Added new transaction codes
+          },
         },
       },
-      include: { 
+      include: {
         transactionsMaster: {
           select: {
-            tran_code: true
-          }
-        }
+            tran_code: true,
+          },
+        },
       },
     });
-    
+
     let debit = 0;
     let credit = 0;
-    
+
     periodEntries.forEach((t) => {
       const { debitAmount, creditAmount } = calculateAmounts(t);
       debit += debitAmount;
       credit += creditAmount;
     });
-    
+
     const closingBalance = openingBalance + (debit - credit);
-    
+
     // Only include accounts with activity or non-zero balances
-    if (debit !== 0 || credit !== 0 || openingBalance !== 0 || closingBalance !== 0) {
+    if (
+      debit !== 0 ||
+      credit !== 0 ||
+      openingBalance !== 0 ||
+      closingBalance !== 0
+    ) {
       activityData.push({
         account: acc.acname,
         opening_balance: openingBalance,
@@ -1843,7 +1937,7 @@ async function getAccountActivity(filters) {
       });
     }
   }
-  
+
   return activityData;
 }
 
@@ -1852,7 +1946,6 @@ function calculateAccountActivitySummary(data) {
     total_accounts: new Set(data.map((t) => t.account)).size,
     total_debit: data.reduce((sum, t) => sum + t.debit, 0),
     total_credit: data.reduce((sum, t) => sum + t.credit, 0),
-
   };
 }
 
@@ -1865,47 +1958,49 @@ async function getTrialBalance(filters) {
         dateD: {
           lte: new Date(dateTo),
         },
-        tran_code: { in: [1, 2, 3, 4, 5, 6, 9, 10,12] }, // All transaction codes
+        tran_code: { in: [1, 2, 3, 4, 5, 6, 9, 10, 12] }, // All transaction codes
       },
     },
     include: {
       transactionsMaster: {
         select: {
-          tran_code: true
-        }
+          tran_code: true,
+        },
       },
       acnoDetails: {
         select: {
-          acname: true
-        }
-      }
+          acname: true,
+        },
+      },
     },
   });
 
   const accountMap = {};
   for (const t of entries) {
     const account = t.acnoDetails?.acname || "Unknown";
-    if(account==="Unknown") {
+    if (account === "Unknown") {
       console.log("Transaction without account: ", t);
       continue; // Skip transactions without an account
     }
-    console.log("Account: ",account)
+    console.log("Account: ", account);
     if (!accountMap[account]) {
-      accountMap[account] = { debit: 0, credit: 0, acno:t.acno };
+      accountMap[account] = { debit: 0, credit: 0, acno: t.acno };
     }
-    
+
     const { debitAmount, creditAmount } = calculateAmounts(t);
     accountMap[account].debit += debitAmount;
     accountMap[account].credit += creditAmount;
   }
 
-  return Object.entries(accountMap).map(([account, { debit, credit,acno }]) => ({
-    account,
-    debit: (debit - credit)>0 ? debit - credit : 0,
-    credit:(debit - credit)<0 ? -(debit - credit) : 0,
-    balance: debit - credit,
-    acno:acno
-  }));
+  return Object.entries(accountMap).map(
+    ([account, { debit, credit, acno }]) => ({
+      account,
+      debit: debit - credit > 0 ? debit - credit : 0,
+      credit: debit - credit < 0 ? -(debit - credit) : 0,
+      balance: debit - credit,
+      acno: acno,
+    })
+  );
 }
 
 function calculateTrialBalanceSummary(data) {
@@ -1913,7 +2008,6 @@ function calculateTrialBalanceSummary(data) {
   const total_credit = data.reduce((sum, a) => sum + a.credit, 0);
   return { total_debit, total_credit, diff: total_debit - total_credit };
 }
-
 
 // route.js
 async function getStockMetricsReport(filters) {
@@ -1924,7 +2018,7 @@ async function getStockMetricsReport(filters) {
     },
   });
 
-  console.log("GOdown: ",godowns)
+  console.log("GOdown: ", godowns);
 
   // Get all items with their categories
   const where = {};
@@ -1943,46 +2037,60 @@ async function getStockMetricsReport(filters) {
   });
 
   // Process each item to calculate stock in each godown
-  const processedItems = await Promise.all(items.map(async (item) => {
-    const godownStocks = {};
-    let totalStock = 0;
+  const processedItems = await Promise.all(
+    items.map(async (item) => {
+      const godownStocks = {};
+      let totalStock = 0;
 
-    // Calculate stock for each godown
-    await Promise.all(godowns.map(async (godown) => {
-      const stockResult = await prisma.$queryRaw`
+      // Calculate stock for each godown
+      await Promise.all(
+        godowns.map(async (godown) => {
+          const stockResult = await prisma.$queryRaw`
         SELECT SUM(
           CASE 
-            WHEN tm.tran_code IN (4, 10, 12) AND tm.godown = ${Number(godown.id)} THEN t.qty  -- Purchase, Sale Return (add to stock)
-            WHEN tm.tran_code IN (6, 9, 5) AND tm.godown = ${Number(godown.id)} THEN -t.qty  -- Sale, Purchase Return (remove from stock)
-            WHEN tm.tran_code = 11 AND tm.godown = ${Number(godown.id)} THEN -t.qty  -- Transfer out
-            WHEN tm.tran_code = 11 AND tm.godown2 = ${Number(godown.id)} THEN t.qty   -- Transfer in
+            WHEN tm.tran_code IN (4, 10, 12) AND tm.godown = ${Number(
+              godown.id
+            )} THEN t.qty  -- Purchase, Sale Return (add to stock)
+            WHEN tm.tran_code IN (6, 9, 5) AND tm.godown = ${Number(
+              godown.id
+            )} THEN -t.qty  -- Sale, Purchase Return (remove from stock)
+            WHEN tm.tran_code = 11 AND tm.godown = ${Number(
+              godown.id
+            )} THEN -t.qty  -- Transfer out
+            WHEN tm.tran_code = 11 AND tm.godown2 = ${Number(
+              godown.id
+            )} THEN t.qty   -- Transfer in
             ELSE 0
           END
         ) as stock
         FROM "Transactions" t
         JOIN "TRANSACTIONS_MASTER" tm ON t.tran_id = tm.tran_id
         WHERE t.itcd = ${item.itcd} 
-        AND (tm.godown = ${Number(godown.id)} OR tm.godown2 = ${Number(godown.id)})
+        AND (tm.godown = ${Number(godown.id)} OR tm.godown2 = ${Number(
+            godown.id
+          )})
       `;
 
-      const stock = stockResult[0]?.stock || 0;
-      godownStocks[godown.id] = stock;
-      totalStock += stock;
-    }));
+          const stock = stockResult[0]?.stock || 0;
+          godownStocks[godown.id] = stock;
+          totalStock += stock;
+        })
+      );
 
-    console.log("YES ")
+      console.log("YES ");
 
-    return {
-      ...item,
-      godownStocks,
-      totalStock,
-    };
-  }));
+      return {
+        ...item,
+        godownStocks,
+        totalStock,
+      };
+    })
+  );
 
   // Apply showZero filter
   let filteredItems = processedItems;
   if (filters.showZero === "false") {
-    filteredItems = processedItems.filter(item => item.totalStock > 0);
+    filteredItems = processedItems.filter((item) => item.totalStock > 0);
   }
 
   return {
@@ -1993,14 +2101,17 @@ async function getStockMetricsReport(filters) {
 
 function calculateStockMetricsSummary(data) {
   const { items, godowns } = data;
-  
+
   // Calculate total stock across all items and godowns
   const totalStock = items.reduce((sum, item) => sum + item.totalStock, 0);
-  
+
   // Calculate godown-wise totals
   const godownTotals = {};
-  godowns.forEach(godown => {
-    godownTotals[godown.id] = items.reduce((sum, item) => sum + (item.godownStocks[godown.id] || 0), 0);
+  godowns.forEach((godown) => {
+    godownTotals[godown.id] = items.reduce(
+      (sum, item) => sum + (item.godownStocks[godown.id] || 0),
+      0
+    );
   });
 
   return {
@@ -2023,10 +2134,10 @@ async function getOrderBalanceReport(filters) {
   if (!orderType) {
     throw new Error("Order type is required (4 for purchase, 6 for sales)");
   }
-  
+
   // Determine if it's purchase order (4) or sales order (6)
   const isPurchaseOrder = parseInt(orderType) === 4;
-  
+
   try {
     // Updated query based on the new PO verification approach
     const orderBalances = await prisma.$queryRaw`
@@ -2067,10 +2178,26 @@ async function getOrderBalanceReport(filters) {
         LEFT JOIN "Transactions" t ON t.tran_id = tm.tran_id AND t.itcd = od.itcd
         
         WHERE om.order_catagory = ${parseInt(orderType)}
-          ${customer ? Prisma.sql`AND om.party_code = ${customer}` : Prisma.empty}
-          ${godown ? Prisma.sql`AND om.godown = ${parseInt(godown)}` : Prisma.empty}
-          ${dateFrom ? Prisma.sql`AND om."dateD" >= ${new Date(dateFrom)}::timestamp` : Prisma.empty}
-          ${dateTo ? Prisma.sql`AND om."dateD" <= ${new Date(dateTo)}::timestamp` : Prisma.empty}
+          ${
+            customer
+              ? Prisma.sql`AND om.party_code = ${customer}`
+              : Prisma.empty
+          }
+          ${
+            godown
+              ? Prisma.sql`AND om.godown = ${parseInt(godown)}`
+              : Prisma.empty
+          }
+          ${
+            dateFrom
+              ? Prisma.sql`AND om."dateD" >= ${new Date(dateFrom)}::timestamp`
+              : Prisma.empty
+          }
+          ${
+            dateTo
+              ? Prisma.sql`AND om."dateD" <= ${new Date(dateTo)}::timestamp`
+              : Prisma.empty
+          }
           AND (tm.tran_code IN (4, 9) OR tm.tran_code IS NULL)
         
         GROUP BY om.order_no, om."dateD", om.party_code, a.acname, om.delivery_location, 
@@ -2119,10 +2246,10 @@ async function getOrderBalanceReport(filters) {
 
     // Group by order for the final response
     const ordersMap = new Map();
-    
-    orderBalances.forEach(row => {
+
+    orderBalances.forEach((row) => {
       const orderNo = parseInt(row.order_no);
-      
+
       if (!ordersMap.has(orderNo)) {
         ordersMap.set(orderNo, {
           orderNo: orderNo,
@@ -2136,10 +2263,10 @@ async function getOrderBalanceReport(filters) {
           totalReturned: 0,
           totalNetReceived: 0,
           totalPending: 0,
-          totalAmount: 0
+          totalAmount: 0,
         });
       }
-      
+
       const order = ordersMap.get(orderNo);
       const orderedQty = parseFloat(row.ordered_qty) || 0;
       const purchasedQty = parseFloat(row.purchased_qty) || 0;
@@ -2148,7 +2275,7 @@ async function getOrderBalanceReport(filters) {
       const pendingQty = parseFloat(row.pending_qty) || 0;
       const amount = parseFloat(row.amount) || 0;
       const completionPercentage = parseFloat(row.completion_percentage) || 0;
-      
+
       order.items.push({
         itemCode: parseInt(row.itcd),
         itemName: row.item_name,
@@ -2161,9 +2288,9 @@ async function getOrderBalanceReport(filters) {
         status: row.status,
         completionPercentage: completionPercentage,
         rate: parseFloat(row.rate) || 0,
-        amount: amount
+        amount: amount,
       });
-      
+
       order.totalOrdered += orderedQty;
       order.totalPurchased += purchasedQty;
       order.totalReturned += returnedQty;
@@ -2175,7 +2302,7 @@ async function getOrderBalanceReport(filters) {
     const result = Array.from(ordersMap.values());
     console.log("Order Balance Report: ", result);
 
-    return result
+    return result;
     // {
 
     //   // success: true,
@@ -2186,31 +2313,264 @@ async function getOrderBalanceReport(filters) {
     //   //   orderType: isPurchaseOrder ? 'Purchase Orders' : 'Sales Orders'
     //   // }
     // };
-
   } catch (error) {
     console.error("Error in getOrderBalanceReport:", error);
-    throw new Error(`Failed to generate order balance report: ${error.message}`);
+    throw new Error(
+      `Failed to generate order balance report: ${error.message}`
+    );
   }
 }
 
-// function calculateOrderBalanceSummary(data) {
-//   return {
-//     totalOrders: data?.length,
-//     totalOrdered: data?.reduce((sum, o) => sum + o.totalOrdered, 0),
-//     totalPurchased: data?.reduce((sum, o) => sum + o.totalPurchased, 0),
-//     totalReturned: data?.reduce((sum, o) => sum + o.totalReturned, 0),
-//     totalNetReceived: data?.reduce((sum, o) => sum + o.totalNetReceived, 0),
-//     totalPending: data?.reduce((sum, o) => sum + o.totalPending, 0),
+function calculateOrderBalanceSummary(data) {
+  return {
+    totalOrders: data?.length,
+    totalOrdered: data?.reduce((sum, o) => sum + o.totalOrdered, 0),
+    totalPurchased: data?.reduce((sum, o) => sum + o.totalPurchased, 0),
+    totalReturned: data?.reduce((sum, o) => sum + o.totalReturned, 0),
+    totalNetReceived: data?.reduce((sum, o) => sum + o.totalNetReceived, 0),
+    totalPending: data?.reduce((sum, o) => sum + o.totalPending, 0),
+
+    // Status-based metrics
+    completeOrders: data?.filter((o) =>
+      o.items.every((item) => item.status === "COMPLETE")
+    ).length,
+    partialOrders: data?.filter((o) =>
+      o.items.some((item) => item.status === "PARTIAL")
+    ).length,
+    pendingOrders: data?.filter((o) =>
+      o.items.every((item) => item.status === "PENDING")
+    ).length,
+    overReceivedOrders: data?.filter((o) =>
+      o.items.some((item) => item.status === "OVER_RECEIVED")
+    ).length,
+
+    // Average completion percentage
+    averageCompletion:
+      data?.length > 0
+        ? data.reduce(
+            (sum, o) => sum + (o.totalNetReceived / o.totalOrdered) * 100,
+            0
+          ) / data.length
+        : 0,
+  };
+}
+
+async function getCustomerAgingReport(filters) {
+  console.log("Filters: ", filters);
+  const { reportDate, customer } = filters;
+
+  // Set default report date to current date if not provided
+  const asOfDate = reportDate ? new Date(reportDate) : new Date();
+  
+  // Validate required parameters
+  if (!customer) {
+    throw new Error("Customer is required for aging report");
+  }
+  
+  try {
+    // Customer aging report query with corrected customer matching logic
+    const agingReport = await prisma.$queryRaw`
+      WITH customer_info AS (
+        -- Get customer details for the party_code
+        SELECT DISTINCT
+          a.acno,
+          a.acname AS customer_name
+        FROM "acno" a
+        WHERE a.acno = ${customer}
+      ),
+
+      sales_invoices AS (
+        -- Get all sales invoices for the customer
+        -- Customer code is in tm.pycd for sales invoices
+        SELECT
+          tm.tran_id,
+          tm."dateD" AS invoice_date,
+          tm.vr_no AS voucher_no,
+          tm.tran_code,
+          tm.invoice_no,
+          tm.pycd AS customer_code,  -- Customer in pycd for sales
+          COALESCE(SUM(t.damt), 0) AS invoice_amount,
+          (tm."dateD" + INTERVAL '30 days') AS due_date
+        FROM "TRANSACTIONS_MASTER" tm
+        INNER JOIN "Transactions" t ON t.tran_id = tm.tran_id
+        WHERE tm.pycd = ${customer}  -- Match customer in pycd
+          AND tm.tran_code = 6  -- Sales Invoice
+          AND tm."dateD" <= ${asOfDate}::date
+          AND t.damt > 0
+        GROUP BY tm.tran_id, tm."dateD", tm.vr_no, tm.tran_code, tm.invoice_no, tm.pycd
+      ),
+
+      direct_receipts AS (
+        -- Get receipts that are directly allocated to specific invoices
+        -- For receipts: t.acno should match the customer who is paying
+        SELECT
+          t.invoice_no,
+          t.acno AS customer_code,  -- Customer making payment (should equal sales invoice pycd)
+          COALESCE(SUM(t.camt), 0) AS direct_receipt_amount
+        FROM "TRANSACTIONS_MASTER" tm
+        INNER JOIN "Transactions" t ON t.tran_id = tm.tran_id
+        WHERE tm.tran_code = 1  -- Receipt Voucher
+          AND tm."dateD" <= ${asOfDate}::date
+          AND t.camt > 0
+          AND t.acno = ${customer}  -- Receipt from this customer
+          AND t.invoice_no IS NOT NULL  -- Only receipts with invoice numbers
+          AND t.invoice_no != ''        -- Non-empty invoice numbers
+        GROUP BY t.invoice_no, t.acno
+      ),
+
+      invoice_with_direct_receipts AS (
+        -- Match invoices with their direct receipts only
+        SELECT
+          si.*,
+          ci.customer_name,
+          COALESCE(dr.direct_receipt_amount, 0) AS direct_receipts,
+          
+          -- Outstanding amount is simply invoice amount minus direct receipts
+          si.invoice_amount - COALESCE(dr.direct_receipt_amount, 0) AS outstanding_amount,
+          
+          -- Calculate days outstanding from due date
+          EXTRACT(DAY FROM (${asOfDate}::date - due_date)) AS days_outstanding
+          
+        FROM sales_invoices si
+        LEFT JOIN customer_info ci ON ci.acno = si.customer_code
+        LEFT JOIN direct_receipts dr ON dr.invoice_no = si.invoice_no 
+                                      AND dr.customer_code = si.customer_code
+      ),
+
+      final_aging AS (
+        SELECT
+          *,
+          -- Only show invoices with outstanding amounts (minimum threshold)  
+          CASE WHEN outstanding_amount > 0.01 THEN outstanding_amount ELSE 0 END AS final_outstanding
+        FROM invoice_with_direct_receipts
+        WHERE outstanding_amount > 0.01  -- Only outstanding invoices
+      )
+
+      -- Final result with aging buckets
+      SELECT
+        customer_name,
+        invoice_date,
+        voucher_no,
+        COALESCE(invoice_no, voucher_no::text) AS invoice_no,
+        due_date,
+        invoice_amount::numeric as invoice_amount,
+        direct_receipts::numeric as direct_receipts,
+        final_outstanding::numeric as outstanding_amount,
+        days_outstanding::numeric as days_outstanding,
+        
+        -- Aging buckets
+        CASE 
+          WHEN days_outstanding <= 0 THEN final_outstanding::numeric
+          ELSE 0 
+        END AS current_amount,
+        
+        CASE 
+          WHEN days_outstanding BETWEEN 1 AND 30 THEN final_outstanding::numeric
+          ELSE 0 
+        END AS days_1_30,
+        
+        CASE 
+          WHEN days_outstanding BETWEEN 31 AND 60 THEN final_outstanding::numeric
+          ELSE 0 
+        END AS days_31_60,
+        
+        CASE 
+          WHEN days_outstanding BETWEEN 61 AND 90 THEN final_outstanding::numeric
+          ELSE 0 
+        END AS days_61_90,
+        
+        CASE 
+          WHEN days_outstanding BETWEEN 91 AND 120 THEN final_outstanding::numeric
+          ELSE 0 
+        END AS days_91_120,
+        
+        CASE 
+          WHEN days_outstanding > 120 THEN final_outstanding::numeric
+          ELSE 0 
+        END AS days_over_120
+
+      FROM final_aging
+      ORDER BY invoice_date, voucher_no
+    `;
+
+    console.log("Aging Report Raw Data: ", agingReport);
+
+    // Process the results
+    const processedResults = agingReport.map(row => ({
+      customerName: row.customer_name,
+      invoiceDate: row.invoice_date,
+      voucherNo: parseInt(row.voucher_no),
+      invoiceNo: row.invoice_no,
+      dueDate: row.due_date,
+      invoiceAmount: parseFloat(row.invoice_amount) || 0,
+      directReceipts: parseFloat(row.direct_receipts) || 0,
+      outstandingAmount: parseFloat(row.outstanding_amount) || 0,
+      daysOutstanding: parseInt(row.days_outstanding) || 0,
+      currentAmount: parseFloat(row.current_amount) || 0,
+      days1To30: parseFloat(row.days_1_30) || 0,
+      days31To60: parseFloat(row.days_31_60) || 0,
+      days61To90: parseFloat(row.days_61_90) || 0,
+      days91To120: parseFloat(row.days_91_120) || 0,
+      daysOver120: parseFloat(row.days_over_120) || 0
+    }));
+
+    console.log("Customer Aging Report: ", processedResults);
+    return processedResults;
+
+  } catch (error) {
+    console.error("Error in getCustomerAgingReport:", error);
+    throw new Error(`Failed to generate customer aging report: ${error.message}`);
+  }
+}
+
+function calculateAgingSummary(data) {
+  if (!data || data.length === 0) {
+    return {
+      totalInvoices: 0,
+      totalInvoiceAmount: 0,
+      totalDirectReceipts: 0,
+      totalOutstanding: 0,
+      currentAmount: 0,
+      days1To30: 0,
+      days31To60: 0,
+      days61To90: 0,
+      days91To120: 0,
+      daysOver120: 0,
+      averageDaysOutstanding: 0,
+      oldestInvoiceDays: 0
+    };
+  }
+
+  const summary = {
+    totalInvoices: data.length,
+    totalInvoiceAmount: data.reduce((sum, item) => sum + item.invoiceAmount, 0),
+    totalDirectReceipts: data.reduce((sum, item) => sum + item.directReceipts, 0),
+    totalOutstanding: data.reduce((sum, item) => sum + item.outstandingAmount, 0),
+    currentAmount: data.reduce((sum, item) => sum + item.currentAmount, 0),
+    days1To30: data.reduce((sum, item) => sum + item.days1To30, 0),
+    days31To60: data.reduce((sum, item) => sum + item.days31To60, 0),
+    days61To90: data.reduce((sum, item) => sum + item.days61To90, 0),
+    days91To120: data.reduce((sum, item) => sum + item.days91To120, 0),
+    daysOver120: data.reduce((sum, item) => sum + item.daysOver120, 0),
     
-//     // Status-based metrics
-//     completeOrders: data?.filter(o => o.items.every(item => item.status === 'COMPLETE')).length,
-//     partialOrders: data?.filter(o => o.items.some(item => item.status === 'PARTIAL')).length,
-//     pendingOrders: data?.filter(o => o.items.every(item => item.status === 'PENDING')).length,
-//     overReceivedOrders: data?.filter(o => o.items.some(item => item.status === 'OVER_RECEIVED')).length,
+    // Calculate average days outstanding (weighted by outstanding amount)
+    averageDaysOutstanding: data.length > 0 
+      ? data.reduce((sum, item) => sum + (item.daysOutstanding * item.outstandingAmount), 0) / 
+        data.reduce((sum, item) => sum + item.outstandingAmount, 0) || 0
+      : 0,
     
-//     // Average completion percentage
-//     averageCompletion: data?.length > 0 
-//       ? data.reduce((sum, o) => sum + (o.totalNetReceived / o.totalOrdered * 100), 0) / data.length 
-//       : 0
-//   };
-// }
+    // Find oldest invoice
+    oldestInvoiceDays: data.length > 0 
+      ? Math.max(...data.map(item => item.daysOutstanding))
+      : 0
+  };
+
+  // Round all numeric values to 2 decimal places
+  Object.keys(summary).forEach(key => {
+    if (typeof summary[key] === 'number') {
+      summary[key] = Math.round(summary[key] * 100) / 100;
+    }
+  });
+
+  return summary;
+}
