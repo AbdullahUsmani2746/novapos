@@ -572,7 +572,7 @@ const ChartOfAccounts = () => {
             variant="destructive"
             onClick={() => handleDelete(modalData.level, modalData.code)}
             disabled={loading}
-            className="flex-1"
+            className="flex-1 text-white"
           >
             Yes, Delete
           </Button>

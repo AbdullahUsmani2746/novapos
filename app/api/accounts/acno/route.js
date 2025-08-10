@@ -240,22 +240,18 @@ export async function PUT(request) {
 export async function DELETE(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const macno = searchParams.get('macno');
-    const acno = searchParams.get('acno');
+    const acno = searchParams.get('code') || "";
 
-    if (!macno || !acno) {
+    if (!acno) {
       return NextResponse.json(
-        { error: 'Both macno and acno query parameters are required' },
+        { error: 'acno query parameters are required' },
         { status: 400 }
       );
     }
 
     await prisma.aCNO.delete({
       where: {
-        macno_acno: {
-          macno,
-          acno,
-        },
+        acno: acno,
       },
     });
 
