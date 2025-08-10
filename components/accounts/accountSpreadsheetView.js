@@ -107,10 +107,15 @@ const ChartOfAccountsView = () => {
     })
   }
 
-  // Export to Excel
+  // Export to Excel - Fixed version
   const exportToExcel = async () => {
     try {
       setExportLoading(true)
+      
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined') {
+        throw new Error('Export is only available in browser environment')
+      }
       
       const response = await axios.get('/api/accounts/all', {
         timeout: 30000
@@ -127,9 +132,24 @@ const ChartOfAccountsView = () => {
         return
       }
       
-      const XLSX = (await import('xlsx')).default
+      // Dynamic import with proper error handling
+      let XLSX
+      try {
+        // Try different import methods
+        if (typeof window !== 'undefined' && window.XLSX) {
+          XLSX = window.XLSX
+        } else {
+          const xlsxModule = await import('xlsx')
+          XLSX = xlsxModule.default || xlsxModule
+        }
+      } catch (importError) {
+        console.error('Failed to load XLSX library:', importError)
+        throw new Error('Excel export library not available. Please ensure XLSX is properly installed.')
+      }
+      
       const flatData = prepareExportData(exportData)
       
+      // Create worksheet and workbook
       const ws = XLSX.utils.json_to_sheet(flatData)
       const wb = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(wb, ws, "Chart of Accounts")
@@ -145,25 +165,36 @@ const ChartOfAccountsView = () => {
       const timestamp = new Date().toISOString().split('T')[0]
       const filename = `chart-of-accounts-${timestamp}.xlsx`
       
-      XLSX.writeFile(wb, filename)
+      // Write file with error handling
+      try {
+        XLSX.writeFile(wb, filename)
+        toast.success("Excel export completed", {
+          description: `File "${filename}" has been downloaded successfully.`
+        })
+      } catch (writeError) {
+        console.error('Error writing Excel file:', writeError)
+        throw new Error('Failed to generate Excel file')
+      }
       
-      toast.success("Excel export completed", {
-        description: `File "${filename}" has been downloaded successfully.`
-      })
     } catch (error) {
       console.error("Excel export error:", error)
       toast.error("Excel export failed", {
-        description: error.response?.data?.message || error.message || "Failed to export to Excel"
+        description: error.message || "Failed to export to Excel. Please check your internet connection and try again."
       })
     } finally {
       setExportLoading(false)
     }
   }
 
-  // Export to PDF
+  // Export to PDF - Fixed version
   const exportToPDF = async () => {
     try {
       setExportLoading(true)
+      
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined') {
+        throw new Error('Export is only available in browser environment')
+      }
       
       const response = await axios.get('/api/accounts/all', {
         timeout: 30000
@@ -180,82 +211,104 @@ const ChartOfAccountsView = () => {
         return
       }
       
-      const html2pdf = (await import('html2pdf.js')).default
+      // Dynamic import with proper error handling
+      let html2pdf
+      try {
+        if (typeof window !== 'undefined' && window.html2pdf) {
+          html2pdf = window.html2pdf
+        } else {
+          const html2pdfModule = await import('html2pdf.js')
+          html2pdf = html2pdfModule.default || html2pdfModule
+        }
+      } catch (importError) {
+        console.error('Failed to load html2pdf library:', importError)
+        throw new Error('PDF export library not available. Please ensure html2pdf.js is properly installed.')
+      }
       
+      // Create temporary element
       const tempDiv = document.createElement('div')
-      tempDiv.style.cssText = 'position: absolute; left: -9999px; top: 0; visibility: hidden;'
+      tempDiv.style.cssText = 'position: absolute; left: -9999px; top: 0; visibility: hidden; width: 210mm;'
       document.body.appendChild(tempDiv)
       
-      const tableRows = exportData.map(item => {
-        const balanceSheetCode = item.balanceSheetCode || ''
-        const balanceSheetCategory = item.balanceSheetCategory || ''
-        const mainAccounts = item.mainAccounts || ''
-        const subAccounts = Array.isArray(item.subAccounts) ? item.subAccounts : []
+      try {
+        const tableRows = exportData.map(item => {
+          const balanceSheetCode = item.balanceSheetCode || ''
+          const balanceSheetCategory = item.balanceSheetCategory || ''
+          const mainAccounts = item.mainAccounts || ''
+          const subAccounts = Array.isArray(item.subAccounts) ? item.subAccounts : []
+          
+          return `
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd; font-size: 10px; word-wrap: break-word; max-width: 50mm;">${balanceSheetCode}</td>
+              <td style="padding: 8px; border: 1px solid #ddd; font-size: 10px; word-wrap: break-word; max-width: 60mm;">${balanceSheetCategory}</td>
+              <td style="padding: 8px; border: 1px solid #ddd; font-size: 10px; word-wrap: break-word; max-width: 70mm;">${mainAccounts}</td>
+              <td style="padding: 8px; border: 1px solid #ddd; font-size: 10px; word-wrap: break-word; max-width: 70mm;">
+                ${subAccounts.length > 0 
+                  ? subAccounts.map(sub => `<div style="margin-bottom: 2px;">${sub || ''}</div>`).join('')
+                  : '<span style="color: #888;">—</span>'
+                }
+              </td>
+            </tr>
+          `
+        }).join('')
         
-        return `
-          <tr>
-            <td style="padding: 8px; border: 1px solid #ddd; font-size: 10px; word-wrap: break-word;">${balanceSheetCode}</td>
-            <td style="padding: 8px; border: 1px solid #ddd; font-size: 10px; word-wrap: break-word;">${balanceSheetCategory}</td>
-            <td style="padding: 8px; border: 1px solid #ddd; font-size: 10px; word-wrap: break-word;">${mainAccounts}</td>
-            <td style="padding: 8px; border: 1px solid #ddd; font-size: 10px; word-wrap: break-word;">
-              ${subAccounts.length > 0 
-                ? subAccounts.map(sub => `<div style="margin-bottom: 2px;">${sub || ''}</div>`).join('')
-                : '<span style="color: #888;">—</span>'
-              }
-            </td>
-          </tr>
-        `
-      }).join('')
-      
-      tempDiv.innerHTML = `
-        <div style="padding: 20px; font-family: 'Segoe UI', Arial, sans-serif;">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <h1 style="color: #1e40af; margin: 0; font-size: 18px; font-weight: bold;">Chart of Accounts</h1>
-            <p style="color: #64748b; margin: 5px 0 0 0; font-size: 12px;">Generated on ${new Date().toLocaleDateString()}</p>
+        tempDiv.innerHTML = `
+          <div style="padding: 20px; font-family: 'Segoe UI', Arial, sans-serif; width: 100%;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h1 style="color: #1e40af; margin: 0; font-size: 18px; font-weight: bold;">Chart of Accounts</h1>
+              <p style="color: #64748b; margin: 5px 0 0 0; font-size: 12px;">Generated on ${new Date().toLocaleDateString()}</p>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed;">
+              <thead>
+                <tr style="background-color: #f1f5f9;">
+                  <th style="padding: 10px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold; color: #1e40af; width: 20%;">Balance Sheet Code</th>
+                  <th style="padding: 10px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold; color: #1e40af; width: 25%;">Category</th>
+                  <th style="padding: 10px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold; color: #1e40af; width: 27.5%;">Main Account</th>
+                  <th style="padding: 10px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold; color: #1e40af; width: 27.5%;">Sub Accounts</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows}
+              </tbody>
+            </table>
           </div>
-          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-            <thead>
-              <tr style="background-color: #f1f5f9;">
-                <th style="padding: 10px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold; color: #1e40af;">Balance Sheet Code</th>
-                <th style="padding: 10px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold; color: #1e40af;">Category</th>
-                <th style="padding: 10px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold; color: #1e40af;">Main Account</th>
-                <th style="padding: 10px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold; color: #1e40af;">Sub Accounts</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${tableRows}
-            </tbody>
-          </table>
-        </div>
-      `
-      
-      const opt = {
-        margin: 10,
-        filename: `chart-of-accounts-${new Date().toISOString().split('T')[0]}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-          scale: 2, 
-          useCORS: true,
-          letterRendering: true
-        },
-        jsPDF: { 
-          unit: 'mm', 
-          format: 'a4', 
-          orientation: 'landscape'
+        `
+        
+        const opt = {
+          margin: [10, 10, 10, 10],
+          filename: `chart-of-accounts-${new Date().toISOString().split('T')[0]}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { 
+            scale: 1.5, 
+            useCORS: true,
+            letterRendering: true,
+            allowTaint: true,
+            scrollX: 0,
+            scrollY: 0
+          },
+          jsPDF: { 
+            unit: 'mm', 
+            format: 'a4', 
+            orientation: 'landscape'
+          }
+        }
+        
+        await html2pdf().from(tempDiv).set(opt).save()
+        
+        toast.success("PDF export completed", {
+          description: "PDF file has been downloaded successfully."
+        })
+      } finally {
+        // Always clean up the temporary element
+        if (document.body.contains(tempDiv)) {
+          document.body.removeChild(tempDiv)
         }
       }
       
-      await html2pdf().from(tempDiv).set(opt).save()
-      
-      document.body.removeChild(tempDiv)
-      
-      toast.success("PDF export completed", {
-        description: "PDF file has been downloaded successfully."
-      })
     } catch (error) {
       console.error("PDF export error:", error)
       toast.error("PDF export failed", {
-        description: error.message || "Failed to export to PDF"
+        description: error.message || "Failed to export to PDF. Please check your internet connection and try again."
       })
     } finally {
       setExportLoading(false)
