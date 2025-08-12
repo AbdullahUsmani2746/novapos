@@ -452,6 +452,130 @@ const entityConfig = {
       },
     ],
   },
+
+  employee_types: {
+  title: "Employee Types",
+  endpoint: "employee_types",
+  buttonText: "Add Employee Type",
+  fields: [
+    {
+      name: "employee_type",
+      label: "Employee Type",
+      fieldType: "text",
+      required: true,
+    },
+    {
+      name: "employee_type_description",
+      label: "Description",
+      fieldType: "textarea",
+      required: false,
+    },
+    {
+      relation: "employer",
+      relationName: "employer",
+      name: "employerId",
+      label: "Employer",
+      fieldType: "select",
+      options: true,
+      fetchFrom: "/api/setup/employers",
+      optionLabelKey: "employer_name", 
+      optionValueKey: "employer_id",   
+      required: true,
+    },
+  ],
+},
+
+  documents: {
+  title: "Documents",
+  endpoint: "documents",
+  buttonText: "Add Document",
+  fields: [
+    {
+      name: "name",
+      label: "Document Name",
+      fieldType: "text",
+      required: true,
+    },
+    {
+      name: "description",
+      label: "Description",
+      fieldType: "textarea",
+      required: false,
+    },
+    {
+      name: "url",
+      label: "Document File",
+      fieldType: "file", // File upload ke liye
+      required: true,
+    },
+    {
+      relation: "employee",
+      relationName: "employee",
+      name: "employee_id",
+      label: "Employee",
+      fieldType: "select",
+      options: true,
+      fetchFrom: "/api/setup/employees",
+      optionLabelKey: "employee_name", 
+      optionValueKey: "id",            
+      required: true,
+    },
+  ],
+},
+
+managers: {
+  title: "Managers",
+  endpoint: "managers",
+  buttonText: "Add Manager",
+  fields: [
+    {
+      relation: "employees",
+      relationName: "employees",
+      name: "employeeIds", // multiple employees ka array
+      label: "Employees",
+      fieldType: "multiselect", // multi select so multiple employees assign ho saken
+      options: true,
+      fetchFrom: "/api/setup/employees",
+      optionLabelKey: "employee_name", // Employee model ka name field
+      optionValueKey: "id",            // Employee ka PK
+      required: true,
+    },
+  ],
+},
+
+leaves: {
+  title: "Leaves",
+  endpoint: "leaves",
+  buttonText: "Add Leave",
+  fields: [
+    {
+      name: "leave_id",
+      label: "Leave ID",
+      fieldType: "text",
+      required: true,
+    },
+    {
+      name: "available",
+      label: "Available Days",
+      fieldType: "number", 
+      required: true,
+    },
+    {
+      relation: "employee",
+      relationName: "employee",
+      name: "employee_id",
+      label: "Employee",
+      fieldType: "select",
+      options: true,
+      fetchFrom: "/api/setup/employees",
+      optionLabelKey: "employee_name", // Employee model me display name field
+      optionValueKey: "id",            // Employee ka PK
+      required: true,
+    },
+  ],
+},
+
+
   allowances: {
     title: "Allowances",
     endpoint: "allowances",
