@@ -30,52 +30,6 @@ const entityConfig = {
     ],
   },
 
-  departments: {
-    title: "Departments",
-    endpoint: "departments",
-    buttonText: "Add Department",
-    fields: [
-      {
-        name: "dept_name",
-        label: "Dept Name",
-        fieldType: "text",
-        required: true,
-      },
-      {
-        relation: "company",
-        relationName: "company",
-        name: "company_id",
-        label: "Company",
-        fieldType: "select",
-        fetchFrom: "/api/setup/companies",
-        optionLabelKey: "company",
-        optionValueKey: "id",
-        required: true,
-      },
-    ],
-  },
-
-  cost_centers: {
-    title: "Cost Centers",
-    endpoint: "cost_centers",
-    buttonText: "Add Cost Center",
-    fields: [
-      { name: "ccname", label: "CC Name", fieldType: "text", required: true },
-      {
-        relation: "company",
-        relationName: "company",
-        name: "company_id",
-        label: "Company",
-        fieldType: "select",
-        options: true,
-        fetchFrom: "/api/setup/companies",
-        optionLabelKey: "company",
-        optionValueKey: "id",
-        required: true,
-      },
-    ],
-  },
-
   godowns: {
     title: "Godowns",
     endpoint: "godowns",
@@ -333,11 +287,73 @@ const entityConfig = {
     ],
   },
 
-  employees: {
-    title: "Employees",
-    endpoint: "employees",
-    buttonText: "Add Employee",
+  // employees: {
+  //   title: "Employees",
+  //   endpoint: "employees",
+  //   buttonText: "Add Employee",
+  //   fields: [
+  //     {
+  //       relation: "company",
+  //       relationName: "company",
+  //       name: "company_id",
+  //       label: "Company",
+  //       fieldType: "select",
+  //       fetchFrom: "/api/setup/companies",
+  //       optionLabelKey: "company",
+  //       optionValueKey: "id",
+  //       required: true,
+  //     },
+  //     {
+  //       name: "first_name",
+  //       label: "First Name",
+  //       fieldType: "text",
+  //       required: true,
+  //     },
+  //     { name: "middle_name", label: "Middle Name", fieldType: "text" },
+  //     { name: "surname", label: "Surname", fieldType: "text", required: true },
+  //     {
+  //       name: "dob",
+  //       label: "Date of Birth",
+  //       fieldType: "date",
+  //       required: true,
+  //     },
+  //     {
+  //       name: "hire_date",
+  //       label: "Hire Date",
+  //       fieldType: "date",
+  //       required: true,
+  //     },
+  //     {
+  //       name: "gender",
+  //       label: "Gender",
+  //       fieldType: "select",
+  //       options: [
+  //         { value: "MALE", label: "Male" },
+  //         { value: "FEMALE", label: "Female" },
+  //         { value: "OTHER", label: "Other" },
+  //       ],
+  //       required: true,
+  //     },
+  //     {
+  //       name: "phone_number",
+  //       label: "Phone Number",
+  //       fieldType: "text",
+  //       required: true,
+  //     },
+  //   ],
+  // },
+
+  departments: {
+    title: "Departments",
+    endpoint: "departments",
+    buttonText: "Add Department",
     fields: [
+      {
+        name: "dept_name",
+        label: "Dept Name",
+        fieldType: "text",
+        required: true,
+      },
       {
         relation: "company",
         relationName: "company",
@@ -350,45 +366,84 @@ const entityConfig = {
         required: true,
       },
       {
-        name: "first_name",
-        label: "First Name",
+        name: "dept_description",
+        label: "Description",
         fieldType: "text",
-        required: true,
-      },
-      { name: "middle_name", label: "Middle Name", fieldType: "text" },
-      { name: "surname", label: "Surname", fieldType: "text", required: true },
-      {
-        name: "dob",
-        label: "Date of Birth",
-        fieldType: "date",
-        required: true,
-      },
-      {
-        name: "hire_date",
-        label: "Hire Date",
-        fieldType: "date",
-        required: true,
-      },
-      {
-        name: "gender",
-        label: "Gender",
-        fieldType: "select",
-        options: [
-          { value: "MALE", label: "Male" },
-          { value: "FEMALE", label: "Female" },
-          { value: "OTHER", label: "Other" },
-        ],
-        required: true,
-      },
-      {
-        name: "phone_number",
-        label: "Phone Number",
-        fieldType: "text",
-        required: true,
+        required: false,
       },
     ],
   },
 
+  cost_centers: {
+    title: "Cost Centers",
+    endpoint: "cost_centers",
+    buttonText: "Add Cost Center",
+    fields: [
+      { name: "ccname", label: "CC Name", fieldType: "text", required: true },
+
+      {
+        relation: "company",
+        relationName: "company",
+        name: "company_id",
+        label: "Company",
+        fieldType: "select",
+        options: true,
+        fetchFrom: "/api/setup/companies",
+        optionLabelKey: "company",
+        optionValueKey: "id",
+        required: true,
+      },
+      {
+        name: "cc_description",
+        label: "Description",
+        fieldType: "text",
+        required: false,
+      },
+    ],
+  },
+
+  work_locations: {
+    title: "Work Locations",
+    endpoint: "work_locations",
+    buttonText: "Add Work Location",
+    fields: [
+      {
+        name: "location_name",
+        label: "Work Location",
+        fieldType: "text",
+        required: false,
+      },
+      {
+        name: "location_description",
+        label: "Description",
+        fieldType: "text",
+        required: false,
+      },
+    ],
+  },
+
+  // Bank
+  banks: {
+    title: "Banks",
+    endpoint: "banks",
+    buttonText: "Add Bank",
+    fields: [
+      {
+        name: "bank_name",
+        label: "Bank",
+        fieldType: "text",
+        required: false,
+      },
+      {
+        name: "bank_description",
+        label: "Description",
+        fieldType: "text",
+        required: false,
+      },
+    ],
+  },
+
+  // Job Title
   job_titles: {
     title: "Job Titles",
     endpoint: "job_titles",
@@ -401,196 +456,41 @@ const entityConfig = {
         required: true,
       },
       {
-        name: "description",
+        name: "job_title_description",
         label: "Description",
-        fieldType: "textarea",
-        required: false,
-      },
-      {
-        relation: "company",
-        relationName: "company",
-        name: "company_id",
-        label: "Company",
-        fieldType: "select",
-        options: true,
-        fetchFrom: "/api/setup/companies",
-        optionLabelKey: "company",
-        optionValueKey: "id",
-        required: true,
-      },
-    ],
-  },
-
-  work_locations: {
-    title: "Work Locations",
-    endpoint: "work_locations",
-    buttonText: "Add Work Location",
-    fields: [
-      {
-        name: "work_location",
-        label: "Work Location",
         fieldType: "text",
         required: true,
       },
       {
-        name: "work_location_description",
-        label: "Description",
-        fieldType: "textarea",
-        required: false,
-      },
-      {
-        relation: "company",
-        relationName: "company",
-        name: "company_id",
-        label: "Company",
+        relation: "department",
+        relationName: "department",
+        name: "department_id",
+        label: "Department",
         fieldType: "select",
-        options: true,
-        fetchFrom: "/api/setup/companies",
-        optionLabelKey: "company",
+        fetchFrom: "/api/setup/departments",
+        optionLabelKey: "dept_name",
         optionValueKey: "id",
         required: true,
       },
     ],
   },
 
-  employee_types: {
-  title: "Employee Types",
-  endpoint: "employee_types",
-  buttonText: "Add Employee Type",
-  fields: [
-    {
-      name: "employee_type",
-      label: "Employee Type",
-      fieldType: "text",
-      required: true,
-    },
-    {
-      name: "employee_type_description",
-      label: "Description",
-      fieldType: "textarea",
-      required: false,
-    },
-    {
-      relation: "employer",
-      relationName: "employer",
-      name: "employerId",
-      label: "Employer",
-      fieldType: "select",
-      options: true,
-      fetchFrom: "/api/setup/employers",
-      optionLabelKey: "employer_name", 
-      optionValueKey: "employer_id",   
-      required: true,
-    },
-  ],
-},
-
-  documents: {
-  title: "Documents",
-  endpoint: "documents",
-  buttonText: "Add Document",
-  fields: [
-    {
-      name: "name",
-      label: "Document Name",
-      fieldType: "text",
-      required: true,
-    },
-    {
-      name: "description",
-      label: "Description",
-      fieldType: "textarea",
-      required: false,
-    },
-    {
-      name: "url",
-      label: "Document File",
-      fieldType: "file", // File upload ke liye
-      required: true,
-    },
-    {
-      relation: "employee",
-      relationName: "employee",
-      name: "employee_id",
-      label: "Employee",
-      fieldType: "select",
-      options: true,
-      fetchFrom: "/api/setup/employees",
-      optionLabelKey: "employee_name", 
-      optionValueKey: "id",            
-      required: true,
-    },
-  ],
-},
-
-managers: {
-  title: "Managers",
-  endpoint: "managers",
-  buttonText: "Add Manager",
-  fields: [
-    {
-      relation: "employees",
-      relationName: "employees",
-      name: "employeeIds", // multiple employees ka array
-      label: "Employees",
-      fieldType: "multiselect", // multi select so multiple employees assign ho saken
-      options: true,
-      fetchFrom: "/api/setup/employees",
-      optionLabelKey: "employee_name", // Employee model ka name field
-      optionValueKey: "id",            // Employee ka PK
-      required: true,
-    },
-  ],
-},
-
-leaves: {
-  title: "Leaves",
-  endpoint: "leaves",
-  buttonText: "Add Leave",
-  fields: [
-    {
-      name: "leave_id",
-      label: "Leave ID",
-      fieldType: "text",
-      required: true,
-    },
-    {
-      name: "available",
-      label: "Available Days",
-      fieldType: "number", 
-      required: true,
-    },
-    {
-      relation: "employee",
-      relationName: "employee",
-      name: "employee_id",
-      label: "Employee",
-      fieldType: "select",
-      options: true,
-      fetchFrom: "/api/setup/employees",
-      optionLabelKey: "employee_name", // Employee model me display name field
-      optionValueKey: "id",            // Employee ka PK
-      required: true,
-    },
-  ],
-},
-
-
+  // Allowance
   allowances: {
     title: "Allowances",
     endpoint: "allowances",
     buttonText: "Add Allowance",
     fields: [
       {
-        name: "allownce",
-        label: "Allowance Name",
+        name: "allowance",
+        label: "Allowance",
         fieldType: "text",
         required: true,
       },
       {
-        name: "allownce_description",
+        name: "allowance_description",
         label: "Description",
-        fieldType: "textarea",
+        fieldType: "text",
         required: true,
       },
       {
@@ -599,203 +499,103 @@ leaves: {
         fieldType: "text",
         required: true,
       },
-      {
-        relation: "company",
-        relationName: "company",
-        name: "company_id",
-        label: "Company",
-        fieldType: "select",
-        options: true,
-        fetchFrom: "/api/setup/companies",
-        optionLabelKey: "company",
-        optionValueKey: "id",
-        required: true,
-      },
     ],
   },
 
+  // Deduction
   deductions: {
     title: "Deductions",
     endpoint: "deductions",
     buttonText: "Add Deduction",
     fields: [
-      { name: "title", label: "Title", fieldType: "text", required: true },
-      { name: "email", label: "Email", fieldType: "email", required: true },
       {
-        name: "phoneNumber",
-        label: "Phone Number",
+        name: "deduction",
+        label: "Deduction",
         fieldType: "text",
         required: true,
       },
       {
-        name: "address",
-        label: "Address",
-        fieldType: "textarea",
-        required: true,
-      },
-
-      {
-        name: "holdingAccount",
-        label: "Holding Account",
-        fieldType: "select",
-        options: [
-          { label: "Bank", value: "Bank" },
-          { label: "Wages", value: "Wages" },
-          { label: "Savings", value: "Savings" },
-          { label: "Loans", value: "Loans" },
-        ],
-        required: true,
-      },
-
-      {
-        name: "calculation",
-        label: "Calculation Type",
-        fieldType: "select",
-        options: [
-          { label: "Amount Per Pay Period", value: "Amount_Per_Pay_Period" },
-          { label: "Percentage", value: "Percentage" },
-          { label: "Time Rate", value: "Time_x_Rate" },
-          { label: "Earning Rate", value: "Earning_Rate" },
-        ],
-        required: true,
-      },
-
-      {
-        name: "payslipYTD",
-        label: "Include in Payslip YTD",
-        fieldType: "checkbox",
-      },
-
-      {
-        name: "statutory",
-        label: "Is Statutory",
-        fieldType: "checkbox",
-      },
-
-      {
-        name: "bank",
-        label: "Bank Type",
-        fieldType: "select",
-        options: [
-          { label: "ANZ", value: "ANZ" },
-          { label: "BSP", value: "BSP" },
-          { label: "NBS", value: "NBS" },
-          { label: "SCB", value: "SCB" },
-        ],
-        required: true,
-      },
-
-      {
-        name: "accountName",
-        label: "Account Name",
+        name: "deduction_description",
+        label: "Description",
         fieldType: "text",
         required: true,
       },
       {
-        name: "accountNumber",
-        label: "Account Number",
+        name: "rate",
+        label: "Rate",
         fieldType: "text",
-        required: true,
-      },
-      { name: "country", label: "Country", fieldType: "text", required: true },
-      {
-        name: "employerNumberAtFund",
-        label: "Employer # at Fund",
-        fieldType: "text",
-        required: true,
-      },
-
-      {
-        relation: "company",
-        relationName: "company",
-        name: "company_id",
-        label: "Company",
-        fieldType: "select",
-        options: true,
-        fetchFrom: "/api/setup/companies",
-        optionLabelKey: "company",
-        optionValueKey: "id",
         required: true,
       },
     ],
   },
 
-  periodic_attendances: {
-    title: "Periodic Attendance",
-    endpoint: "periodic_attendances",
-    buttonText: "Add Periodic Attendance",
+  // Leave
+  leaves: {
+    title: "Leaves",
+    endpoint: "leaves",
+    buttonText: "Add Leave",
     fields: [
       {
-        name: "clientId",
-        label: "Client ID",
-        fieldType: "number",
+        name: "leave",
+        label: "Leave",
+        fieldType: "text",
         required: true,
       },
       {
-        relation: "employee",
-        relationName: "employee",
-        name: "employeeId",
-        label: "Employee",
+        name: "leave_description",
+        label: "Leave Description",
+        fieldType: "text",
+        required: true,
+      },
+      {
+        name: "balance",
+        label: "Balance",
+        fieldType: "number",
+        required: false,
+      },
+      {
+        name: "maxCarryForward",
+        label: "Max Carry Forward",
+        fieldType: "number",
+        required: false,
+      },
+    ],
+  },
+
+  // Manager
+  managers: {
+    title: "Managers",
+    endpoint: "managers",
+    buttonText: "Add Manager",
+    fields: [
+      {
+        name: "manager",
+        label: "Manager Name",
+        fieldType: "text",
+        required: true,
+      },
+      {
+        relation: "department",
+        relationName: "department",
+        name: "department_id",
+        label: "Department",
         fieldType: "select",
-        options: true,
-        fetchFrom: "/api/setup/employees",
-        optionLabelKey: "full_name", // adjust if needed
+        fetchFrom: "/api/setup/departments",
+        optionLabelKey: "dept_name",
         optionValueKey: "id",
         required: true,
       },
-      {
-        name: "dateRange",
-        label: "Date Range",
-        fieldType: "text", // optionally use date-range picker in frontend
-        required: true,
-      },
-      {
-        name: "totalBreakHours",
-        label: "Total Break Hours",
-        fieldType: "text",
-        defaultValue: "0",
-        required: true,
-      },
-      {
-        name: "totalWorkingHours",
-        label: "Total Working Hours",
-        fieldType: "text",
-        required: true,
-      },
-      {
-        name: "totalDoubleTimeHours",
-        label: "Total Double Time Hours",
-        fieldType: "text",
-        defaultValue: "0",
-        required: true,
-      },
-      {
-        name: "numberOfDays",
-        label: "Number of Days",
-        fieldType: "text",
-        defaultValue: "0",
-        required: true,
-      },
-      {
-        name: "status",
-        label: "Status",
-        fieldType: "select",
-        options: [
-          { label: "Pending", value: "Pending" },
-          { label: "Approved", value: "Approved" },
-          { label: "Rejected", value: "Rejected" },
-        ],
-        required: true,
-      },
-      {
-        name: "rejectionReason",
-        label: "Rejection Reason",
-        fieldType: "textarea",
-        showIf: {
-          field: "status",
-          equals: "Rejected",
-        },
-      },
+      // {
+      //   relation: "company",
+      //   relationName: "company",
+      //   name: "company_id",
+      //   label: "Company",
+      //   fieldType: "select",
+      //   fetchFrom: "/api/setup/companies",
+      //   optionLabelKey: "company",
+      //   optionValueKey: "id",
+      //   required: true,
+      // },
     ],
   },
 };
