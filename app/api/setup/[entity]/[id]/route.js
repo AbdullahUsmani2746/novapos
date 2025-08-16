@@ -28,11 +28,25 @@ export async function PUT(req, { params }) {
     return new Response(JSON.stringify({ error: "Invalid entity" }), { status: 400 });
   }
 
+  const trim = (data) => 
+  {
+    config.fields(data);
+    Object.keys(data).forEach(key => {
+      if (typeof data[key] === 'string') {
+        data[key] = data[key].trim();
+      }
+    })
+    return data;
+  }
   try {
     const body = await req.json();
     const updated = await config.model.update({
-      where: { id: parseInt(id) },
-      data: config.fields(body),
+      where: { 
+
+        ...body.ccno ? { ccno: body.ccno } : {id: parseInt(id) }, // Handle case where ccno is used instead of id
+        
+      },
+      data: trim(config.fields(body)),
     });
     return Response.json(updated);
   } catch (error) {
@@ -43,6 +57,7 @@ export async function PUT(req, { params }) {
 export async function DELETE(req, { params }) {
   const { entity, id } = await params;
   const config = entityModelMap[entity];
+  console.log("Processing DELETE for entity:", config, id, config.id);
 
   if (!config) {
     return new Response(JSON.stringify({ error: "Invalid entity" }), { status: 400 });
@@ -50,7 +65,7 @@ export async function DELETE(req, { params }) {
 
   try {
     await config.model.delete({
-      where: { id: parseInt(id) },
+      where: { ...config.id!==null ? {ccno: Number(id)} : { id: Number(id)} }, // Handle case where ccno is used instead of id
     });
     return new Response(null, { status: 204 });
   } catch (error) {
