@@ -145,8 +145,6 @@ model Company {
   phone              String?              @db.VarChar(50)
   fax                String?              @db.VarChar(50)
   email              String?              @db.VarChar(50)
-  costCenters        CostCenter[]
-  departments        Department[]
   designations       Designation[]
   godowns            Godown[]
   TransactionsMaster TransactionsMaster[]
@@ -157,22 +155,16 @@ model Company {
   deliveryModes      DeliveryMode[]
   deliveryTerms      DeliveryTerm[]
   commissionTerms    CommissionTerm[]
-  employees          Employee[]
-}
-
-model CostCenter {
-  ccno        Int            @id @default(autoincrement())
-  company_id  Int
-  ccname      String?        @db.VarChar(50)
-  company     Company        @relation(fields: [company_id], references: [id])
-  Transaction Transactions[]
-}
-
-model Department {
-  id         Int     @id @default(autoincrement())
-  dept_name  String? @db.VarChar(100)
-  company_id Int
-  company    Company @relation(fields: [company_id], references: [id])
+  // employees          Employee[]
+  costCenters        CostCenter[]
+  departments        Department[]
+  WorkLocation       WorkLocation[]
+  Bank               Bank[]
+  job_titles         JobTitle[]
+  Allowance          Allowance[]
+  Leave              Leave[]
+  Deduction          Deduction[]
+  Manager            Manager[]
 }
 
 model ProductMasterCategory {
@@ -425,222 +417,85 @@ model CommissionTerm {
   company         Company @relation(fields: [company_id], references: [id])
 }
 
-model Employee {
-  id                String         @id @default(uuid()) @map("id")
-  first_name        String         @map("first_name")
-  middle_name       String?        @map("middle_name")
-  surname           String         @map("surname")
-  dob               DateTime       @map("dob")
-  gender            Gender?        @map("gender")
-  phone_number      String         @map("phone_number")
-  npf_number        String         @map("npf_number")
-  email_address     String         @map("email_address")
-  village           String         @map("village")
-  status            Status?        @map("status")
-  hire_date         DateTime       @map("hire_date")
-  jobTitleId        Int            @map("job_title_id")
-  jobTitle          JobTitle       @relation(fields: [jobTitleId], references: [id])
-  department        String         @map("department")
-  workLocationId    Int
-  workLocation      WorkLocation   @relation(fields: [workLocationId], references: [id])
-  manager_id        String?        @map("manager_id")
-  manager           Manager?       @relation(fields: [manager_id], references: [id])
-  client_id         String         @map("client_id")
-  employer          Employer       @relation(fields: [client_id], references: [employer_id])
-  employee_id       String         @unique @map("employee_id")
-  payment_method    PaymentMethod? @map("payment_method")
-  bank_name         String?        @map("bank_name")
-  account_name      String?        @map("account_name")
-  account_number    String?        @map("account_number")
-  pay_type          PayType?       @map("pay_type")
-  rate_per_hour     Float          @map("rate_per_hour")
-  pay_frequency     PayFrequency?  @map("pay_frequency")
-  employeeTypeId    Int?
-  employeeType      EmployeeType?  @relation(fields: [employeeTypeId], references: [id])
-  cost_center       String         @map("cost_center")
-  allownces         Json           @map("allownces")
-  allownce_eligible Boolean        @default(false) @map("allownce_eligible")
-  deductions        Deduction[]
-  leaves            Leave[]
-  profile_image     String?        @map("profile_image")
-  documents         Document[]
-  created_on        DateTime       @default(now()) @map("created_on")
-  updated_on        DateTime       @updatedAt @map("updated_on")
-  company_id        Int
-  company           Company        @relation(fields: [company_id], references: [id])
+model CostCenter {
+  ccno           Int            @id @default(autoincrement())
+  company_id     Int
+  ccname         String?        @db.VarChar(50)
+  cc_description String?        @db.VarChar(255)
+  company        Company        @relation(fields: [company_id], references: [id])
+  Transaction    Transactions[]
+}
+
+model Department {
+  id               Int        @id @default(autoincrement())
+  dept_name        String?    @db.VarChar(100)
+  dept_description String?    @db.VarChar(255)
+  company_id       Int
+  company          Company    @relation(fields: [company_id], references: [id])
+  job_titles       JobTitle[]
+  Manager          Manager[]
+}
+
+model WorkLocation {
+  id                   Int     @id @default(autoincrement())
+  location_name        String? @db.VarChar(100)
+  location_description String? @db.VarChar(255)
+  company_id           Int
+  company              Company @relation(fields: [company_id], references: [id])
+}
+
+model Bank {
+  id               Int     @id @default(autoincrement())
+  bank_name        String? @db.VarChar(100)
+  bank_description String? @db.VarChar(255)
+  company_id       Int
+  company          Company @relation(fields: [company_id], references: [id])
 }
 
 model JobTitle {
   id                    Int        @id @default(autoincrement())
   job_title             String     @db.VarChar(150)
   job_title_description String     @db.VarChar(150)
-  departmentId          Int
-  employerId            String     @db.VarChar(12)
-  employees             Employee[]
+  department_id         Int
+  department            Department @relation(fields: [department_id], references: [id])
+  company_id            Int
+  company               Company    @relation(fields: [company_id], references: [id])
 }
 
-model EmployeeType {
-  id                        Int      @id @default(autoincrement())
-  employee_type             String   @db.VarChar(150)
-  employee_type_description String   @db.VarChar(150)
-  employerId                String   @db.VarChar(12)
-  employer                  Employer @relation(fields: [employerId], references: [employer_id])
-
-  employees Employee[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("employee_types")
-}
-
-model Allownce {
-  id                   Int      @id @default(autoincrement())
-  allownce             String   @db.VarChar(150)
-  allownce_description String   @db.VarChar(150)
-  rate                 String   @db.VarChar(150)
-  employerId           String   @db.VarChar(12)
-  employer             Employer @relation(fields: [employerId], references: [employer_id])
-
-  @@map("allownces")
-}
-
-model WorkLocation {
-  id                        Int    @id @default(autoincrement())
-  work_location             String @db.VarChar(150)
-  work_location_description String @db.VarChar(150)
-  employerId                String @db.VarChar(150)
-
-  // Relations
-  employees Employee[]
-}
-
-model Bank {
-  id               Int      @id @default(autoincrement())
-  bank             String   @db.VarChar(150)
-  bank_description String   @db.VarChar(150)
-  employerId       String   @db.VarChar(12)
-  employer         Employer @relation(fields: [employerId], references: [employer_id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("banks")
+model Allowance {
+  id                    Int     @id @default(autoincrement())
+  allowance             String  @db.VarChar(150)
+  allowance_description String  @db.VarChar(150)
+  rate                  String  @db.VarChar(150)
+  company_id            Int
+  company               Company @relation(fields: [company_id], references: [id])
 }
 
 model Deduction {
-  id                   Int                @id @default(autoincrement())
-  title                String             @db.VarChar(150)
-  email                String             @db.VarChar(150)
-  phoneNumber          String             @db.VarChar(20)
-  address              String             @db.VarChar(200)
-  holdingAccount       HoldingAccountType
-  calculation          CalculationType
-  payslipYTD           Boolean            @default(false)
-  statutory            Boolean            @default(false)
-  bank                 BankType
-  accountName          String             @db.VarChar(150)
-  accountNumber        String             @db.VarChar(50)
-  country              String             @db.VarChar(100)
-  employerNumberAtFund String             @db.VarChar(100)
-  employee             Employee           @relation(fields: [employee_id], references: [id])
-  employee_id          String             @map("employee_id")
-
-  @@map("deductions")
+  id                    Int     @id @default(autoincrement())
+  deduction             String  @db.VarChar(150)
+  deduction_description String  @db.VarChar(150)
+  rate                  String  @db.VarChar(150)
+  company_id            Int
+  company               Company @relation(fields: [company_id], references: [id])
 }
 
 model Leave {
-  id          String   @id @default(uuid())
-  leave_id    String   @map("leave_id")
-  available   Float    @map("available")
-  employee    Employee @relation(fields: [employee_id], references: [id])
-  employee_id String   @map("employee_id")
-}
-
-model Document {
-  id          String   @id @default(uuid())
-  url         String   @map("url")
-  name        String   @map("name")
-  description String?  @map("description")
-  employee    Employee @relation(fields: [employee_id], references: [id])
-  employee_id String   @map("employee_id")
+  id                Int      @id @default(autoincrement())
+  leave             String   @db.VarChar(150)
+  leave_description String   @db.VarChar(150)
+  balance           Int      @default(0)
+  maxCarryForward   Int      @default(15) // Default maximum 15 days carry forward
+  lastUpdated       DateTime @default(now())
+  company_id        Int
+  company           Company  @relation(fields: [company_id], references: [id])
 }
 
 model Manager {
-  id        String     @id @default(uuid())
-  employees Employee[]
-}
-
-model Employer {
-  employer_id   String         @id @map("employer_id")
-  employees     Employee[]
-  allownces     Allownce[]
-  banks         Bank[]
-  employeeTypes EmployeeType[]
-}
-
-model PeriodicAttendance {
-  id                   Int     @id @default(autoincrement())
-  clientId             Int
-  employeeId           Int
-  dateRange            String
-  totalBreakHours      String  @default("0")
-  totalWorkingHours    String
-  totalDoubleTimeHours String  @default("0")
-  numberOfDays         String  @default("0")
-  status               String
-  rejectionReason      String? // Only required if status is Rejected
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-enum HoldingAccountType {
-  Bank
-  Wages
-  Savings
-  Loans
-}
-
-enum CalculationType {
-  Amount_Per_Pay_Period
-  Percentage
-  Time_x_Rate
-  Earning_Rate
-}
-
-enum BankType {
-  ANZ
-  BSP
-  NBS
-  SCB
-  Others_Overseas
-}
-
-enum Gender {
-  MALE
-  FEMALE
-  OTHER
-}
-
-enum Status {
-  ACTIVE
-  INACTIVE
-}
-
-enum PaymentMethod {
-  CASH
-  DIRECT_DEPOSIT
-  CHEQUE
-}
-
-enum PayType {
-  HOUR
-  SALARY
-}
-
-enum PayFrequency {
-  Monthly
-  Fortnightly
-  Weekly
+  id            Int        @id @default(autoincrement())
+  manager       String     @db.VarChar(150)
+  department_id Int
+  department    Department @relation(fields: [department_id], references: [id])
+  company_id    Int
+  company       Company    @relation(fields: [company_id], references: [id])
 }
