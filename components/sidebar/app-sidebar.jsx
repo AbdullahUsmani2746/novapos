@@ -12,7 +12,20 @@ import {
   Send,
   Settings2,
   SquareTerminal,
-} from "lucide-react"
+  LayoutDashboard,
+  Users,
+  Clipboard,
+  BriefcaseBusiness,
+  BriefcaseConveyorBelt,
+  DollarSign as DollarSignIcon,
+  LucideUmbrella,
+  CircleHelp,
+  Contact,
+  Locate,
+  Building,
+  UserCheck2 as UserCheck2Icon,
+  MinusCircle as MinusCircleIcon,
+  } from "lucide-react"
 
 import { NavMain } from "@/components/sidebar/nav-main"
 import { NavProjects } from "@/components/sidebar/nav-projects"
@@ -249,43 +262,207 @@ const data = {
           title: "Shift",
           url: "/admin/shift",
         },
-        // {
-        //   title: "Show Account",
-        //   url: "/accounting/show-account",
-        // },
 
       ],
     },
   ],
-  // navSecondary: [
-  //   {
-  //     title: "Support",
-  //     url: "#",
-  //     icon: LifeBuoy,
-  //   },
-  //   {
-  //     title: "Feedback",
-  //     url: "#",
-  //     icon: Send,
-  //   },
-  // ],
-  // projects: [
-  //   {
-  //     name: "Design Engineering",
-  //     url: "#",
-  //     icon: Frame,
-  //   },
-  //   {
-  //     name: "Sales & Marketing",
-  //     url: "#",
-  //     icon: PieChart,
-  //   },
-  //   {
-  //     name: "Travel",
-  //     url: "#",
-  //     icon: Map,
-  //   },
-  // ],
+   navEmployee: [
+    {
+      title: "Dashboard",
+      url: "/client/dashboard",
+      icon: LayoutDashboard,
+      isActive: true,
+    },
+    {
+      title: "Employee",
+      url: "/client/employee",
+      icon: Users,
+      isActive: true,
+    },
+    {
+      title: "Time Entry",
+      url: "/client/attendance",
+      icon: Clipboard,
+      isActive: true,
+    },
+     {
+      title: "Employee Requests",
+      url: "/client/request", // Link to the approval page
+      icon: BriefcaseBusiness, // Example icon, can be customized
+      isActive: true,
+    },
+    {
+      title: "Time Approvals",
+      url: "/client/approvals", // Link to the approval page
+      icon: BriefcaseBusiness, // Example icon, can be customized
+      isActive: true,
+    },
+    {
+      title: "Leave Approvals",
+      url: "/client/requestApproval", // Link to the approval page
+      icon: BriefcaseBusiness, // Example icon, can be customized
+      isActive: true,
+    },
+    {
+      title: "Run Payroll",
+      url: "/client/payroll/employeePayroll",
+      icon: LucideUmbrella,
+      isActive: true,
+    },
+    {
+      title: "Reports",
+      url: "/client/reports",
+      icon: PieChart,
+      isActive: true,
+    },
+    {
+      title: "Help Desk",
+      url: "/client/helpdesk",
+      icon: CircleHelp,
+      isActive: true,
+    },
+    {
+      title: "Payroll Operations",
+      url: "#",
+      icon: Users,
+      isActive: false,
+      items: [
+        {
+          title: "Work Location",
+          url: "/client/location",
+          icon: Locate,
+          isActive: true,
+        },
+        {
+          title: "Department",
+          url: "/client/department",
+          icon: Building,
+          isActive: true,
+        },
+        {
+          title: "Cost Center",
+          url: "/client/costCenter",
+          icon: PieChart,
+          isActive: true,
+        },
+
+        {
+          title: "Parent Cost Center",
+          url: "/client/parentCostCenter",
+          icon: PieChart,
+          isActive: true,
+        },
+        {
+          title: "Employee Type",
+          url: "/client/employeeType",
+          icon: UserCheck2Icon,
+          isActive: true,
+        },
+
+        {
+          title: "Bank",
+          url: "/client/bank",
+          icon: UserCheck2Icon,
+          isActive: true,
+        },
+
+        {
+          title: "Manager",
+          url: "/client/manager",
+          icon: BriefcaseConveyorBelt,
+          isActive: true,
+        },
+        {
+          title: "Job Title",
+          url: "/client/jobTitle",
+          icon: BriefcaseBusiness,
+          isActive: true,
+        },
+        {
+          title: "Allowances",
+          url: "/client/allowance",
+          icon: DollarSignIcon,
+          isActive: true,
+        },
+        {
+          title: "Deductions",
+          url: "/client/deduction",
+          icon: MinusCircleIcon,
+          isActive: true,
+        },
+
+        {
+          title: "Leaves",
+          url: "/client/leave",
+          icon: LucideUmbrella,
+          isActive: true,
+        },
+
+        {
+          title: "Payroll Cycle",
+          url: "/client/payrollProcess",
+        },
+        // {
+        //   title: "Payroll Compensation",
+        //   url: "/client/payroll",
+        // },
+      ],
+    },
+
+    {
+      title: "Settings",
+      url: "/client/setting", // Set to "#" since the modal will open without navigating
+      icon: Settings2,
+      isActive: true,
+      onClick: true,
+    },
+  ],
+  navUserEmployee: [
+    {
+      title: "Dashboard",
+      url: "/employee/dashboard",
+      icon: LayoutDashboard,
+      isActive: true,
+    },
+    {
+      title: "Profile",
+      url: "/employee/profile",
+      icon: Contact,
+      isActive: true,
+    },
+    {
+      title: "Attendances",
+      url: "/employee/attendances",
+      icon: Clipboard,
+      isActive: true,
+    },
+    {
+      title: "Request",
+      url: "/employee/request",
+      icon: Send,
+      isActive: true,
+    },
+    
+    {
+      title: "Payslip",
+      url: "/employee/payslips",
+      icon: DollarSignIcon,
+      isActive: true,
+    },
+    {
+      title: "Help Desk",
+      url: "/employee/helpdesk",
+      icon: CircleHelp,
+      isActive: true,
+    },
+    {
+      title: "Settings",
+      url: "/employee/setting",
+      icon: Settings2,
+      isActive: true,
+      onClick: true,
+    },
+  ],
 }
 
 export function AppSidebar({
@@ -320,9 +497,10 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-         {props.role === "admin" ? (
-          <NavMain items={data.navAdmin} />
-        ) : (
+         {props.role === "admin" ? (<NavMain items={data.navAdmin} />) : 
+         props.role === "userEmployee" ? (<NavMain items={data.navUserEmployee} />) : 
+         props.role === "employer" ? (  <NavMain items={data.navEmployee} />) :
+        (
           <NavMain items={data.navMain} />
         )}
         {/* <NavProjects projects={data.projects} /> */}

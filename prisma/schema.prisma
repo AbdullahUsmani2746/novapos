@@ -158,6 +158,8 @@ model Company {
   deliveryTerms      DeliveryTerm[]
   commissionTerms    CommissionTerm[]
   employees          Employee[]
+  periodicAttendances PeriodicAttendance[]
+  payrollProcesses   PayrollProcess[]
 }
 
 model CostCenter {
@@ -468,6 +470,7 @@ model Employee {
   updated_on        DateTime       @updatedAt @map("updated_on")
   company_id        Int
   company           Company        @relation(fields: [company_id], references: [id])
+  periodicAttendances PeriodicAttendance[]
 }
 
 model JobTitle {
@@ -579,21 +582,6 @@ model Employer {
   employeeTypes EmployeeType[]
 }
 
-model PeriodicAttendance {
-  id                   Int     @id @default(autoincrement())
-  clientId             Int
-  employeeId           Int
-  dateRange            String
-  totalBreakHours      String  @default("0")
-  totalWorkingHours    String
-  totalDoubleTimeHours String  @default("0")
-  numberOfDays         String  @default("0")
-  status               String
-  rejectionReason      String? // Only required if status is Rejected
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
 
 enum HoldingAccountType {
   Bank
@@ -643,4 +631,47 @@ enum PayFrequency {
   Monthly
   Fortnightly
   Weekly
+}
+
+model PeriodicAttendance {
+  id                  Int   @id @default(autoincrement())
+  compnayId           Int   @default(1) // Default to 1 for the main company
+  employeeId          String
+  dateRange           String
+  totalBreakHours     String   @default("0")
+  totalWorkingHours   String?
+  totalDoubleTimeHours String  @default("0")
+  numberOfDays        String   @default("0")
+  status              String
+  rejectionReason     String?  // Nullable because required only if status = "Rejected"
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  employee           Employee @relation(fields: [employeeId], references: [id])
+  company            Company  @relation(fields: [compnayId], references: [id])
+}
+
+model PayrollProcess {
+  id                 Int    @id @default(autoincrement())
+  payroll_id         Int       @unique
+  date_from          DateTime
+  date_to            DateTime
+  month_no           Int
+  week_no            Int
+  year               Int
+  status             PayrollStatus @default(Draft)
+  companyId         Int
+  processedEmployees String[] // array of employee IDs
+  totalAmount        Float    @default(0)
+
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  company            Company  @relation(fields: [companyId], references: [id])
+}
+
+enum PayrollStatus {
+  Draft
+  Pending
+  PartiallyApproved
+  Approved
 }

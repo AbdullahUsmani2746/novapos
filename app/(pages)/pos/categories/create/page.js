@@ -1,74 +1,3 @@
-// "use client";
-// import { useState, useEffect } from 'react';
-// import { motion } from 'framer-motion';
-// import { toast } from 'sonner';
-// import { Button } from '@/components/ui/button';
-// import { Input } from '@/components/ui/input';
-// import { Label } from '@/components/ui/label';
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-// import { useRouter } from 'next/navigation';
-
-// import React from 'react'
-
-// const CreateCategory = () => {
-//   const [form, setForm] = useState({ ic_name: '', mc_id: '' });
-//   const [mainCategories, setMainCategories] = useState([]);
-//   const router = useRouter();
-
-//   useEffect(() => {
-//     fetch('/pos/api/categories')
-//       .then(res => res.json())
-//       .then(data => setMainCategories(data.map(c => c.mainCategory)));
-//   }, []);
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     try {
-//       const response = await fetch('/pos/api/categories', {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({ ic_name: form.ic_name, mc_id: parseInt(form.mc_id) }),
-//       });
-//       if (response.ok) {
-//         toast.success('Category created successfully');
-//         router.push('/pos/categories');
-//       } else {
-//         toast.error('Failed to create category');
-//       }
-//     } catch (error) {
-//       toast.error('Error creating category');
-//     }
-//   };
-
-//   return (
-//     <div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 max-w-md mx-auto">
-//       <h2 className="text-2xl font-bold mb-4">Create Category</h2>
-//       <form onSubmit={handleSubmit} className="space-y-4">
-//         <div>
-//           <Label htmlFor="ic_name">Category Name</Label>
-//           <Input id="ic_name" value={form.ic_name} onChange={(e) => setForm({ ...form, ic_name: e.target.value })} />
-//         </div>
-//         <div>
-//           <Label htmlFor="mc_id">Main Category</Label>
-//           <Select onValueChange={(value) => setForm({ ...form, mc_id: value })}>
-//             <SelectTrigger>
-//               <SelectValue placeholder="Select main category" />
-//             </SelectTrigger>
-//             <SelectContent>
-//               {mainCategories.map(category => (
-//                 <SelectItem key={category.id} value={category.id}>{category.mc_name}</SelectItem>
-//               ))}
-//             </SelectContent>
-//           </Select>
-//         </div>
-//         <Button type="submit">Create</Button>
-//       </form>
-//     </div>
-//   );
-// }
-
-// export default CreateCategory
-
 "use client";
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -93,34 +22,59 @@ import {
   CheckCircle2,
   Lightbulb,
   Hash,
-  Grid3X3
+  Grid3X3,
+  DollarSign,
+  Package,
+  ShoppingCart,
+  TrendingUp
 } from 'lucide-react';
 import React from 'react';
 
 const CreateCategory = () => {
   const [form, setForm] = useState({ 
     ic_name: '', 
-    mc_id: '',
-    description: ''
+    description: '',
+    stock_acno: '',
+    sale_acno: '',
+    pos_acno: '',
+    cogs_acno: ''
   });
-  // const [mainCategories, setMainCategories] = useState([
-  //   // Mock data for demonstration
-  //   { id: 1, mc_name: 'Food & Drinks' },
-  //   { id: 2, mc_name: 'Technology' },
-  //   { id: 3, mc_name: 'Fashion' },
-  //   { id: 4, mc_name: 'Education' },
-  //   { id: 5, mc_name: 'Lifestyle' },
-  //   { id: 6, mc_name: 'Recreation' }
-  // ]);
+  
+  const [mainCategories, setMainCategories] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [errors, setErrors] = useState({});
   const router = useRouter();
+
+  // Fetch accounts on component mount
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      setLoadingAccounts(true);
+      try {
+        const response = await axios.get('/api/accounts/macno');
+        if (response.data) {
+          setAccounts(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching accounts:', error);
+        toast.error('Failed to load accounts');
+      } finally {
+        setLoadingAccounts(false);
+      }
+    };
+
+    fetchAccounts();
+  }, []);
 
   const validateForm = () => {
     const newErrors = {};
     
     if (!form.ic_name.trim()) newErrors.ic_name = 'Category name is required';
     if (form.ic_name.length < 2) newErrors.ic_name = 'Category name must be at least 2 characters';
+    if (!form.stock_acno) newErrors.stock_acno = 'Stock account is required';
+    if (!form.sale_acno) newErrors.sale_acno = 'Sales account is required';
+    if (!form.pos_acno) newErrors.pos_acno = 'POS account is required';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -150,16 +104,21 @@ const CreateCategory = () => {
     setLoading(true);
     try {
       const response = await axios.post('/api/pos/categories', {
-      ic_name: form.ic_name,
-    });
+        ic_name: form.ic_name,
+        stock_acno: parseInt(form.stock_acno),
+        sale_acno: parseInt(form.sale_acno),
+        pos_acno: parseInt(form.pos_acno),
+        cogs_acno: form.cogs_acno ? parseInt(form.cogs_acno) : null
+      });
       
-      if (response.ok) {
+      if (response.data) {
         toast.success('Category created successfully!');
         router.push('/pos/categories');
       } else {
         toast.error('Failed to create category');
       }
     } catch (error) {
+      console.error('Error creating category:', error);
       toast.error('Error creating category');
     } finally {
       setLoading(false);
@@ -203,7 +162,7 @@ const CreateCategory = () => {
       <Label htmlFor={id} className="text-sm font-medium text-gray-700 flex items-center">
         {Icon && <Icon className="w-4 h-4 mr-2 text-gray-500" />}
         {label}
-        {required && <span className="text-red-500 ml-1"></span>}
+        {required && <span className="text-red-500 ml-1">*</span>}
       </Label>
       <div className="relative">
         <Input
@@ -224,6 +183,58 @@ const CreateCategory = () => {
             error ? 'text-red-400' : 'text-gray-400'
           }`} />
         )}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="absolute -bottom-6 left-0 flex items-center text-red-500 text-xs"
+          >
+            <AlertCircle className="w-3 h-3 mr-1" />
+            {error}
+          </motion.div>
+        )}
+      </div>
+    </motion.div>
+  );
+
+  const   SelectField = ({ 
+    id, 
+    label, 
+    value, 
+    onValueChange, 
+    placeholder, 
+    icon: Icon, 
+    error, 
+    required = false,
+    options = [],
+    loading = false,
+    ...props 
+  }) => (
+    <motion.div variants={itemVariants} className="space-y-2">
+      <Label htmlFor={id} className="text-sm font-medium text-gray-700 flex items-center">
+        {Icon && <Icon className="w-4 h-4 mr-2 text-gray-500" />}
+        {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
+      </Label>
+      <div className="relative">
+        <Select value={value} onValueChange={onValueChange} disabled={loading}>
+          <SelectTrigger 
+            className={`transition-all duration-200 ${
+              error 
+                ? 'border-red-300 focus:border-red-500 focus:ring-red-200' 
+                : 'border-gray-200 focus:border-blue-500 focus:ring-blue-200'
+            }`}
+          >
+            <SelectValue placeholder={loading ? "Loading..." : placeholder} />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option) => (
+              <SelectItem key={option.macno} value={option.macno}>
+                {option.macname || option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {error && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -335,43 +346,62 @@ const CreateCategory = () => {
                 />
               </motion.div>
 
-               {/* Main Category */}
-                  {/* <motion.div variants={itemVariants} className="md:col-span-2">
-                    <Label className="text-sm font-medium text-gray-700 flex items-center mb-2">
-                      <Folder className="w-4 h-4 mr-2 text-gray-500" />
-                      Main Category
-                      <span className="text-red-500 ml-1">*</span>
-                    </Label>
-                    <Select onValueChange={(value) => setForm({ ...form, mc_id: value })}>
-                      <SelectTrigger className={`transition-all duration-200 ${
-                        errors.mc_id 
-                          ? 'border-red-300 focus:border-red-500' 
-                          : 'border-gray-200 focus:border-blue-500'
-                      }`}>
-                        <SelectValue placeholder="Select a main category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {mainCategories.map(category => (
-                          <SelectItem key={category.id} value={category.id.toString()}>
-                            <div className="flex items-center">
-                              <Grid3X3 className="w-4 h-4 mr-2 text-gray-400" />
-                              {category.mc_name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.mc_id && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center text-red-500 text-xs mt-2"
-                      >
-                        <AlertCircle className="w-3 h-3 mr-1" />
-                        {errors.mc_id}
-                      </motion.div>
-                    )}
-                  </motion.div> */}
+              {/* Main Category */}
+              {/* Stock Account */}
+              <SelectField
+                id="stock_acno"
+                label="Stock Account"
+                value={form.stock_acno}
+                onValueChange={(value) => setForm({ ...form, stock_acno: value })}
+                placeholder="Select stock account"
+                icon={Package}
+                error={errors.stock_acno}
+                required
+                options={accounts}
+                loading={loadingAccounts}
+              />
+
+              {/* Sales Account */}
+              <SelectField
+                id="sale_acno"
+                label="Sales Account"
+                value={form.sale_acno}
+                onValueChange={(value) => setForm({ ...form, sale_acno: value })}
+                placeholder="Select sales account"
+                icon={DollarSign}
+                error={errors.sale_acno}
+                required
+                options={accounts}
+                loading={loadingAccounts}
+              />
+
+              {/* POS Account */}
+              <SelectField
+                id="pos_acno"
+                label="POS Account"
+                value={form.pos_acno}
+                onValueChange={(value) => setForm({ ...form, pos_acno: value })}
+                placeholder="Select POS account"
+                icon={ShoppingCart}
+                error={errors.pos_acno}
+                required
+                options={accounts}
+                loading={loadingAccounts}
+              />
+
+              {/* COGS Account (Optional) */}
+              <SelectField
+                id="cogs_acno"
+                label="COGS Account"
+                value={form.cogs_acno}
+                onValueChange={(value) => setForm({ ...form, cogs_acno: value })}
+                placeholder="Select COGS account (optional)"
+                icon={TrendingUp}
+                error={errors.cogs_acno}
+                required={false}
+                options={accounts}
+                loading={loadingAccounts}
+              />
 
               {/* Description */}
               <motion.div variants={itemVariants} className="md:col-span-2">
@@ -408,7 +438,7 @@ const CreateCategory = () => {
               <Button
                 type="button"
                 onClick={handleSubmit}
-                disabled={loading}
+                disabled={loading || loadingAccounts}
                 className="w-full sm:w-auto bg-primary text-white shadow-md hover:shadow-lg transition-all"
               >
                 {loading ? (
@@ -429,60 +459,60 @@ const CreateCategory = () => {
       </Card>
 
       {/* Helper Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            {/* Tips Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              <Card className="bg-blue-50/50 backdrop-blur-sm border border-blue-200/50">
-                <div className="p-6">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                      <CheckCircle2 className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-primary mb-2">Best Practices</h3>
-                      <ul className="text-sm text-primary space-y-1">
-                        <li>• Use clear, descriptive category names</li>
-                        <li>• Keep categories organized and logical</li>
-                        <li>• Avoid creating too many similar categories</li>
-                        <li>• Consider your customers shopping patterns</li>
-                      </ul>
-                    </div>
-                  </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        {/* Tips Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <Card className="bg-blue-50/50 backdrop-blur-sm border border-blue-200/50">
+            <div className="p-6">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-white" />
                 </div>
-              </Card>
-            </motion.div>
+                <div>
+                  <h3 className="font-semibold text-primary mb-2">Account Setup Tips</h3>
+                  <ul className="text-sm text-primary space-y-1">
+                    <li>• Stock Account: For inventory tracking</li>
+                    <li>• Sales Account: For revenue recognition</li>
+                    <li>• POS Account: For point-of-sale transactions</li>
+                    <li>• COGS Account: For cost of goods sold (optional)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
 
-            {/* Examples Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-            >
-              <Card className="bg-purple-50/50 backdrop-blur-sm border border-purple-200/50">
-                <div className="p-6">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Lightbulb className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-primary mb-2">Category Examples</h3>
-                      <div className="text-sm text-primary space-y-1">
-                        <div><strong>Food & Drinks:</strong> Beverages, Snacks, Frozen</div>
-                        <div><strong>Technology:</strong> Electronics, Accessories</div>
-                        <div><strong>Fashion:</strong> Clothing, Shoes, Jewelry</div>
-                      </div>
-                    </div>
+        {/* Examples Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+        >
+          <Card className="bg-purple-50/50 backdrop-blur-sm border border-purple-200/50">
+            <div className="p-6">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Lightbulb className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-primary mb-2">Category Examples</h3>
+                  <div className="text-sm text-primary space-y-1">
+                    <div><strong>Food & Drinks:</strong> Beverages, Snacks, Frozen</div>
+                    <div><strong>Technology:</strong> Electronics, Accessories</div>
+                    <div><strong>Fashion:</strong> Clothing, Shoes, Jewelry</div>
                   </div>
                 </div>
-              </Card>
-            </motion.div>
-          </div>
+              </div>
+            </div>
+          </Card>
         </motion.div>
       </div>
+    </motion.div>
+  </div>
 </div>
 
   );

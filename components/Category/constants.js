@@ -2467,7 +2467,7 @@ export const VOUCHER_CONFIG = {
         value2: "acname",
       },
       { name: "rmk", label: "Narration", type: "text" },
-      { name: "total", label: "Total Amount", type: "number", isTotal: true },
+      // { name: "total", label: "Total Amount", type: "number", isTotal: true },
     ],
   },
 

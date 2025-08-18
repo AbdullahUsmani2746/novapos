@@ -277,6 +277,62 @@ export default function VoucherForm({
     };
   }, []);
 
+  const fetchOrderItemDetails = async (itemCode, isMain, index, lines) => {
+  try {
+    const orderNo = type === "purchase" || type === "grn" 
+      ? masterData.po_no 
+      : masterData.so_no;
+    
+    const orderType = type === "purchase" || type === "grn" ? "purchase" : "sale";
+    
+    // API call
+    const response = await fetch(`/api/orders/getQty/${orderNo}/items/${itemCode}?type=${orderType}`);
+    const orderItemData = await response.json();
+    
+    if (orderItemData.success && orderItemData.item) {
+      const item = orderItemData.item;
+      
+      // Update the line with API data
+      lines[index] = {
+        ...lines[index],
+        itcd: itemCode,
+        rate: item.rate || 0,
+        type: type,
+        po_qty: item.available_qty || item.original_qty,
+        max_allowed_qty: item.available_qty,
+        // Add validation data
+        original_order_qty: item.original_qty,
+        consumed_qty: item.consumed_qty
+      };
+
+      if (isMain) setMainLines([...lines]);
+      else setDeductionLines([...lines]);
+      
+      // Show warning if no quantity available
+      if (item.available_qty <= 0) {
+        setErrors((prev) => ({
+          ...prev,
+          validation: {
+            ...prev.validation,
+            [`${isMain ? "main" : "deduction"}-${index}-itcd`]: 
+              `No remaining quantity available for this item in ${orderType} order`
+          }
+        }));
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching order item details:', error);
+    setErrors((prev) => ({
+      ...prev,
+      validation: {
+        ...prev.validation,
+        [`${isMain ? "main" : "deduction"}-${index}-itcd`]: 
+          'Error loading order details'
+      }
+    }));
+  }
+};
+
   // Fetch options for select fields
   const getRequiredOptionTypes = useCallback(() => {
     return [
@@ -672,7 +728,7 @@ export default function VoucherForm({
     return fieldConfig.calculate(dependencies) || 0;
   };
 
-  const handleLineChange = (index, fieldName, value, isMain) => {
+  const handleLineChange = async (index, fieldName, value, isMain) => {
     const lines = isMain ? [...mainLines] : [...deductionLines];
     const fieldConfigs = isMain
       ? voucherConfig.lineFields
@@ -698,39 +754,43 @@ export default function VoucherForm({
         (type === "grn" && masterData.po_no) ||
         (type === "dispatch" && masterData.so_no)
       ) {
-        const poItem = masterData.orderDetails?.find(
-          (item) => item.itcd === Number(value)
-        );
-        console.log("PO Item 1: ", masterData);
-        console.log("PO Item 2: ", value);
+        // const poItem = masterData.orderDetails?.find(
+        //   (item) => item.itcd === Number(value)
+        // );
+        // console.log("PO Item 1: ", masterData);
+        // console.log("PO Item 2: ", value);
 
-        console.log("PO Item: ", poItem);
-        console.log("PO Item Rate: ", lines);
+        // console.log("PO Item: ", poItem);
+        // console.log("PO Item Rate: ", lines);
 
-        if (poItem) {
-          // Update the line with PO details
-          lines[index] = {
-            ...lines[index],
-            itcd: value,
-            rate: poItem.rate || 0,
-            type: type,
-            // You might want to add original PO quantities for validation
-            ...(type === "purchase" || type === "grn"
-              ? {
-                  po_qty:
-                    (poItem.no_of_packs || 0) * (poItem.qty_per_pack || 0),
-                }
-              : type === "sale" || type === "dispatch"
-              ? {
-                  so_qty:
-                    (poItem.no_of_packs || 0) * (poItem.qty_per_pack || 0),
-                }
-              : {}),
-          };
+        // if (poItem) {
+        //   // Update the line with PO details
+        //   lines[index] = {
+        //     ...lines[index],
+        //     itcd: value,
+        //     rate: poItem.rate || 0,
+        //     type: type,
+        //     // You might want to add original PO quantities for validation
+        //     ...(type === "purchase" || type === "grn"
+        //       ? {
+        //           po_qty:
+        //             (poItem.no_of_packs || 0) * (poItem.qty_per_pack || 0),
+        //         }
+        //       : type === "sale" || type === "dispatch"
+        //       ? {
+        //           so_qty:
+        //             (poItem.no_of_packs || 0) * (poItem.qty_per_pack || 0),
+        //         }
+        //       : {}),
+        //   };
 
-          if (isMain) setMainLines([...lines]);
-          else setDeductionLines([...lines]);
-        }
+        //   if (isMain) setMainLines([...lines]);
+        //   else setDeductionLines([...lines]);
+        // }
+
+        // API call to get updated PO/SO quantities
+  await fetchOrderItemDetails(value, isMain, index, lines);
+  return; // Exit early as fetchOrderItemDetails will handle the rest
       }
       // Fetch stock for this product
       fetchStockLevels([value]);
