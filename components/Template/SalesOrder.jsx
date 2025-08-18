@@ -2,7 +2,6 @@ import axios from "axios";
 import { jsPDF } from "jspdf";
 
 export const generateSalesOrderPDF = async (orderData) => {
-
   const order = orderData.data[0];
 
   // ============== ALL VALUES CONSOLIDATED HERE ==============
@@ -48,7 +47,7 @@ export const generateSalesOrderPDF = async (orderData) => {
   // Dynamic order details from API
   const orderDetails = {
     date: formatDate(order.dateD),
-    saleOrderNo: order.order_no.toString().padStart(6, "0"),
+    saleOrderNo: order.order_no.toString().padStart(),
     customer: order.acno?.acname || "Unknown Customer",
     customerRef: order.additional_instructions || "-",
     paymentTerms: order.payment_terms,
@@ -173,9 +172,8 @@ export const generateSalesOrderPDF = async (orderData) => {
     doc.setTextColor(...colors.darkText);
     doc.text(
       orderDetails.customer,
-      margin + labelWidth + (pageWidth - 2 * margin - labelWidth) / 2,
-      yPosition + 4,
-      { align: "center" }
+      margin + 45, // <-- yahan label ke baad offset rakho
+      yPosition + 4
     );
 
     yPosition += rowHeight;

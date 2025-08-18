@@ -47,7 +47,7 @@ export const generatePurchaseOrderPDF = async (orderData) => {
   // Dynamic order details from API
   const orderDetails = {
     date: formatDate(order.dateD),
-    poNumber: order.order_no.toString().padStart(6, "0"),
+    poNumber: order.order_no.toString().padStart(),
     vendor: order.acno?.acname || "Unknown Vendor",
     reference: order.additional_instructions || "-",
     paymentTerms: order.payment_terms || "-",
@@ -164,15 +164,14 @@ export const generatePurchaseOrderPDF = async (orderData) => {
     // Vendor Row
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...colors.primary);
-    doc.text("Vendor", margin + 5, yPosition + 4);
+    doc.text("Vendor:", margin + 5, yPosition + 4);
 
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...colors.darkText);
     doc.text(
       orderDetails.vendor,
-      margin + labelWidth + (pageWidth - 2 * margin - labelWidth) / 2,
-      yPosition + 4,
-      { align: "center" }
+      margin + 45, // <-- yahan label ke baad offset rakho
+      yPosition + 4
     );
 
     yPosition += rowHeight;

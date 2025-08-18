@@ -117,28 +117,28 @@ const DataTable = ({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="relative flex-1 max-w-md">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+              <Search className="h-5 w-5 text-primary" />
             </div>
             <input
               type="text"
               placeholder="Search data..."
               value={localSearchValue}
               onChange={(e) => setLocalSearchValue(e.target.value)}
-              className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm transition-all duration-200 shadow-sm hover:shadow-md"
+              className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl bg-white placeholder-gray-500 focus:outline-none focus:ring-primary focus:border-primary text-sm transition-all duration-200 shadow-sm hover:shadow-md"
             />
           </div>
 
           {/* Page Size Selector */}
           {pagination && (
             <div className="flex items-center space-x-3 bg-white rounded-xl px-4 py-2 shadow-sm border border-gray-200">
-              <Filter className="h-4 w-4 text-gray-400" />
-              <label className="text-sm font-medium text-gray-700">Show:</label>
+              <Filter className="h-4 w-4 text-primary" />
+              <label className="text-sm font-medium text-primary">Show:</label>
               <select
                 value={pagination.limit}
                 onChange={(e) =>
                   onPaginationChange(1, parseInt(e.target.value))
                 }
-                className="border-0 bg-transparent text-sm font-medium text-gray-700 focus:ring-0 focus:outline-none cursor-pointer"
+                className="border-0 bg-transparent text-sm font-medium text-primary focus:ring-0 focus:outline-none cursor-pointer"
               >
                 <option value={10}>10</option>
                 <option value={15}>15</option>
@@ -172,7 +172,7 @@ const DataTable = ({
                         ? "cursor-pointer hover:bg-opacity-90 text-white transition-all duration-200"
                         : ""
                     }`}
-                    onClick={() => handleSort(field)} 
+                    onClick={() => handleSort(field)}
                   >
                     <div className="flex items-center">
                       {field.label || field.name}
@@ -193,8 +193,8 @@ const DataTable = ({
                     className="px-8 py-16 text-center"
                   >
                     <div className="flex flex-col items-center justify-center space-y-4">
-                      <div className="w-16 h-16 bg-primary bg-opacity-10 rounded-full flex items-center justify-center">
-                        <FileText className="w-8 h-8 text-primary opacity-60" />
+                      <div className="w-16 h-16 bg-secondary/100 bg-opacity-10 rounded-full flex items-center justify-center">
+                        <FileText className="w-8 h-8 text-primary" />
                       </div>
                       <div className="space-y-2">
                         <p className="text-lg font-semibold text-gray-900">
@@ -275,7 +275,7 @@ const DataTable = ({
       </div>
 
       {/* Enhanced Pagination */}
-      {pagination && pagination.total > pagination.limit && (
+      {pagination && pagination.total > 0 && (
         <div className="px-8 py-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center text-sm text-gray-600">
