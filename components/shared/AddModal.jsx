@@ -7,7 +7,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
   const [errors, setErrors] = useState({});
   const [relationData, setRelationData] = useState({});
 
-  useEffect(() => {
+  useEffect(() => { 
     // Fetch data for relation fields
     const fetchRelationData = async () => {
       const relationDataObj = {};
@@ -142,7 +142,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
                 <option value="">Select {field.label}</option>
                 {field.options && Array.isArray(field.options) ? (
                   // For static options
-                  field.options.map((option) => (
+                  field.options?.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>

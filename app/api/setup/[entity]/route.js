@@ -18,6 +18,32 @@ export async function GET(request, { params }) {
     const searchParams = request.nextUrl.searchParams;
     const pageParam = searchParams.get('page');
     const limitParam = searchParams.get('limit');
+    const searchQuery = searchParams.get('search');
+    const sortField = searchParams.get('sortField');
+    const sortOrder = searchParams.get('sortOrder') || 'asc';
+
+    // Build where clause for search
+    let whereClause = {};
+    if (searchQuery && searchQuery.trim() !== '') {
+      // Define searchable fields for each entity
+      const searchableFields = config.searchableFields || ['name', 'title', 'description'];
+      
+      whereClause.OR = searchableFields.map(field => ({
+        [field]: {
+          contains: searchQuery,
+          mode: 'insensitive'
+        }
+      }));
+    }
+
+    // Build orderBy clause for sorting
+    let orderByClause = {};
+    if (sortField) {
+      orderByClause[sortField] = sortOrder;
+    } else {
+      // Default sorting (you can customize this based on your needs)
+      orderByClause = config.defaultSort || { id: 'desc' };
+    }
 
     // If page or limit is missing, don't paginate
     const shouldPaginate = pageParam !== null && limitParam !== null;
@@ -30,11 +56,15 @@ export async function GET(request, { params }) {
 
       const [data, total] = await Promise.all([
         config.model.findMany({
+          where: whereClause,
           skip,
           take: limit,
+          orderBy: orderByClause,
           include: config.include || undefined,
         }),
-        config.model.count(),
+        config.model.count({
+          where: whereClause
+        }),
       ]);
 
       return NextResponse.json({
@@ -44,24 +74,35 @@ export async function GET(request, { params }) {
           page,
           limit,
           pages: Math.ceil(total / limit)
+        },
+        filters: {
+          search: searchQuery,
+          sortField,
+          sortOrder
         }
       });
     } else {
       // Fetch all data without pagination
       console.log("Fetching all data for entity:", entity);
       const data = await config.model.findMany({
+        where: whereClause,
+        orderBy: orderByClause,
         include: config.include || undefined,
       });
 
       return NextResponse.json({
         data,
-        total: data.length
+        total: data.length,
+        filters: {
+          search: searchQuery,
+          sortField,
+          sortOrder
+        }
       });
     }
   } catch (error) {
-    // console.error(`Error in ${params?.entity || 'unknown'} API route:`, error);
+    console.error(`Error in ${params?.entity || 'unknown'} API route:`, error);
     
-    // Always return a proper JSON response object
     return NextResponse.json(
       { 
         error: "Failed to fetch data", 
@@ -78,8 +119,21 @@ export async function POST(req, { params }) {
   const { entity } = await params;
   const config = entityModelMap[entity];
 
+  console.log("Processing POST for entity:", config);
+
   if (!config) {
     return new NextResponse(JSON.stringify({ error: "Invalid entity" }), { status: 400 });
+  }
+
+    const trim = (data) => 
+  {
+    config.fields(data);
+    Object.keys(data).forEach(key => {
+      if (typeof data[key] === 'string') {
+        data[key] = data[key].trim();
+      }
+    })
+    return data;
   }
 
   try {
@@ -97,12 +151,8 @@ export async function POST(req, { params }) {
     console.log("body", body);
 
 
-   
-
-    // console.log("body..", config.fields(body))
-
     const newItem = await config.model.create({
-      data: body,
+      data: trim(config.fields(body)),
     });
     return NextResponse.json(newItem);
   } catch (error) {

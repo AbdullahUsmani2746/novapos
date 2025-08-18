@@ -1,9 +1,35 @@
 import { useState, useEffect } from "react";
 import Modal from "./Modal";
+import axios from "axios";
 
 const EditModal = ({ title, fields, initialData, onSubmit, onClose }) => {
   const [formData, setFormData] = useState(initialData || {});
   const [errors, setErrors] = useState({});
+   const [relationData, setRelationData] = useState({});
+
+  useEffect(() => {
+    // Fetch data for relation fields
+    const fetchRelationData = async () => {
+      const relationDataObj = {};
+      
+      for (const field of fields) {
+        if (field.fieldType === "select" && field.fetchFrom) {
+          try {
+            const response = await axios.get(field.fetchFrom);
+            const data = await response.data.data;
+            console.log(field.name);
+            relationDataObj[field.name] = data;
+          } catch (error) {
+            console.error(`Error fetching relation data for ${field.name}:`, error);
+          }
+        }
+      }
+      
+      setRelationData(relationDataObj);
+    };
+
+    fetchRelationData();
+  }, [fields]);
 
   useEffect(() => {
     setFormData(initialData || {});
@@ -83,20 +109,34 @@ const EditModal = ({ title, fields, initialData, onSubmit, onClose }) => {
               />
             )}
 
-            {field.fieldType === "select" && (
+              {field.fieldType === "select" && (
               <select
                 id={field.name}
                 name={field.name}
                 value={formData[field.name] || ""}
                 onChange={handleChange}
                 className="border p-2 w-full rounded bg-secondary"
+                required={field.required}
               >
                 <option value="">Select {field.label}</option>
-                {field.options?.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
+                {field.options && Array.isArray(field.options) ? (
+                  // For static options
+                  field.options?.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))
+                ) : (
+                  // For relation options fetched from API
+                  relationData[field.name]?.map((item) => (
+                    <option 
+                      key={item[field.optionValueKey]} 
+                      value={item[field.optionValueKey]}
+                    >
+                      {item[field.optionLabelKey]}
+                    </option>
+                  ))
+                )}
               </select>
             )}
              {errors[field.name] && (
