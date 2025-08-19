@@ -591,13 +591,13 @@ export async function PUT(req) {
         tran_code === 1
           ? totalDamt - totalCamt
           : tran_code === 4
-          ? totalCamt
+          ? totalDamt
           : 0;
       const camt =
         tran_code === 2
           ? totalCamt - totalDamt
           : tran_code === 6
-          ? totalDamt
+          ? totalCamt
           : 0;
 
       const autoEntry = await prisma.transactions.findFirst({

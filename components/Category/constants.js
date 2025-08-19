@@ -1039,7 +1039,7 @@ export const VOUCHER_CONFIG = {
         value2: "acname",
       },
       { name: "rmk", label: "Narration", type: "text" },
-      { name: "total", label: "Total Amount", type: "number", isTotal: true },
+      { name: "damt", label: "Total Amount", type: "number", isTotal: true },
     ],
   },
   sale: {
@@ -2277,8 +2277,8 @@ export const VOUCHER_CONFIG = {
           { name: "name", label: "Vendor Name", type: "text", required: true },
         ],
       },
-      { name: "check_no", label: "ST Inv No", type: "text" },
-      { name: "check_date", label: "ST Inv Date", type: "Date" },
+      // { name: "check_no", label: "ST Inv No", type: "text" },
+      // { name: "check_date", label: "ST Inv Date", type: "Date" },
       { name: "rmk", label: "Narration", type: "textarea" },
       // {
       //   name: "invoice_no",

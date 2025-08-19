@@ -286,8 +286,8 @@ export default function VoucherForm({
     const orderType = type === "purchase" || type === "grn" ? "purchase" : "sale";
     
     // API call
-    const response = await fetch(`/api/orders/getQty/${orderNo}/items/${itemCode}?type=${orderType}`);
-    const orderItemData = await response.json();
+    const response = await axios.get(`/api/orders/getQty?orderNo=${orderNo}&item=${itemCode}&type=${orderType}`);
+    const orderItemData = await response.data;
     
     if (orderItemData.success && orderItemData.item) {
       const item = orderItemData.item;
@@ -297,12 +297,11 @@ export default function VoucherForm({
         ...lines[index],
         itcd: itemCode,
         rate: item.rate || 0,
-        type: type,
         po_qty: item.available_qty || item.original_qty,
-        max_allowed_qty: item.available_qty,
+        // max_allowed_qty: item.available_qty,
         // Add validation data
-        original_order_qty: item.original_qty,
-        consumed_qty: item.consumed_qty
+        // original_order_qty: item.original_qty,
+        // consumed_qty: item.consumed_qty
       };
 
       if (isMain) setMainLines([...lines]);
@@ -688,12 +687,14 @@ export default function VoucherForm({
     }
 
     if (fieldConfig?.validate) {
+      console.log("Validating field: ", name, value);
       setLoading((prev) => ({ ...prev, validation: true }));
       try {
         const validationError = await fieldConfig.validate(value, {
           ...masterData,
           [name]: value, // Ensure the latest value is included
         });
+       
         setErrors((prev) => ({
           ...prev,
           validation: { ...prev.validation, [name]: validationError },

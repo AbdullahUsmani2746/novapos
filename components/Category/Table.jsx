@@ -95,7 +95,7 @@ const StatusBadge = ({ status }) => {
 };
 
 // Transaction item component
-const TransactionItem = ({ transaction, index }) => {
+const TransactionItem = ({ transaction, index, type}) => {
   return (
     <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
       <div className="flex items-center justify-between mb-3">
@@ -131,7 +131,7 @@ const TransactionItem = ({ transaction, index }) => {
           </div>
         )}
 
-        {transaction.damt && (
+        {transaction.damt && type!=="grn" && (
           <div>
             <span className="font-medium text-gray-600">Debit:</span>
             <span className="ml-2 text-gray-900 font-semibold text-green-600">
@@ -143,7 +143,7 @@ const TransactionItem = ({ transaction, index }) => {
           </div>
         )}
 
-        {transaction.camt && (
+        {transaction.camt && type!=="dispatch" && (
           <div>
             <span className="font-medium text-gray-600">Credit:</span>
             <span className="ml-2 text-gray-900 font-semibold text-red-600">
@@ -170,7 +170,7 @@ const TransactionItem = ({ transaction, index }) => {
 };
 
 // Main DataViewModal component
-const DataViewModal = ({ data, isOpen, onClose }) => {
+const DataViewModal = ({ data, type, isOpen, onClose }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportType, setExportType] = useState("");
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
@@ -325,6 +325,7 @@ const DataViewModal = ({ data, isOpen, onClose }) => {
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">
                   Transaction Details
+                  {console.log("Data:", data)}
                 </h2>
                 <p className="text-sm text-gray-600">
                   Voucher #{data.vr_no} | Transaction ID: {data.tran_id}
@@ -500,11 +501,12 @@ const DataViewModal = ({ data, isOpen, onClose }) => {
                     Associated Transactions ({data.transactions.length})
                   </h3>
                   <div className="space-y-3">
-                    {data.transactions.map((transaction, index) => (
+                    {data.transactions.filter((t)=>t.sub_tran_id!==3).map((transaction, index) => (
                       <TransactionItem
                         key={transaction.id}
                         transaction={transaction}
                         index={index}
+                        type={type}
                       />
                     ))}
                   </div>
@@ -1142,6 +1144,7 @@ export default function VoucherTable({
       {/* Data View Modal */}
       <DataViewModal
         data={selectedRow}
+        type={type}
         isOpen={viewModalOpen}
         onClose={() => {
           setViewModalOpen(false);
