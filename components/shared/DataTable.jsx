@@ -16,6 +16,7 @@ import LoadingSpinner from "../Setups/spinner";
 const DataTable = ({
   data = [],
   fields = [],
+  tableFields = [],
   onEdit = () => {},
   onDelete = () => {},
   loading = false,
@@ -29,6 +30,9 @@ const DataTable = ({
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
   const [localSearchValue, setLocalSearchValue] = useState(searchValue);
+
+  const displayFields = tableFields || fields;
+  console.log("Display Fields:", displayFields);
 
   // Debounce search input
   useEffect(() => {
@@ -164,7 +168,7 @@ const DataTable = ({
           <table className="w-full">
             <thead>
               <tr className="bg-gradient-to-r from-primary to-primary">
-                {fields?.map((field) => (
+                {displayFields.map((field) => (
                   <th
                     key={field.label || field.name}
                     className={`group px-8 py-5 text-left text-sm text-white uppercase tracking-wider ${
@@ -224,7 +228,7 @@ const DataTable = ({
                     onMouseEnter={() => setHoveredRow(item.id)}
                     onMouseLeave={() => setHoveredRow(null)}
                   >
-                    {fields?.map((field) => {
+                    {displayFields?.map((field) => {
                       let cellContent = "";
                       try {
                         if (field.fieldType === "date" && item[field.name]) {

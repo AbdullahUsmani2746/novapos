@@ -165,6 +165,7 @@ model Company {
   Leave              Leave[]
   Deduction          Deduction[]
   Manager            Manager[]
+  Employee           Employee[]
 }
 
 model ProductMasterCategory {
@@ -424,6 +425,7 @@ model CostCenter {
   cc_description String?        @db.VarChar(255)
   company        Company        @relation(fields: [company_id], references: [id])
   Transaction    Transactions[]
+  employees      Employee[]
 }
 
 model Department {
@@ -434,22 +436,25 @@ model Department {
   company          Company    @relation(fields: [company_id], references: [id])
   job_titles       JobTitle[]
   Manager          Manager[]
+  employees        Employee[]
 }
 
 model WorkLocation {
-  id                   Int     @id @default(autoincrement())
-  location_name        String? @db.VarChar(100)
-  location_description String? @db.VarChar(255)
+  id                   Int        @id @default(autoincrement())
+  location_name        String?    @db.VarChar(100)
+  location_description String?    @db.VarChar(255)
   company_id           Int
-  company              Company @relation(fields: [company_id], references: [id])
+  company              Company    @relation(fields: [company_id], references: [id])
+  employees            Employee[]
 }
 
 model Bank {
-  id               Int     @id @default(autoincrement())
-  bank_name        String? @db.VarChar(100)
-  bank_description String? @db.VarChar(255)
+  id               Int        @id @default(autoincrement())
+  bank_name        String?    @db.VarChar(100)
+  bank_description String?    @db.VarChar(255)
   company_id       Int
-  company          Company @relation(fields: [company_id], references: [id])
+  company          Company    @relation(fields: [company_id], references: [id])
+  employees        Employee[]
 }
 
 model JobTitle {
@@ -460,35 +465,39 @@ model JobTitle {
   department            Department @relation(fields: [department_id], references: [id])
   company_id            Int
   company               Company    @relation(fields: [company_id], references: [id])
+  employees             Employee[]
 }
 
 model Allowance {
-  id                    Int     @id @default(autoincrement())
-  allowance             String  @db.VarChar(150)
-  allowance_description String  @db.VarChar(150)
-  rate                  String  @db.VarChar(150)
+  id                    Int        @id @default(autoincrement())
+  allowance             String     @db.VarChar(150)
+  allowance_description String     @db.VarChar(150)
+  rate                  String     @db.VarChar(150)
   company_id            Int
-  company               Company @relation(fields: [company_id], references: [id])
+  company               Company    @relation(fields: [company_id], references: [id])
+  employees             Employee[]
 }
 
 model Deduction {
-  id                    Int     @id @default(autoincrement())
-  deduction             String  @db.VarChar(150)
-  deduction_description String  @db.VarChar(150)
-  rate                  String  @db.VarChar(150)
+  id                    Int        @id @default(autoincrement())
+  deduction             String     @db.VarChar(150)
+  deduction_description String     @db.VarChar(150)
+  rate                  String     @db.VarChar(150)
   company_id            Int
-  company               Company @relation(fields: [company_id], references: [id])
+  company               Company    @relation(fields: [company_id], references: [id])
+  employees             Employee[]
 }
 
 model Leave {
-  id                Int      @id @default(autoincrement())
-  leave             String   @db.VarChar(150)
-  leave_description String   @db.VarChar(150)
-  balance           Int      @default(0)
-  maxCarryForward   Int      @default(15) // Default maximum 15 days carry forward
-  lastUpdated       DateTime @default(now())
+  id                Int        @id @default(autoincrement())
+  leave             String     @db.VarChar(150)
+  leave_description String     @db.VarChar(150)
+  balance           Int        @default(0)
+  maxCarryForward   Int        @default(15) // Default maximum 15 days carry forward
+  lastUpdated       DateTime   @default(now())
   company_id        Int
-  company           Company  @relation(fields: [company_id], references: [id])
+  company           Company    @relation(fields: [company_id], references: [id])
+  employees         Employee[]
 }
 
 model Manager {
@@ -498,39 +507,101 @@ model Manager {
   department    Department @relation(fields: [department_id], references: [id])
   company_id    Int
   company       Company    @relation(fields: [company_id], references: [id])
+  employees     Employee[]
 }
+
+model Employee {
+  id             Int            @id @default(autoincrement())
+  firstName      String         @db.VarChar(25)
+  middleName     String?        @db.VarChar(25)
+  surname        String         @db.VarChar(25)
+  dob            DateTime
+  gender         String         @db.VarChar(25)
+  phoneNumber    String         @db.VarChar(25)
+  emailAddress   String         @unique @db.VarChar(100)
+  status         EmployeeStatus
+  hireDate       DateTime
+  jobTitleId     Int
+  jobTitle       JobTitle       @relation(fields: [jobTitleId], references: [id])
+  departmentId   Int
+  department     Department     @relation(fields: [departmentId], references: [id])
+  workLocationId Int
+  workLocation   WorkLocation   @relation(fields: [workLocationId], references: [id])
+  managerId      Int?
+  manager        Manager?       @relation(fields: [managerId], references: [id])
+  company_id     Int
+  company        Company        @relation(fields: [company_id], references: [id])
+  paymentMethod  PaymentMethod
+  bankId         Int?
+  bank           Bank?          @relation(fields: [bankId], references: [id])
+  accountName    String?        @db.VarChar(25)
+  accountNumber  String?        @db.VarChar(25)
+  payType        PayType        @default(SALARY)
+  rate           Float
+  payFrequency   PayFrequency   @default(MONTHLY)
+  costCenterId   Int
+  costCenter     CostCenter     @relation(fields: [costCenterId], references: [ccno])
+  allowances     Allowance[]
+  deductions     Deduction[]
+  leaves         Leave[]
+  createdOn      DateTime       @default(now())
+  updatedOn      DateTime       @updatedAt
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum PaymentMethod {
+  CASH
+  DIRECT_DEPOSIT
+  CHEQUE
+}
+
+enum PayType {
+  HOUR
+  SALARY
+}
+
+enum PayFrequency {
+  MONTHLY
+  FORTNIGHTLY
+  WEEKLY
+}
+
 model PeriodicAttendance {
-  id                  Int   @id @default(autoincrement())
-  compnayId           Int   @default(1) // Default to 1 for the main company
-  employeeId          String
-  dateRange           String
-  totalBreakHours     String   @default("0")
-  totalWorkingHours   String?
-  totalDoubleTimeHours String  @default("0")
-  numberOfDays        String   @default("0")
-  status              String
-  rejectionReason     String?  // Nullable because required only if status = "Rejected"
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                   Int      @id @default(autoincrement())
+  compnayId            Int      @default(1) // Default to 1 for the main company
+  employeeId           String
+  dateRange            String
+  totalBreakHours      String   @default("0")
+  totalWorkingHours    String?
+  totalDoubleTimeHours String   @default("0")
+  numberOfDays         String   @default("0")
+  status               String
+  rejectionReason      String? // Nullable because required only if status = "Rejected"
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
   // employee           Employee @relation(fields: [employeeId], references: [id])
   // company            Company  @relation(fields: [compnayId], references: [id])
 }
 
 model PayrollProcess {
-  id                 Int    @id @default(autoincrement())
-  payroll_id         Int       @unique
+  id                 Int           @id @default(autoincrement())
+  payroll_id         Int           @unique
   date_from          DateTime
   date_to            DateTime
   month_no           Int
   week_no            Int
   year               Int
   status             PayrollStatus @default(Draft)
-  companyId         Int
+  companyId          Int
   processedEmployees String[] // array of employee IDs
-  totalAmount        Float    @default(0)
+  totalAmount        Float         @default(0)
 
-  created_at         DateTime @default(now())
-  updated_at         DateTime @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   // company            Company  @relation(fields: [companyId], references: [id])
 }

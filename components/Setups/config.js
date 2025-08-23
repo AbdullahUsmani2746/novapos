@@ -6,13 +6,43 @@ const entityConfig = {
     endpoint: "companies",
     buttonText: "Add Company",
     fields: [
-      { name: "company", label: "Company", fieldType: "text", required: true, sortable: true },
-      { name: "addr1", label: "Address 1", fieldType: "text", required: true , sortable: true  },
-      { name: "addr2", label: "Address 2", fieldType: "text", sortable: true  },
-      { name: "city", label: "City", fieldType: "text", required: true, sortable: true  },
-      { name: "phone", label: "Phone", fieldType: "text", required: true, sortable: true  },
-      { name: "fax", label: "Fax", fieldType: "text", sortable: true  },
-      { name: "email", label: "Email", fieldType: "email", required: true, sortable: true  },
+      {
+        name: "company",
+        label: "Company",
+        fieldType: "text",
+        required: true,
+        sortable: true,
+      },
+      {
+        name: "addr1",
+        label: "Address 1",
+        fieldType: "text",
+        required: true,
+        sortable: true,
+      },
+      { name: "addr2", label: "Address 2", fieldType: "text", sortable: true },
+      {
+        name: "city",
+        label: "City",
+        fieldType: "text",
+        required: true,
+        sortable: true,
+      },
+      {
+        name: "phone",
+        label: "Phone",
+        fieldType: "text",
+        required: true,
+        sortable: true,
+      },
+      { name: "fax", label: "Fax", fieldType: "text", sortable: true },
+      {
+        name: "email",
+        label: "Email",
+        fieldType: "email",
+        required: true,
+        sortable: true,
+      },
     ],
   },
 
@@ -62,7 +92,7 @@ const entityConfig = {
         label: "Product Master Category Name",
         fieldType: "text",
         required: true,
-         sortable: true,
+        sortable: true,
       },
     ],
   },
@@ -142,7 +172,13 @@ const entityConfig = {
         required: true,
         sortable: true,
       },
-      { name: "date_to", label: "End Date", fieldType: "date", required: true , sortable: true,},
+      {
+        name: "date_to",
+        label: "End Date",
+        fieldType: "date",
+        required: true,
+        sortable: true,
+      },
       {
         name: "status",
         label: "Status",
@@ -181,7 +217,13 @@ const entityConfig = {
         required: true,
         sortable: true,
       },
-      { name: "date_to", label: "End Date", fieldType: "date", required: true, sortable: true, },
+      {
+        name: "date_to",
+        label: "End Date",
+        fieldType: "date",
+        required: true,
+        sortable: true,
+      },
       {
         name: "status",
         label: "Status",
@@ -247,7 +289,13 @@ const entityConfig = {
         required: true,
         sortable: true,
       },
-      { name: "rate_kg", label: "Rate", fieldType: "number", required: true, sortable: true,},
+      {
+        name: "rate_kg",
+        label: "Rate",
+        fieldType: "number",
+        required: true,
+        sortable: true,
+      },
     ],
   },
 
@@ -305,62 +353,6 @@ const entityConfig = {
     ],
   },
 
-  // employees: {
-  //   title: "Employees",
-  //   endpoint: "employees",
-  //   buttonText: "Add Employee",
-  //   fields: [
-  //     {
-  //       relation: "company",
-  //       relationName: "company",
-  //       name: "company_id",
-  //       label: "Company",
-  //       fieldType: "select",
-  //       fetchFrom: "/api/setup/companies",
-  //       optionLabelKey: "company",
-  //       optionValueKey: "id",
-  //       required: true,
-  //     },
-  //     {
-  //       name: "first_name",
-  //       label: "First Name",
-  //       fieldType: "text",
-  //       required: true,
-  //     },
-  //     { name: "middle_name", label: "Middle Name", fieldType: "text" },
-  //     { name: "surname", label: "Surname", fieldType: "text", required: true },
-  //     {
-  //       name: "dob",
-  //       label: "Date of Birth",
-  //       fieldType: "date",
-  //       required: true,
-  //     },
-  //     {
-  //       name: "hire_date",
-  //       label: "Hire Date",
-  //       fieldType: "date",
-  //       required: true,
-  //     },
-  //     {
-  //       name: "gender",
-  //       label: "Gender",
-  //       fieldType: "select",
-  //       options: [
-  //         { value: "MALE", label: "Male" },
-  //         { value: "FEMALE", label: "Female" },
-  //         { value: "OTHER", label: "Other" },
-  //       ],
-  //       required: true,
-  //     },
-  //     {
-  //       name: "phone_number",
-  //       label: "Phone Number",
-  //       fieldType: "text",
-  //       required: true,
-  //     },
-  //   ],
-  // },
-
   departments: {
     title: "Departments",
     endpoint: "departments",
@@ -399,7 +391,13 @@ const entityConfig = {
     endpoint: "cost_centers",
     buttonText: "Add Cost Center",
     fields: [
-      { name: "ccname", label: "CC Name", fieldType: "text", required: true, sortable: true, },
+      {
+        name: "ccname",
+        label: "CC Name",
+        fieldType: "text",
+        required: true,
+        sortable: true,
+      },
 
       // {
       //   relation: "company",
@@ -445,7 +443,6 @@ const entityConfig = {
     ],
   },
 
-  // Bank
   banks: {
     title: "Banks",
     endpoint: "banks",
@@ -468,7 +465,6 @@ const entityConfig = {
     ],
   },
 
-  // Job Title
   job_titles: {
     title: "Job Titles",
     endpoint: "job_titles",
@@ -488,7 +484,7 @@ const entityConfig = {
         required: true,
         sortable: true,
       },
-      
+
       {
         relation: "department",
         relationName: "dept_name",
@@ -504,7 +500,6 @@ const entityConfig = {
     ],
   },
 
-  // Allowance
   allowances: {
     title: "Allowances",
     endpoint: "allowances",
@@ -523,7 +518,6 @@ const entityConfig = {
         fieldType: "text",
         required: true,
         sortable: true,
-        
       },
       {
         name: "rate",
@@ -535,7 +529,6 @@ const entityConfig = {
     ],
   },
 
-  // Deduction
   deductions: {
     title: "Deductions",
     endpoint: "deductions",
@@ -565,7 +558,6 @@ const entityConfig = {
     ],
   },
 
-  // Leave
   leaves: {
     title: "Leaves",
     endpoint: "leaves",
@@ -581,7 +573,7 @@ const entityConfig = {
       {
         name: "leave_description",
         label: "Description",
-        fieldType: "text",  
+        fieldType: "text",
         required: true,
         sortable: true,
       },
@@ -602,7 +594,6 @@ const entityConfig = {
     ],
   },
 
-  // Manager
   managers: {
     title: "Managers",
     endpoint: "managers",
@@ -640,6 +631,148 @@ const entityConfig = {
       // },
     ],
   },
+
+  employees: {
+  title: "Employees",
+  endpoint: "employees",
+  buttonText: "Add Employee",
+   tableFields: [
+    { name: "firstName", label: "First Name" },
+    { name: "surname", label: "Surname" },
+    { name: "emailAddress", label: "Email" },
+    { name: "phoneNumber", label: "Phone" },
+    { name: "payType", label: "Pay Type" },
+  ],
+  fields: [
+    {
+      name: "firstName",
+      label: "First Name",
+      fieldType: "text",
+      required: true,
+    },
+    {
+      name: "surname",
+      label: "Surname",
+      fieldType: "text",
+      required: true,
+    },
+    {
+      name: "dob",
+      label: "Date of Birth",
+      fieldType: "date",
+      required: true,
+    },
+    {
+      name: "gender",
+      label: "Gender",
+      fieldType: "select",
+      options: ["Male", "Female", "Other"],
+      required: true,
+    },
+    {
+      name: "phoneNumber",
+      label: "Phone Number",
+      fieldType: "text",
+    },
+    {
+      name: "emailAddress",
+      label: "Email",
+      fieldType: "email",
+      required: true,
+    },
+    {
+      relation: "jobTitle",
+      relationName: "jobTitle",
+      name: "jobTitleId",
+      label: "Job Title",
+      fieldType: "select",
+      fetchFrom: "/api/jobtitles",
+      required: true,
+    },
+    {
+      relation: "department",
+      relationName: "department",
+      name: "departmentId",
+      label: "Department",
+      fieldType: "select",
+      fetchFrom: "/api/departments",
+      required: true,
+    },
+    {
+      relation: "workLocation",
+      relationName: "workLocation",
+      name: "workLocationId",
+      label: "Work Location",
+      fieldType: "select",
+      fetchFrom: "/api/worklocations",
+      required: true,
+    },
+    {
+      relation: "manager",
+      relationName: "manager",
+      name: "managerId",
+      label: "Manager",
+      fieldType: "select",
+      fetchFrom: "/api/managers",
+    },
+    {
+      name: "paymentMethod",
+      label: "Payment Method",
+      fieldType: "select",
+      options: ["CASH", "DIRECT_DEPOSIT", "CHEQUE"],
+      required: true,
+    },
+    {
+      relation: "bank",
+      relationName: "bank",
+      name: "bankId",
+      label: "Bank",
+      fieldType: "select",
+      fetchFrom: "/api/banks",
+    },
+    {
+      name: "accountName",
+      label: "Account Name",
+      fieldType: "text",
+    },
+    {
+      name: "accountNumber",
+      label: "Account Number",
+      fieldType: "text",
+    },
+    {
+      name: "payType",
+      label: "Pay Type",
+      fieldType: "select",
+      options: ["SALARY", "HOUR"],
+      required: true,
+    },
+    {
+      name: "rate",
+      label: "Rate",
+      fieldType: "number",
+      required: true,
+    },
+    {
+      name: "payFrequency",
+      label: "Pay Frequency",
+      fieldType: "select",
+      options: ["MONTHLY", "FORTNIGHTLY", "WEEKLY"],
+      required: true,
+    },
+    {
+      relation: "costCenter",
+      relationName: "costCenter",
+      name: "costCenterId",
+      label: "Cost Center",
+      fieldType: "select",
+      fetchFrom: "/api/costcenters",
+      required: true,
+    },
+  ],
+
+},
+
 };
 
 export default entityConfig;
