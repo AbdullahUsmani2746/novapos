@@ -632,11 +632,11 @@ const entityConfig = {
     ],
   },
 
-  employees: {
+ employees: {
   title: "Employees",
   endpoint: "employees",
   buttonText: "Add Employee",
-   tableFields: [
+  tableFields: [
     { name: "firstName", label: "First Name" },
     { name: "surname", label: "Surname" },
     { name: "emailAddress", label: "Email" },
@@ -663,11 +663,17 @@ const entityConfig = {
       required: true,
     },
     {
+      name: "hireDate",
+      label: "Hire Date",
+      fieldType: "date",
+      required: true,
+    },
+    {
       name: "gender",
       label: "Gender",
       fieldType: "select",
       options: ["Male", "Female", "Other"],
-      required: true,
+      // required: true,
     },
     {
       name: "phoneNumber",
@@ -686,8 +692,8 @@ const entityConfig = {
       name: "jobTitleId",
       label: "Job Title",
       fieldType: "select",
-      fetchFrom: "/api/jobtitles",
-      required: true,
+      fetchFrom: "/api/setup/job_titles",
+      // required: true,
     },
     {
       relation: "department",
@@ -695,8 +701,8 @@ const entityConfig = {
       name: "departmentId",
       label: "Department",
       fieldType: "select",
-      fetchFrom: "/api/departments",
-      required: true,
+      fetchFrom: "/api/setup/departments",
+      // required: true,
     },
     {
       relation: "workLocation",
@@ -704,8 +710,8 @@ const entityConfig = {
       name: "workLocationId",
       label: "Work Location",
       fieldType: "select",
-      fetchFrom: "/api/worklocations",
-      required: true,
+      fetchFrom: "/api/setup/work_locations",
+      // required: true,
     },
     {
       relation: "manager",
@@ -713,14 +719,21 @@ const entityConfig = {
       name: "managerId",
       label: "Manager",
       fieldType: "select",
-      fetchFrom: "/api/managers",
+      fetchFrom: "/api/setup/managers",
+    },
+    {
+      name: "status",
+      label: "Status",
+      fieldType: "select",
+      options: ["ACTIVE", "INACTIVE"],
+      // required: true,
     },
     {
       name: "paymentMethod",
       label: "Payment Method",
       fieldType: "select",
       options: ["CASH", "DIRECT_DEPOSIT", "CHEQUE"],
-      required: true,
+      // required: true,
     },
     {
       relation: "bank",
@@ -728,7 +741,7 @@ const entityConfig = {
       name: "bankId",
       label: "Bank",
       fieldType: "select",
-      fetchFrom: "/api/banks",
+      fetchFrom: "/api/setup/banks",
     },
     {
       name: "accountName",
@@ -745,7 +758,7 @@ const entityConfig = {
       label: "Pay Type",
       fieldType: "select",
       options: ["SALARY", "HOUR"],
-      required: true,
+      // required: true,
     },
     {
       name: "rate",
@@ -758,7 +771,7 @@ const entityConfig = {
       label: "Pay Frequency",
       fieldType: "select",
       options: ["MONTHLY", "FORTNIGHTLY", "WEEKLY"],
-      required: true,
+      // required: true,
     },
     {
       relation: "costCenter",
@@ -766,12 +779,11 @@ const entityConfig = {
       name: "costCenterId",
       label: "Cost Center",
       fieldType: "select",
-      fetchFrom: "/api/costcenters",
-      required: true,
+      fetchFrom: "/api/setup/cost_centers",
+      // required: true,
     },
   ],
-
-},
+}
 
 };
 

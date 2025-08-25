@@ -192,7 +192,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
                         } cursor-pointer`}
                         required={field.required}
                       >
-                        <option value="" className="bg-secondary text-white/70">
+                        <option value="" className="bg-white text-primary">
                           Select {field.label}
                         </option>
                         {field.options && Array.isArray(field.options)
@@ -201,7 +201,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
                               <option
                                 key={option.value}
                                 value={option.value}
-                                className="bg-secondary text-white"
+                                className="bg-white text-primary"
                               >
                                 {option.label}
                               </option>
@@ -211,7 +211,7 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
                               <option
                                 key={item[field.optionValueKey]}
                                 value={item[field.optionValueKey]}
-                                className="bg-secondary text-white"
+                                className="bg-white text-primary"
                               >
                                 {item[field.optionLabelKey]}
                               </option>
