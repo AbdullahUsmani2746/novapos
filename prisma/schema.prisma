@@ -228,6 +228,10 @@ model Item {
   orderMaster    OrderDetail[]
   itemCategories ItemCategory   @relation(fields: [ic_id], references: [id])
   Transactions   Transactions[]
+  BomDetail      BomDetail[]
+  BomMaster      BomMaster[]    
+  productionPlanMaster productionPlanMaster[]
+  productionPlanDetail productionPlanDetail[]
 }
 
 model Designation {
@@ -324,6 +328,52 @@ model OrderDetail {
   amount       Float
   items        Item        @relation(fields: [itcd], references: [itcd])
   orderMaster  OrderMaster @relation(fields: [order_no], references: [order_no])
+}
+
+enum MainProductCategory {
+  RAW_MATERIAL
+  SEMI_FINISHED
+  FINISHED
+}
+
+model BomMaster {
+  finishedId  Int         @id @unique
+  date_created      DateTime    @default(now())
+  item        Item        @relation(fields: [finishedId], references: [itcd])  
+  bomDetails  BomDetail[]
+  // product     Item          @relation(fields: [product_id], references: [itcd])
+}
+
+
+model BomDetail {
+  id          Int        @id @default(autoincrement())
+  finishedId      Int
+  materialId     Int
+  materialPercentage Float 
+  bomMaster   BomMaster  @relation(fields: [finishedId], references: [finishedId])
+  item        Item       @relation(fields: [materialId], references: [itcd])
+}
+
+
+model productionPlanMaster {
+  id               Int                     @id @default(autoincrement())
+  date_created     DateTime                @default(now())
+  finishedId       Int                   // Reference to finished product (Item itcd)
+  Qty              Float                   // Quantity to produce
+  status           String?                 @db.VarChar(25) // e.g., Planned, In Progress, Completed
+  item        Item        @relation(fields: [finishedId], references: [itcd])  
+  productionPlanDetail  productionPlanDetail[]
+  // createdByUser   User                    @relation(fields: [created_by], references: [id])
+}
+
+model productionPlanDetail {
+  id                   Int                     @id @default(autoincrement())
+  planId              Int
+  materialId         Int
+  materialQty        Float                   // Quantity of material required
+  materialPercentage  Float                   // Percentage of material in the BOM
+  productionPlanMaster productionPlanMaster   @relation(fields: [planId], references: [id])
+  item                Item                    @relation(fields: [materialId], references: [itcd])
 }
 
 model TransactionsMaster {
