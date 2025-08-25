@@ -26,7 +26,7 @@ const DynamicEntityPage = () => {
               const data = await res.json();
 
               relations[field.name] = data;
-              console.log(relations[field.name])
+              console.log(relations[field.name]);
             } catch (err) {
               console.error(`Error fetching ${field.label}:`, err);
             }
@@ -44,20 +44,22 @@ const DynamicEntityPage = () => {
   }
 
   const fieldsWithOptions = config.fields.map((field) => {
-    console.log(relatedData[field.name])
+    console.log(relatedData[field.name]);
     if (
       field.fieldType === "select" &&
       relatedData[field.name] &&
       field.optionLabelKey &&
       field.optionValueKey
     ) {
-      console.log("im here")
+      console.log("im here");
       return {
         ...field,
-        options:relatedData?.length > 0 && relatedData[field.name]?.map((item) => ({
-          label: item[field.optionLabelKey],
-          value: item[field.optionValueKey],
-        })),
+        options:
+          relatedData?.length > 0 &&
+          relatedData[field.name]?.map((item) => ({
+            label: item[field.optionLabelKey],
+            value: item[field.optionValueKey],
+          })),
       };
     }
     // console.log({options})
@@ -69,6 +71,7 @@ const DynamicEntityPage = () => {
       title={config.title}
       endpoint={config.endpoint}
       fields={fieldsWithOptions}
+      tableFields={config.tableFields || fieldsWithOptions}
       buttonText={config.buttonText}
     />
   );

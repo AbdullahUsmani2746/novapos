@@ -7,7 +7,7 @@ import EditModal from "./EditModal";
 import axios from "axios";
 import { Plus } from "lucide-react";
 
-const EntityPageLayout = ({ title, endpoint, fields, buttonText = null }) => {
+const EntityPageLayout = ({ title, endpoint, fields, tableFields , buttonText = null }) => {
   const [items, setItems] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -177,6 +177,7 @@ const EntityPageLayout = ({ title, endpoint, fields, buttonText = null }) => {
         <DataTable
           data={items}
           fields={fields}
+          tableFields={tableFields}
           onEdit={handleEdit}
           onDelete={handleDelete}
           loading={loading}
