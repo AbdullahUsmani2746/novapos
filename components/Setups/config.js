@@ -398,19 +398,6 @@ const entityConfig = {
         required: true,
         sortable: true,
       },
-
-      // {
-      //   relation: "company",
-      //   relationName: "company",
-      //   name: "company_id",
-      //   label: "Company",
-      //   fieldType: "select",
-      //   options: true,
-      //   fetchFrom: "/api/setup/companies",
-      //   optionLabelKey: "company",
-      //   optionValueKey: "id",
-      //   required: true,
-      // },
       {
         name: "cc_description",
         label: "Description",
@@ -478,14 +465,6 @@ const entityConfig = {
         sortable: true,
       },
       {
-        name: "job_title_description",
-        label: "Description",
-        fieldType: "text",
-        required: true,
-        sortable: true,
-      },
-
-      {
         relation: "department",
         relationName: "dept_name",
         name: "department_id",
@@ -496,6 +475,13 @@ const entityConfig = {
         optionValueKey: "id",
         required: true,
         sortable: false,
+      },
+      {
+        name: "job_title_description",
+        label: "Description",
+        fieldType: "text",
+        required: true,
+        sortable: true,
       },
     ],
   },
@@ -637,11 +623,10 @@ const entityConfig = {
     endpoint: "employees",
     buttonText: "Add Employee",
     tableFields: [
-      { name: "firstName", label: "First Name" },
-      { name: "surname", label: "Surname" },
-      { name: "emailAddress", label: "Email" },
-      { name: "phoneNumber", label: "Phone" },
-      { name: "payType", label: "Pay Type" },
+      { name: "firstName", label: "Name", sortable: true },
+      { name: "emailAddress", label: "Email", sortable: true },
+      { name: "phoneNumber", label: "Phone", sortable: true },
+      { name: "status", label: "Status", sortable: true },
     ],
     fields: [
       {
@@ -819,8 +804,8 @@ const entityConfig = {
         label: "Cost Center",
         fieldType: "select",
         fetchFrom: "/api/setup/cost_centers",
-        optionLabelKey: "ccno",
-        optionValueKey: "id",
+        optionLabelKey: "ccname",
+        optionValueKey: "ccno",
         required: true,
       },
     ],
