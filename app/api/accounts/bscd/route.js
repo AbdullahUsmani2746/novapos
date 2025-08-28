@@ -11,7 +11,7 @@ export async function GET(request) {
       const { searchParams } = new URL(request.url);
       const mbscd = searchParams.get('mbscd') || "";
   
-      const where = mbscd !== "" ? { mbscd:mbscd } : {};
+      const where = mbscd !== "" ? { mbscd:parseInt(mbscd) } : {};
   
   
       const bscds = await prisma.bSCD.findMany({

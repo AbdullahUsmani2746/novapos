@@ -12,13 +12,13 @@ export async function GET(request) {
 
     // Case 1 or 2: If macno is provided
     if (macnoParam) {
-      const macnos = macnoParam.split(',').map(m => m.trim());
-      where.macno = macnos.length === 1 ? macnos[0] : { in: macnos };
+      const macnos = macnoParam.split(',').map(m => parseInt(m.trim(),10));
+      where.macno = macnos.length === 1 ? parseInt(macnos[0]) : { in: macnos };
     }
 
     // Case 3: Exclude by macno (e.g., get all acnos except where macno is 003 or 004)
     if (excludeMacnoParam) {
-      const excludeMacnos = excludeMacnoParam.split(',').map(m => m.trim());
+      const excludeMacnos = excludeMacnoParam.split(',').map(m => parseInt(m.trim(), 10));
       where.macno = { notIn: excludeMacnos };
     }
 

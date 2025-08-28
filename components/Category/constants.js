@@ -1747,7 +1747,6 @@ export const VOUCHER_CONFIG = {
       { name: "total", label: "Total Amount", type: "number", isTotal: true },
     ],
   },
-  // Add to VOUCHER_CONFIG in constants.js
   transfer: {
     tran_code: 11,
     hasDeductionBlock: false,
@@ -1859,9 +1858,6 @@ export const VOUCHER_CONFIG = {
       { name: "rmk", label: "Narration", type: "text" },
     ],
   },
-
-  // Add to VOUCHER_CONFIG in constants.js
-
   purchaseOrder: {
     tran_code: 400,
     hasDeductionBlock: false,
@@ -2731,4 +2727,5 @@ export const VOUCHER_CONFIG = {
       { name: "total", label: "Total Amount", type: "number", isTotal: true },
     ],
   },
+
 };

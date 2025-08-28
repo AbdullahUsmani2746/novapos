@@ -11,7 +11,7 @@ export async function GET(request) {
     console.log(bscd);
 
     // Construct where clause based on bscd parameter
-    const where = bscd ? { bscd:bscd } : {};
+    const where = bscd ? { bscd:parseInt(bscd) } : {};
 
     console.log(where)
   
