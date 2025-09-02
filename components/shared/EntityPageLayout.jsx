@@ -7,7 +7,13 @@ import EditModal from "./EditModal";
 import axios from "axios";
 import { Plus } from "lucide-react";
 
-const EntityPageLayout = ({ title, endpoint, fields, tableFields , buttonText = null }) => {
+const EntityPageLayout = ({
+  title,
+  endpoint,
+  fields,
+  tableFields,
+  buttonText = null,
+}) => {
   const [items, setItems] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -41,9 +47,7 @@ const EntityPageLayout = ({ title, endpoint, fields, tableFields , buttonText = 
         params.append("sortOrder", sortOrder);
       }
 
-      const res = await axios.get(
-        `/api/setup/${endpoint}?${params.toString()}`
-      );
+      const res = await axios.get(`${endpoint}?${params.toString()}`);
 
       if (res.data) {
         setItems(res.data.data || []);
@@ -155,21 +159,21 @@ const EntityPageLayout = ({ title, endpoint, fields, tableFields , buttonText = 
               <p className="text-lg text-gray-600">
                 Manage your {title.toLowerCase()} efficiently and effectively
               </p>
-            </div>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              disabled={loading}
-              className="group relative overflow-hidden bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              <div className="flex items-center space-x-3">
-                <Plus
-                  size={20}
-                  className="transition-transform group-hover:rotate-90 duration-300"
-                />
-                <span>{buttonText || `Add ${title.slice(0, -1)}`}</span>
-              </div>
-              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-            </button>
+            </div>     
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                disabled={loading}
+                className="group relative overflow-hidden bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                <div className="flex items-center space-x-3">
+                  <Plus
+                    size={20}
+                    className="transition-transform group-hover:rotate-90 duration-300"
+                  />
+                  <span>{buttonText || `Add ${title.slice(0, -1)}`}</span>
+                </div>
+                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+              </button>
           </div>
         </div>
 

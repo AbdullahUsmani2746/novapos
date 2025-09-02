@@ -3,7 +3,7 @@
 const entityConfig = {
   companies: {
     title: "Companies",
-    endpoint: "companies",
+    endpoint: "/api/setup/companies",
     buttonText: "Add Company",
     fields: [
       {
@@ -48,7 +48,7 @@ const entityConfig = {
 
   currencies: {
     title: "Currencies",
-    endpoint: "currencies",
+    endpoint: "/api/setup/currencies",
     buttonText: "Add Currency",
     fields: [
       {
@@ -63,7 +63,7 @@ const entityConfig = {
 
   godowns: {
     title: "Godowns",
-    endpoint: "godowns",
+    endpoint: "/api/setup/godowns",
     buttonText: "Add Godown",
     fields: [
       { name: "godown", label: "Godown", fieldType: "text", required: true },
@@ -84,7 +84,7 @@ const entityConfig = {
 
   product_master_categories: {
     title: "Product Master Categories",
-    endpoint: "product_master_categories",
+    endpoint: "/api/setup/product_master_categories",
     buttonText: "Add Product Master Category",
     fields: [
       {
@@ -99,7 +99,7 @@ const entityConfig = {
 
   product_groups: {
     title: "Product Groups",
-    endpoint: "product_groups",
+    endpoint: "/api/setup/product_groups",
     buttonText: "Add Product Group",
     fields: [
       {
@@ -125,7 +125,7 @@ const entityConfig = {
 
   items: {
     title: "Items",
-    endpoint: "items",
+    endpoint: "/api/setup/items",
     buttonText: "Add Item",
     fields: [
       {
@@ -149,30 +149,29 @@ const entityConfig = {
     ],
   },
 
-  subtrates:{
-    title:"Subtrates",
-    endpoint: "subtrates",
+  subtrates: {
+    title: "Subtrates",
+    endpoint: "/api/setup/subtrates",
     buttonText: "Add Subtrate",
-    fields:[
+    fields: [
       {
-        name:"subtrate",
-        label:"Subrate Name",
-        fieldType:"text",
-        required:true,
+        name: "subtrate",
+        label: "Subrate Name",
+        fieldType: "text",
+        required: true,
       },
       {
-        name:"description",
-        label:"Description",
-        fieldType:"text",
-        required:true,
+        name: "description",
+        label: "Description",
+        fieldType: "text",
+        required: true,
       },
-    ]
-
+    ],
   },
 
   financial_years: {
     title: "Financial Years",
-    endpoint: "financial_years",
+    endpoint: "/api/setup/financial_years",
     buttonText: "Add Financial Year",
     fields: [
       {
@@ -216,7 +215,7 @@ const entityConfig = {
 
   seasons: {
     title: "Seasons",
-    endpoint: "seasons",
+    endpoint: "/api/setup/seasons",
     buttonText: "Add Season",
     fields: [
       {
@@ -261,7 +260,7 @@ const entityConfig = {
 
   purchase_product_categories: {
     title: "PO Product Categories",
-    endpoint: "purchase_product_categories",
+    endpoint: "/api/setup/purchase_product_categories",
     buttonText: "Add PO Product Category",
     fields: [
       {
@@ -288,7 +287,7 @@ const entityConfig = {
 
   delivery_modes: {
     title: "Delivery Modes",
-    endpoint: "delivery_modes",
+    endpoint: "/api/setup/delivery_modes",
     buttonText: "Add Delivery Mode",
     fields: [
       {
@@ -322,7 +321,7 @@ const entityConfig = {
 
   delivery_terms: {
     title: "Delivery Terms",
-    endpoint: "delivery_terms",
+    endpoint: "/api/setup/delivery_terms",
     buttonText: "Add Delivery Term",
     fields: [
       {
@@ -349,7 +348,7 @@ const entityConfig = {
 
   commission_terms: {
     title: "Commission Terms",
-    endpoint: "commission_terms",
+    endpoint: "/api/setup/commission_terms",
     buttonText: "Add Commission Term",
     fields: [
       {
@@ -376,7 +375,7 @@ const entityConfig = {
 
   departments: {
     title: "Departments",
-    endpoint: "departments",
+    endpoint: "/api/setup/departments",
     buttonText: "Add Department",
     fields: [
       {
@@ -409,7 +408,7 @@ const entityConfig = {
 
   cost_centers: {
     title: "Cost Centers",
-    endpoint: "cost_centers",
+    endpoint: "/api/setup/cost_centers",
     buttonText: "Add Cost Center",
     fields: [
       {
@@ -431,7 +430,7 @@ const entityConfig = {
 
   work_locations: {
     title: "Work Locations",
-    endpoint: "work_locations",
+    endpoint: "/api/setup/work_locations",
     buttonText: "Add Work Location",
     fields: [
       {
@@ -453,7 +452,7 @@ const entityConfig = {
 
   banks: {
     title: "Banks",
-    endpoint: "banks",
+    endpoint: "/api/setup/banks",
     buttonText: "Add Bank",
     fields: [
       {
@@ -475,7 +474,7 @@ const entityConfig = {
 
   job_titles: {
     title: "Job Titles",
-    endpoint: "job_titles",
+    endpoint: "/api/setup/job_titles",
     buttonText: "Add Job Title",
     fields: [
       {
@@ -509,7 +508,7 @@ const entityConfig = {
 
   allowances: {
     title: "Allowances",
-    endpoint: "allowances",
+    endpoint: "/api/setup/allowances",
     buttonText: "Add Allowance",
     fields: [
       {
@@ -538,7 +537,7 @@ const entityConfig = {
 
   deductions: {
     title: "Deductions",
-    endpoint: "deductions",
+    endpoint: "/api/setup/deductions",
     buttonText: "Add Deduction",
     fields: [
       {
@@ -567,7 +566,7 @@ const entityConfig = {
 
   leaves: {
     title: "Leaves",
-    endpoint: "leaves",
+    endpoint: "/api/setup/leaves",
     buttonText: "Add Leave",
     fields: [
       {
@@ -603,7 +602,7 @@ const entityConfig = {
 
   managers: {
     title: "Managers",
-    endpoint: "managers",
+    endpoint: "/api/setup/managers",
     buttonText: "Add Manager",
     tableFields: [
       { name: "manager", label: "Manager Name", sortable: true },
@@ -667,7 +666,7 @@ const entityConfig = {
 
   employees: {
     title: "Employees",
-    endpoint: "employees",
+    endpoint: "/api/setup/employees",
     buttonText: "Add Employee",
     tableFields: [
       { name: "firstName", label: "Name", sortable: true },
@@ -857,6 +856,34 @@ const entityConfig = {
       },
     ],
   },
+
+vendors: {
+  title: "Vendor Master",
+  endpoint: "/api/setup/vendors",
+  tableFields: [
+    { name: "acno", label: "Code", sortable: true },
+    { name: "acname", label: "Name", sortable: true },
+    { name: "city", label: "City", sortable: true },
+    { name: "email", label: "Email", sortable: true },
+    { name: "category", label: "Category", sortable: true },
+  ],
+  fields: [
+    { name: "acno", label: "Code", fieldType: "text", required: true, readOnly: true },
+    { name: "acname", label: "Name", fieldType: "text", required: true },
+    { name: "address", label: "Detail Address", fieldType: "text" },
+    { name: "area", label: "Area", fieldType: "text" },
+    { name: "city", label: "City", fieldType: "text" },
+    { name: "phoneFax", label: "Phone/Fax", fieldType: "text" },
+    { name: "salesArea", label: "Sales Person", fieldType: "text" },
+    { name: "contactPerson", label: "Contact Person", fieldType: "text" },
+    { name: "isDisabled", label: "Disabled", fieldType: "checkbox" },
+    { name: "type", label: "Type", fieldType: "select", options: [{ value: "regular", label: "Regular" }] },
+  ],
+  allowAdd: false,   // add disable
+  allowEdit: true,   // sirf edit khulega
+  allowDelete: false // delete bhi disable
+},
+
 };
 
 export default entityConfig;
