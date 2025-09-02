@@ -149,6 +149,27 @@ const entityConfig = {
     ],
   },
 
+  subtrates:{
+    title:"Subtrates",
+    endpoint: "subtrates",
+    buttonText: "Add Subtrate",
+    fields:[
+      {
+        name:"subtrate",
+        label:"Subrate Name",
+        fieldType:"text",
+        required:true,
+      },
+      {
+        name:"description",
+        label:"Description",
+        fieldType:"text",
+        required:true,
+      },
+    ]
+
+  },
+
   financial_years: {
     title: "Financial Years",
     endpoint: "financial_years",

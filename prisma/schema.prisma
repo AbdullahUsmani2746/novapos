@@ -76,6 +76,7 @@ enum Role {
   MANAGER
   CASHIER
   ACCOUNTANT
+  SALES
 }
 
 model MBSCD {
@@ -286,6 +287,10 @@ model Item {
   productionPlanMaster productionPlanMaster[]
   productionPlanDetail productionPlanDetail[]
   salesItemCust  SALES_ITEM_CUST[]
+  machineRef     MACHINE_INSTRUCTION_MASTER[]
+  machineDetails MACHINE_INSTRUCTION_DETAIL[]
+  receipeMasters RECEIPE_MASTER[]
+  receipeDetail RECEIPE_DETAIL[]
   subtrateRef   Subtrates?     @relation(fields: [subtrates], references: [subtrate])
 }
 
@@ -354,20 +359,23 @@ model Currency {
 
 model OrderMaster {
   order_no                Int           @id @default(autoincrement())
-  dateD                   DateTime      @default(now())
+  dated                   DateTime      @default(now())
   godown                  Int?
-  userId                  String?       @db.VarChar(25)
+  userid                  String?       @db.VarChar(25)
   status                  Int // 1 or 2
+  region                  String?       @db.VarChar(25)
+  st_rate                 Int?
   due_date                DateTime?
   party_code              Int
   delivery_terms          String?       @db.VarChar(25)
   payment_terms           String?       @db.VarChar(25)
   delivery_location       String?       @db.VarChar(500)
   order_catagory          Int // 4 = purchase order, 6 = sales order
+  p_cat                   String?       @db.VarChar(25)
   additional_instructions String?       @db.VarChar(500)
   godownDetails           Godown?       @relation(fields: [godown], references: [id])
   acno                    ACNO?         @relation(fields: [party_code], references: [acno])
-  users                   User?         @relation(fields: [userId], references: [id])
+  users                   User?         @relation(fields: [userid], references: [id])
   orderDetails            OrderDetail[]
 }
 
@@ -375,12 +383,13 @@ model OrderDetail {
   id           Int         @id @default(autoincrement())
   order_no     Int
   itcd         Int
-  no_of_packs  Int
-  qty_per_pack Int
-  qty          Int // Derived from no_of_packs * qty_per_pack (can be computed manually or through trigger)
+  no_of_packs  Int?
+  qty_per_pack Int?
+  qty          Int? // Derived from no_of_packs * qty_per_pack (can be computed manually or through trigger)
   unit         String?     @db.VarChar(25)
   rate         Float
-  amount       Float
+  amount       Float?
+  status       Int? // 1 = pending, 2 = completed
   items        Item        @relation(fields: [itcd], references: [itcd])
   orderMaster  OrderMaster @relation(fields: [order_no], references: [order_no])
 }
@@ -392,43 +401,96 @@ enum MainProductCategory {
 }
 
 model BomMaster {
-  finishedId  Int         @id @unique
-  date_created      DateTime    @default(now())
-  item        Item        @relation(fields: [finishedId], references: [itcd])  
+  id         Int         @id @default(autoincrement())
+  instructions String?     @db.VarChar(500)
+  finished_id  Int       // Reference to finished product (Item itcd)
+  dated      DateTime?    @default(now())
+  item        Item        @relation(fields: [finished_id], references: [itcd])  
   bomDetails  BomDetail[]
+  receipeMasters RECEIPE_MASTER[]
   // product     Item          @relation(fields: [product_id], references: [itcd])
 }
 
 
 model BomDetail {
-  id          Int        @id @default(autoincrement())
-  finishedId      Int
-  materialId     Int
-  materialPercentage Float 
-  bomMaster   BomMaster  @relation(fields: [finishedId], references: [finishedId])
-  item        Item       @relation(fields: [materialId], references: [itcd])
+  bom_id          Int        @id
+  finished_id      Int
+  material_id     Int
+  material_percentage Float 
+  bomMaster   BomMaster  @relation(fields: [bom_id], references: [id])
+  item        Item       @relation(fields: [material_id], references: [itcd])
 }
 
 
 model productionPlanMaster {
   id               Int                     @id @default(autoincrement())
   date_created     DateTime                @default(now())
-  finishedId       Int                   // Reference to finished product (Item itcd)
+  finished_id       Int                   // Reference to finished product (Item itcd)
   Qty              Float                   // Quantity to produce
   status           String?                 @db.VarChar(25) // e.g., Planned, In Progress, Completed
-  item        Item        @relation(fields: [finishedId], references: [itcd])  
+  item        Item        @relation(fields: [finished_id], references: [itcd])  
   productionPlanDetail  productionPlanDetail[]
   // createdByUser   User                    @relation(fields: [created_by], references: [id])
 }
 
 model productionPlanDetail {
   id                   Int                     @id @default(autoincrement())
-  planId              Int
-  materialId         Int
-  materialQty        Float                   // Quantity of material required
-  materialPercentage  Float                   // Percentage of material in the BOM
-  productionPlanMaster productionPlanMaster   @relation(fields: [planId], references: [id])
-  item                Item                    @relation(fields: [materialId], references: [itcd])
+  plan_id              Int
+  material_id         Int
+  material_qty       Float                   // Quantity of material required
+  material_percentage  Float                   // Percentage of material in the BOM
+  productionPlanMaster productionPlanMaster   @relation(fields: [plan_id], references: [id])
+  item                Item                    @relation(fields: [material_id], references: [itcd])
+}
+
+model MACHINE_INSTRUCTION_MASTER {
+  rec_id Int @id @default(autoincrement())
+  machine_id Int
+  time_min Int?
+  descr String?
+  item Item @relation(fields: [machine_id], references: [itcd])
+  machineDetails MACHINE_INSTRUCTION_DETAIL[]
+
+
+
+}
+
+model MACHINE_INSTRUCTION_DETAIL {
+  id Int @id @default(autoincrement())
+  rec_id Int 
+  machine_id Int
+  part String?
+  time_min Int?
+  instructions String?
+  item Item @relation(fields: [machine_id], references: [itcd])
+  machineRef MACHINE_INSTRUCTION_MASTER @relation(fields: [rec_id], references: [rec_id])
+}
+
+
+model RECEIPE_MASTER {
+  receipe_id Int @id @default(autoincrement())
+  finished_count Int 
+  machine_id Int?
+  dated DateTime?
+  finished_id Int
+  bom_id Int?
+  time_min Int?
+  status String? @db.VarChar(25)
+  bomRef BomMaster? @relation(fields: [bom_id], references: [id])
+  item Item @relation(fields: [finished_id], references: [itcd])
+  receipeDetails RECEIPE_DETAIL[]
+}
+
+model RECEIPE_DETAIL {
+  id Int @id @default(autoincrement())
+  receipe_id Int
+  product_id Int?
+  product_desc String?
+  qty Int?
+  product_percentage Float?
+  sno  Int?
+  receipeMaster RECEIPE_MASTER @relation(fields: [receipe_id], references: [receipe_id])
+  item Item? @relation(fields: [product_id], references: [itcd])
 }
 
 model TransactionsMaster {

@@ -6,23 +6,27 @@ const prisma = new PrismaClient();
 async function main() {
   const users = [
     {
-      name: "Admin User",
-      email: "admin@demo.com",
+      id: "SALES",
+      name: "Sales User",
+      email: "sale@demo.com",
       password: "admin123",
-      role: "ADMIN",
+      role: "SALES",
     },
-    {
-      name: "Cashier User",
-      email: "cashier@demo.com",
-      password: "cashier123",
-      role: "CASHIER",
+     {
+      id: "SALES_2",
+      name: "Sales User",
+      email: "sale_2@demo.com",
+      password: "admin123",
+      role: "SALES",
     },
-    {
-      name: "Accountant User",
-      email: "accountant@demo.com",
-      password: "accountant123",
-      role: "ACCOUNTANT",
+     {
+      id: "SALES_3",
+      name: "Sales User",
+      email: "sale_3demo.com",
+      password: "admin123",
+      role: "SALES",
     },
+    
   ];
 
   for (const user of users) {
@@ -31,6 +35,7 @@ async function main() {
     if (!existing) {
       await prisma.user.create({
         data: {
+          id: user.id,
           name: user.name,
           email: user.email,
           role: user.role,

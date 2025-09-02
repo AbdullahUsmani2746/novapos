@@ -86,6 +86,22 @@ const data = {
       ],
     },
     {
+      title: "Subsidary Details",
+      url: "#",
+      icon: SquareTerminal,
+      isActive: true,
+      items: [
+        {
+          title: "Customers",
+          url: "/accounting/forms/customer",
+        },
+        {
+          title: "Vendors",
+          url: "/accounting/forms/vendor",
+        },
+      ],
+    },
+    {
       title: "Invoices",
       url: "#",
       icon: SquareTerminal,
