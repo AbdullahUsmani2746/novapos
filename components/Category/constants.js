@@ -35,7 +35,7 @@ export const VOUCHER_CONFIG = {
         ],
       },
       {
-        name: "dateD",
+        name: "dated",
         label: "Date",
         type: "date",
         required: true,
@@ -322,7 +322,7 @@ export const VOUCHER_CONFIG = {
     },
 
     tableFields: [
-      { name: "dateD", label: "Date", type: "date" },
+      { name: "dated", label: "Date", type: "date" },
       { name: "tran_id", label: "Transaction No", type: "text" },
       { name: "vr_no", label: "Voucher No", type: "text" },
       {
@@ -371,7 +371,7 @@ export const VOUCHER_CONFIG = {
         ],
       },
       {
-        name: "dateD",
+        name: "dated",
         label: "Date",
         type: "date",
         required: true,
@@ -651,7 +651,7 @@ export const VOUCHER_CONFIG = {
         )}) cannot be negative.`,
     },
     tableFields: [
-      { name: "dateD", label: "Date", type: "date" },
+      { name: "dated", label: "Date", type: "date" },
       { name: "tran_id", label: "Transaction No", type: "text" },
       { name: "vr_no", label: "Voucher No", type: "text" },
       { name: "pycd", label: "Received At", type: "text" },
@@ -670,7 +670,7 @@ export const VOUCHER_CONFIG = {
         autoGenerate: true,
       },
       {
-        name: "dateD",
+        name: "dated",
         label: "Date",
         type: "date",
         required: true,
@@ -776,7 +776,7 @@ export const VOUCHER_CONFIG = {
         )}).`,
     },
     tableFields: [
-      { name: "dateD", label: "Date", type: "date" },
+      { name: "dated", label: "Date", type: "date" },
       { name: "tran_id", label: "Transaction No", type: "text" },
       { name: "vr_no", label: "Voucher No", type: "text" },
       { name: "rmk1", label: "Narration", type: "text" },
@@ -786,7 +786,7 @@ export const VOUCHER_CONFIG = {
     tran_code: 4,
     hasDeductionBlock: false,
     masterFields: [
-      // { name: "dateD", label: "Date", type: "date", required: true },
+      // { name: "dated", label: "Date", type: "date", required: true },
       // { name: "time", label: "Time", type: "time", required: true },
       {
         name: "vr_no",
@@ -796,7 +796,7 @@ export const VOUCHER_CONFIG = {
         autoGenerate: true,
       },
       {
-        name: "dateD",
+        name: "dated",
         label: "Date",
         type: "date",
         required: true,
@@ -1027,7 +1027,7 @@ export const VOUCHER_CONFIG = {
       },
     },
     tableFields: [
-      { name: "dateD", label: "Date", type: "date" },
+      { name: "dated", label: "Date", type: "date" },
       { name: "vr_no", label: "Voucher No", type: "text" },
       { name: "invoice_no", label: "Invoice No", type: "text" },
       {
@@ -1047,7 +1047,7 @@ export const VOUCHER_CONFIG = {
     hasDeductionBlock: false,
     masterFields: [
       {
-        name: "dateD",
+        name: "dated",
         label: "Date",
         type: "date",
         required: true,
@@ -1323,7 +1323,7 @@ export const VOUCHER_CONFIG = {
       },
     },
     tableFields: [
-      { name: "dateD", label: "Date", type: "date" },
+      { name: "dated", label: "Date", type: "date" },
       { name: "vr_no", label: "Voucher No", type: "text" },
       { name: "invoice_no", label: "Invoice No", type: "text" },
       {
@@ -1350,7 +1350,7 @@ export const VOUCHER_CONFIG = {
         autoGenerate: true,
       },
       {
-        name: "dateD",
+        name: "dated",
         label: "Date",
         type: "date",
         required: true,
@@ -1527,7 +1527,7 @@ export const VOUCHER_CONFIG = {
       },
     },
     tableFields: [
-      { name: "dateD", label: "Date", type: "date" },
+      { name: "dated", label: "Date", type: "date" },
       { name: "vr_no", label: "Voucher No", type: "text" },
       { name: "invoice_no", label: "Invoice No", type: "text" },
       {
@@ -1554,7 +1554,7 @@ export const VOUCHER_CONFIG = {
         autoGenerate: true,
       },
       {
-        name: "dateD",
+        name: "dated",
         label: "Date",
         type: "date",
         required: true,
@@ -1732,7 +1732,7 @@ export const VOUCHER_CONFIG = {
       },
     },
     tableFields: [
-      { name: "dateD", label: "Date", type: "date" },
+      { name: "dated", label: "Date", type: "date" },
       { name: "vr_no", label: "Voucher No", type: "text" },
       { name: "invoice_no", label: "Invoice No", type: "text" },
       {
@@ -1752,7 +1752,7 @@ export const VOUCHER_CONFIG = {
     hasDeductionBlock: false,
     masterFields: [
       {
-        name: "dateD",
+        name: "dated",
         label: "Date",
         type: "date",
         required: true,
@@ -1837,7 +1837,7 @@ export const VOUCHER_CONFIG = {
       },
     },
     tableFields: [
-      { name: "dateD", label: "Date", type: "date" },
+      { name: "dated", label: "Date", type: "date" },
       { name: "vr_no", label: "Voucher No", type: "text" },
       {
         name: "godown",
@@ -1863,7 +1863,7 @@ export const VOUCHER_CONFIG = {
     hasDeductionBlock: false,
     masterFields: [
       {
-        name: "dateD",
+        name: "dated",
         label: "Date",
         type: "date",
         required: true,
@@ -2011,7 +2011,7 @@ export const VOUCHER_CONFIG = {
       },
     },
     tableFields: [
-      { name: "dateD", label: "Date", type: "date" },
+      { name: "dated", label: "Date", type: "date" },
       { name: "order_no", label: "Order No", type: "text" },
       {
         name: "party_code",
@@ -2037,7 +2037,7 @@ export const VOUCHER_CONFIG = {
     hasDeductionBlock: false,
     masterFields: [
       {
-        name: "dateD",
+        name: "dated",
         label: "Date",
         type: "date",
         required: true,
@@ -2047,8 +2047,8 @@ export const VOUCHER_CONFIG = {
         label: "Customer",
         type: "select",
         options: "masterAccounts",
-        apiEndpoint: "/api/accounts/acno?macno=001", // Customers
-        createEndpoint: "/api/accounts/acno",
+        apiEndpoint: "/api/accounts/acno", // Customers
+        createEndpoint: "/api/accounts/acno?macno=35",
         nameKey: "acname",
         valueKey: "acno",
         required: true,
@@ -2185,7 +2185,7 @@ export const VOUCHER_CONFIG = {
       },
     },
     tableFields: [
-      { name: "dateD", label: "Date", type: "date" },
+      { name: "dated", label: "Date", type: "date" },
       { name: "order_no", label: "Order No", type: "text" },
       {
         name: "party_code",
@@ -2210,7 +2210,7 @@ export const VOUCHER_CONFIG = {
     tran_code: 4,
     hasDeductionBlock: false,
     masterFields: [
-      // { name: "dateD", label: "Date", type: "date", required: true },
+      // { name: "dated", label: "Date", type: "date", required: true },
       // { name: "time", label: "Time", type: "time", required: true },
       {
         name: "vr_no",
@@ -2220,7 +2220,7 @@ export const VOUCHER_CONFIG = {
         autoGenerate: true,
       },
       {
-        name: "dateD",
+        name: "dated",
         label: "Date",
         type: "date",
         required: true,
@@ -2451,7 +2451,7 @@ export const VOUCHER_CONFIG = {
     //   },
     // },
     tableFields: [
-      { name: "dateD", label: "Date", type: "date" },
+      { name: "dated", label: "Date", type: "date" },
       { name: "vr_no", label: "Voucher No", type: "text" },
       // { name: "invoice_no", label: "Invoice No", type: "text" },
       {
@@ -2471,7 +2471,7 @@ export const VOUCHER_CONFIG = {
     tran_code: 6,
     hasDeductionBlock: false,
     masterFields: [
-      // { name: "dateD", label: "Date", type: "date", required: true },
+      // { name: "dated", label: "Date", type: "date", required: true },
       // { name: "time", label: "Time", type: "time", required: true },
       {
         name: "vr_no",
@@ -2481,7 +2481,7 @@ export const VOUCHER_CONFIG = {
         autoGenerate: true,
       },
       {
-        name: "dateD",
+        name: "dated",
         label: "Date",
         type: "date",
         required: true,
@@ -2712,7 +2712,7 @@ export const VOUCHER_CONFIG = {
     //   },
     // },
     tableFields: [
-      { name: "dateD", label: "Date", type: "date" },
+      { name: "dated", label: "Date", type: "date" },
       { name: "vr_no", label: "Voucher No", type: "text" },
       // { name: "invoice_no", label: "Invoice No", type: "text" },
       {

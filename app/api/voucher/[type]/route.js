@@ -127,9 +127,9 @@ export async function POST(req, { params }) {
           : now;
 
       masterDateTime =
-        master.dateD && master.dateD !== "" ? new Date(master.dateD) : now;
+        master.dated && master.dated !== "" ? new Date(master.dated) : now;
 
-      master.dateD = masterDateTime;
+      master.dated = masterDateTime;
       master.time = masterDateTime;
       master.check_date = masterCheckDateTime;
 
@@ -143,11 +143,11 @@ export async function POST(req, { params }) {
         master.godown2 = parseOptionalInt(master.godown2);
       }
 
-      console.log("masterDate:", master.dateD);
+      console.log("masterDate:", master.dated);
 
-      masterDateTime = new Date(`${master.dateD}`);
+      masterDateTime = new Date(`${master.dated}`);
       console.log("masterDateTime:", masterDateTime);
-      master.dateD = masterDateTime; // Format date as YYYY-MM-DD    master.check_date = masterDateTime; // Format check_date as YYYY-MM-DD HH:MM:SS
+      master.dated = masterDateTime; // Format date as YYYY-MM-DD    master.check_date = masterDateTime; // Format check_date as YYYY-MM-DD HH:MM:SS
     }
 
     // Add this validation before creating the master record (around line 70)
@@ -424,14 +424,14 @@ export async function PUT(req) {
       const now = new Date();
 
       const dateObj =
-        master.dateD && master.dateD !== "" ? new Date(master.dateD) : now;
+        master.dated && master.dated !== "" ? new Date(master.dated) : now;
 
       const checkDateObj =
         master.check_date && master.check_date !== ""
           ? new Date(master.check_date)
           : now;
 
-      master.dateD = dateObj;
+      master.dated = dateObj;
       master.time = dateObj;
       master.check_date = checkDateObj;
 
@@ -439,7 +439,7 @@ export async function PUT(req) {
         master.godown = parseOptionalInt(master.godown);
       }
     } else if (tran_code === 3) {
-      master.dateD = new Date(master.dateD || new Date());
+      master.dated = new Date(master.dated || new Date());
     }
 
     // Update master

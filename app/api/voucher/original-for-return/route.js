@@ -23,7 +23,7 @@ export async function GET(req) {
     const transactions = await prisma.transactionsMaster.findMany({
       where: {
         tran_code,
-        dateD: {
+        dated: {
           gte: startDate,
           lte: endDate
         }
@@ -40,7 +40,7 @@ export async function GET(req) {
         acno: true // Include account details
       },
       orderBy: {
-        dateD: 'desc'
+        dated: 'desc'
       }
     });
 

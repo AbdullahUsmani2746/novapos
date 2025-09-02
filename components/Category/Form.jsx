@@ -471,7 +471,7 @@ export default function VoucherForm({
           return {
             ...acc,
             [fieldKey]:
-              field.type === "date" && field.name === "dateD"
+              field.type === "date" && field.name === "dated"
                 ? today
                 : field.type === "time"
                 ? now
@@ -494,8 +494,8 @@ export default function VoucherForm({
               ...existingData.master,
               pycd: String(existingData.master.pycd || ""), // Ensure string
               godown: String(existingData.master.godown || ""), // Convert number to string
-              dateD:
-                formatDateToYYYYMMDD(existingData.master.dateD) ||
+              dated:
+                formatDateToYYYYMMDD(existingData.master.dated) ||
                 formatDateToYYYYMMDD(new Date()),
               time: formatTimeToHHMMSS(existingData.master.time) || now,
               vr_no: String(existingData.master.vr_no || ""),
@@ -544,7 +544,7 @@ export default function VoucherForm({
         ...defaultMasterData,
         pycd: String(originalData.pycd || ""),
         godown: String(originalData.godown || ""),
-        dateD: formatDateToYYYYMMDD(new Date()),
+        dated: formatDateToYYYYMMDD(new Date()),
         time: formatTimeToHHMMSS(new Date()),
         rmk: `Return for ${originalData.vr_no}`,
         invoice_no: `RTN-${originalData.invoice_no}`,
