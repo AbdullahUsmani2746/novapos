@@ -80,30 +80,32 @@ enum Role {
 }
 
 model MBSCD {
-  mbscd       Int    @id @unique @default(autoincrement())
+  mbscd       Int @id @unique @default(autoincrement()) 
   mbscdDetail String @db.VarChar(100)
   bscdItems   BSCD[]
 }
 
 model BSCD {
-  bscd       Int     @id @unique @default(autoincrement())
-  mbscd      Int
+  bscd       Int  @id @unique @default(autoincrement()) 
+  mbscd      Int  
   bscdDetail String  @db.VarChar(100)
   mainBscd   MBSCD   @relation(fields: [mbscd], references: [mbscd])
   macnoItems MACNO[]
+
 }
 
 model MACNO {
-  macno    Int    @id @unique @default(autoincrement())
+  macno    Int @id @unique @default(autoincrement()) 
   bscd     Int
   macname  String @db.VarChar(100)
   bscdRef  BSCD   @relation(fields: [bscd], references: [bscd])
   accounts ACNO[]
+
 }
 
 model ACNO {
-  acno               Int                  @id @unique @default(autoincrement())
-  macno              Int
+  acno               Int               @id @unique @default(autoincrement()) 
+  macno              Int               
   acname             String               @db.VarChar(250)
   bankAccountNo      String?              @map("bank_account_no") @db.VarChar(25)
   address            String?              @db.VarChar(250)
@@ -111,9 +113,9 @@ model ACNO {
   phoneFax           String?              @map("phone_fax") @db.VarChar(50)
   email              String?              @db.VarChar(250)
   website            String?              @db.VarChar(250)
-  crDays             Int?                 @map("cr_days")
-  crDays2            Int?                 @map("cr_days2") //SIZ
-  areaCode           String?              @map("area_code") @db.VarChar(10)
+  crDays             Int?                 @map("cr_days") 
+  crDays2            Int?                 @map("cr_days2")//SIZ
+  areaCode          String?              @map("area_code") @db.VarChar(10)
   stRate             Decimal?             @map("st_rate") @db.Decimal(15, 2)
   area               String?              @db.VarChar(50)
   category           String?              @map("catagory") @db.VarChar(50)
@@ -121,12 +123,12 @@ model ACNO {
   country            String?              @db.VarChar(25)
   customerBank       String?              @map("customer_bank") @db.VarChar(50)
   customerBankAddr   String?              @map("customer_bank_addr") @db.VarChar(100) //shipping Address
-  stRegNo            String?              @map("st_reg_no") @db.VarChar(25) //model
-  stReg              String?              @map("st_reg") @db.VarChar(25) //amp
-  ntnNo              String?              @map("ntn_no") @db.VarChar(25) //Voltage
+  stRegNo            String?              @map("st_reg_no") @db.VarChar(25)//model
+  stReg              String?              @map("st_reg") @db.VarChar(25)//amp
+  ntnNo              String?              @map("ntn_no") @db.VarChar(25)//Voltage
   contactPerson      String?              @map("contact_person") @db.VarChar(25)
-  crLimit            Int?                 @map("cr_limit") //rate
-  salesArea          String?              @map("sales_ares") @db.VarChar(25) // Ledger Acno
+  crLimit            Int?                 @map("cr_limit")//rate
+  salesArea          String?              @map("sales_ares") @db.VarChar(25)// Ledger Acno
   oderMaster         OrderMaster[]
   transactionsMaster TransactionsMaster[]
   transactions       Transactions[]
@@ -138,15 +140,15 @@ model ACNO {
 }
 
 model SALES_ITEM_CUST {
-  id          Int       @id @default(autoincrement())
-  itcd        Int
-  acno        Int
-  rate        Float
-  cust_itcd   Int?
-  gst_rate    Float?
-  dateD       DateTime? @default(now())
-  item        Item      @relation(fields: [itcd], references: [itcd])
-  acnoDetails ACNO      @relation(fields: [acno], references: [acno])
+  id     Int   @id @default(autoincrement())
+  itcd   Int    
+  acno   Int 
+  rate    Float
+  cust_itcd Int?   
+  gst_rate Float?
+  dateD  DateTime? @default(now())
+  item   Item   @relation(fields: [itcd], references: [itcd])
+  acnoDetails ACNO @relation(fields: [acno], references: [acno])
 }
 
 model Company {
@@ -220,7 +222,7 @@ model ItemCategory {
   sale_acno      Int?         @default(14)
   pos_acno       Int?         @default(15)
   cogs_acno      Int?
-  cogm_acno      Int?
+  cogm_acno     Int?        
   sync_status    String?      @default("synced") @db.VarChar(20)
   last_sync      DateTime?    @default(now())
   mainCategory   MainCategory @relation(fields: [mc_id], references: [id])
@@ -228,63 +230,67 @@ model ItemCategory {
 }
 
 model Subtrates {
-  id          Int     @id @default(autoincrement())
-  subtrate    String  @unique @db.VarChar(50)
-  description String? @db.VarChar(255)
+  id          Int      @id @default(autoincrement())
+  subtrate    String   @db.VarChar(50) @unique
+  description String?  @db.VarChar(255)
   items       Item[]
 }
 
-model PARTY_MANAGEMENT {
-  id          Int     @id @default(autoincrement())
-  acno        Int
-  name        String  @db.VarChar(100)
+model PARTY_MANAGEMENT{
+  id     Int   @id @default(autoincrement())
+  acno Int   
+  name String @db.VarChar(100)
   designation String? @db.VarChar(100)
-  contact     String? @db.VarChar(25)
+  contact String? @db.VarChar(25)
 
   acnoDetails ACNO @relation(fields: [acno], references: [acno])
 }
 
 model Item {
-  itcd                 Int                    @id @unique @default(autoincrement())
-  item                 String?                @db.VarChar(250)
-  ic_id                Int
-  sku                  String?                @unique
-  price                Float?
-  alternate_id         Int?
-  unit                 String?                @db.VarChar(25)
-  cdate                DateTime?              @default(now())
+  itcd           Int            @id @unique @default(autoincrement())
+  item           String?        @db.VarChar(250)
+  ic_id          Int
+  sku            String?        @unique
+  price          Float?
+  alternate_id    Int?
+  unit           String?        @db.VarChar(25)
+  cdate         DateTime?      @default(now())
   // ai_Date      DateTime?      @updatedAt
-  code                 String?                @db.VarChar(50)
-  subtrates            String?                @db.VarChar(50)
-  valid_from           DateTime?
-  valid_to             DateTime?
-  with_white           Int?
-  viscosity            String?                @db.VarChar(50)
-  color_bulk           String?                @db.VarChar(50)
-  gloss                String?                @db.VarChar(50)
-  opacity              String?                @db.VarChar(50)
-  fineness             String?                @db.VarChar(50)
-  solid                String?                @db.VarChar(50)
-  adhesion             String?                @db.VarChar(50)
-  e                    String?                @db.VarChar(50)
-  a                    String?                @db.VarChar(50)
-  l                    String?                @db.VarChar(50)
-  b                    String?                @db.VarChar(50)
-  stock                Int?
-  description          String?                @db.VarChar(500)
-  wc_product_id        Int?                   @unique
-  image_url            String?                @db.VarChar(500) // New field for product image
-  wc_parent_id         Int?
-  sync_status          String?                @default("synced")
-  last_sync            DateTime?
-  orderMaster          OrderDetail[]
-  itemCategories       ItemCategory           @relation(fields: [ic_id], references: [id])
-  Transactions         Transactions[]
-  BomDetail            BomDetail[]
-  BomMaster            BomMaster[]
+  code      String?        @db.VarChar(50)
+  subtrates     String?        @db.VarChar(50)
+  valid_from    DateTime?    
+  valid_to      DateTime?
+  with_white    Int?
+  viscosity     String?        @db.VarChar(50)
+  color_bulk     String?        @db.VarChar(50)
+  gloss         String?        @db.VarChar(50)
+  opacity       String?        @db.VarChar(50)
+  fineness      String?        @db.VarChar(50)
+  solid       String?        @db.VarChar(50)
+  adhesion      String?        @db.VarChar(50)
+  e             String?        @db.VarChar(50)
+  a             String?        @db.VarChar(50)
+  l             String?        @db.VarChar(50)
+  b             String?        @db.VarChar(50)
+  stock         Int?
+  description   String?        @db.VarChar(500)
+  wc_product_id  Int?          @unique
+  image_url      String?       @db.VarChar(500) // New field for product image
+  wc_parent_id   Int?
+  sync_status    String?        @default("synced")
+  last_sync      DateTime?
+  orderMaster    OrderDetail[]
+  itemCategories ItemCategory   @relation(fields: [ic_id], references: [id])
+  Transactions   Transactions[]
+  BomDetail      BomDetail[]
+  BomMaster      BomMaster[]    
   productionPlanMaster productionPlanMaster[]
   productionPlanDetail productionPlanDetail[]
   salesItemCust  SALES_ITEM_CUST[]
+  machineRef     MACHINE_INSTRUCTION_MASTER[]
+  machineDetails MACHINE_INSTRUCTION_DETAIL[]
+  receipeMasters RECEIPE_MASTER[]
+  receipeDetail RECEIPE_DETAIL[]
   subtrateRef   Subtrates?     @relation(fields: [subtrates], references: [subtrate])
 }
 
@@ -395,41 +401,96 @@ enum MainProductCategory {
 }
 
 model BomMaster {
-  finishedId  Int         @id @unique
-  date_created      DateTime    @default(now())
-  item        Item        @relation(fields: [finishedId], references: [itcd])  
+  id         Int         @id @default(autoincrement())
+  instructions String?     @db.VarChar(500)
+  finished_id  Int       // Reference to finished product (Item itcd)
+  dated      DateTime?    @default(now())
+  item        Item        @relation(fields: [finished_id], references: [itcd])  
   bomDetails  BomDetail[]
+  receipeMasters RECEIPE_MASTER[]
   // product     Item          @relation(fields: [product_id], references: [itcd])
 }
 
+
 model BomDetail {
-  id          Int        @id @default(autoincrement())
-  finishedId      Int
-  materialId     Int
-  materialPercentage Float 
-  bomMaster   BomMaster  @relation(fields: [finishedId], references: [finishedId])
-  item        Item       @relation(fields: [materialId], references: [itcd])
+  bom_id          Int        @id
+  finished_id      Int
+  material_id     Int
+  material_percentage Float 
+  bomMaster   BomMaster  @relation(fields: [bom_id], references: [id])
+  item        Item       @relation(fields: [material_id], references: [itcd])
 }
+
 
 model productionPlanMaster {
   id               Int                     @id @default(autoincrement())
   date_created     DateTime                @default(now())
-  finishedId       Int                   // Reference to finished product (Item itcd)
+  finished_id       Int                   // Reference to finished product (Item itcd)
   Qty              Float                   // Quantity to produce
   status           String?                 @db.VarChar(25) // e.g., Planned, In Progress, Completed
-  item        Item        @relation(fields: [finishedId], references: [itcd])  
+  item        Item        @relation(fields: [finished_id], references: [itcd])  
   productionPlanDetail  productionPlanDetail[]
   // createdByUser   User                    @relation(fields: [created_by], references: [id])
 }
 
 model productionPlanDetail {
   id                   Int                     @id @default(autoincrement())
-  planId              Int
-  materialId         Int
-  materialQty        Float                   // Quantity of material required
-  materialPercentage  Float                   // Percentage of material in the BOM
-  productionPlanMaster productionPlanMaster   @relation(fields: [planId], references: [id])
-  item                Item                    @relation(fields: [materialId], references: [itcd])
+  plan_id              Int
+  material_id         Int
+  material_qty       Float                   // Quantity of material required
+  material_percentage  Float                   // Percentage of material in the BOM
+  productionPlanMaster productionPlanMaster   @relation(fields: [plan_id], references: [id])
+  item                Item                    @relation(fields: [material_id], references: [itcd])
+}
+
+model MACHINE_INSTRUCTION_MASTER {
+  rec_id Int @id @default(autoincrement())
+  machine_id Int
+  time_min Int?
+  descr String?
+  item Item @relation(fields: [machine_id], references: [itcd])
+  machineDetails MACHINE_INSTRUCTION_DETAIL[]
+
+
+
+}
+
+model MACHINE_INSTRUCTION_DETAIL {
+  id Int @id @default(autoincrement())
+  rec_id Int 
+  machine_id Int
+  part String?
+  time_min Int?
+  instructions String?
+  item Item @relation(fields: [machine_id], references: [itcd])
+  machineRef MACHINE_INSTRUCTION_MASTER @relation(fields: [rec_id], references: [rec_id])
+}
+
+
+model RECEIPE_MASTER {
+  receipe_id Int @id @default(autoincrement())
+  finished_count Int 
+  machine_id Int?
+  dated DateTime?
+  finished_id Int
+  bom_id Int?
+  time_min Int?
+  status String? @db.VarChar(25)
+  bomRef BomMaster? @relation(fields: [bom_id], references: [id])
+  item Item @relation(fields: [finished_id], references: [itcd])
+  receipeDetails RECEIPE_DETAIL[]
+}
+
+model RECEIPE_DETAIL {
+  id Int @id @default(autoincrement())
+  receipe_id Int
+  product_id Int?
+  product_desc String?
+  qty Int?
+  product_percentage Float?
+  sno  Int?
+  receipeMaster RECEIPE_MASTER @relation(fields: [receipe_id], references: [receipe_id])
+  item Item? @relation(fields: [product_id], references: [itcd])
 }
 
 model TransactionsMaster {
