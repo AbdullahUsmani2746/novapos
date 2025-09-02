@@ -99,6 +99,10 @@ const data = {
           title: "Vendors",
           url: "/accounting/forms/vendor",
         },
+        {
+          title: "Material",
+          url: "/accounting/material",
+        },
       ],
     },
     {
@@ -171,8 +175,6 @@ const data = {
           title: "Godown Transfer",
           url: "/accounting/godown/transfer",
         },
-        
-        
       ],
     },
     {
@@ -196,6 +198,10 @@ const data = {
       icon: SquareTerminal,
       isActive: true,
       items: [
+        {
+          title: "Iten Setup",
+          url: "/accounting/setup/items",
+        },
         {
           title: "Company Setup",
           url: "/accounting/setup/companies",

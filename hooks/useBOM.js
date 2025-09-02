@@ -1,5 +1,6 @@
+// hooks/useBOM.js
 import { useState, useEffect, useCallback } from "react";
-import { bomAPI } from "../components/Manufactuting/api";
+import { bomAPI } from "@/components/Manufacturing/api";
 import axios from "axios";
 
 export const useBOM = () => {
@@ -8,16 +9,14 @@ export const useBOM = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch all BOMs
   const fetchBOMs = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await bomAPI.getAll();
-      const itemsData = await axios.get("/api/setup/items"); // Adjust the endpoint as needed
-      console.log("DAta: ",itemsData.data.data)
-      setBomItems(data.data); // axios returns `response.data`, so this is 
-      setItems(itemsData.data.data);
+      const { data } = await bomAPI.getAll();
+      const itemsResponse = await axios.get("/api/setup/items");
+      setBomItems(data.data);
+      setItems(itemsResponse.data.data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -25,14 +24,13 @@ export const useBOM = () => {
     }
   }, []);
 
-  // Create new BOM
   const createBOM = async (bomData) => {
     setLoading(true);
     setError(null);
     try {
-      const newBOM = await bomAPI.create(bomData);
-      setBomItems((prev) => [...prev, newBOM]);
-      return { success: true, data: newBOM };
+      const { data } = await bomAPI.create(bomData);
+      setBomItems((prev) => [...prev, data]);
+      return { success: true, data };
     } catch (err) {
       setError(err.message);
       return { success: false, error: err.message };
@@ -41,16 +39,15 @@ export const useBOM = () => {
     }
   };
 
-  // Update BOM
   const updateBOM = async (id, bomData) => {
     setLoading(true);
     setError(null);
     try {
-      const updatedBOM = await bomAPI.update(id, bomData);
+      const { data } = await bomAPI.update(id, bomData);
       setBomItems((prev) =>
-        prev.map((item) => (item.id === id ? updatedBOM : item))
+        prev.map((item) => (item.id === id ? data : item))
       );
-      return { success: true, data: updatedBOM };
+      return { success: true, data };
     } catch (err) {
       setError(err.message);
       return { success: false, error: err.message };
@@ -59,7 +56,6 @@ export const useBOM = () => {
     }
   };
 
-  // Delete BOM
   const deleteBOM = async (id) => {
     setLoading(true);
     setError(null);
@@ -75,7 +71,6 @@ export const useBOM = () => {
     }
   };
 
-  // Load BOMs on mount
   useEffect(() => {
     fetchBOMs();
   }, [fetchBOMs]);
@@ -85,7 +80,6 @@ export const useBOM = () => {
     items,
     loading,
     error,
-    fetchBOMs,
     createBOM,
     updateBOM,
     deleteBOM,

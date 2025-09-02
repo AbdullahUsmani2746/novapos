@@ -1,9 +1,10 @@
-// app/api/production/route.js
+// app/api/production/[id]/route.js
 import prisma from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request, { params }) {
   try {
-    const plans = await prisma.productionPlanMaster.findMany({
+    const plan = await prisma.productionPlanMaster.findUnique({
+      where: { id: parseInt(params.id) },
       include: {
         productionPlanDetail: {
           include: { item: true },
@@ -11,50 +12,52 @@ export async function GET() {
         item: true,
       },
     });
-    const formatted = plans.map(plan => ({
+    if (!plan) return Response.json({ error: 'Not found' }, { status: 404 });
+    const formatted = {
       id: plan.id,
       finishedId: plan.finished_id,
       productName: plan.item.item,
       date: plan.date_created.toISOString().split('T')[0],
       qty: plan.Qty,
-      status: plan.status || 'Scheduled',
+      status: plan.status,
       materialRequirements: plan.productionPlanDetail.map(detail => ({
         id: detail.material_id,
         name: detail.item.item,
         percentage: detail.material_percentage,
         required: detail.material_qty,
       })),
-    }));
-    return Response.json({ data: formatted }, { status: 200 });
+    };
+    return Response.json(formatted, { status: 200 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
 
-export async function POST(request) {
+export async function PUT(request, { params }) {
   try {
     const data = await request.json();
     const { finishedId, qty, date, materialRequirements } = data;
-    const master = await prisma.productionPlanMaster.create({
+    await prisma.productionPlanMaster.update({
+      where: { id: parseInt(params.id) },
       data: {
         finished_id: parseInt(finishedId),
         Qty: qty,
-        status: 'Scheduled',
         date_created: new Date(date),
       },
     });
+    await prisma.productionPlanDetail.deleteMany({ where: { plan_id: parseInt(params.id) } });
     for (const mat of materialRequirements) {
       await prisma.productionPlanDetail.create({
         data: {
-          plan_id: master.id,
+          plan_id: parseInt(params.id),
           material_id: parseInt(mat.id),
           material_qty: mat.required,
           material_percentage: mat.percentage,
         },
       });
     }
-    const newPlan = await prisma.productionPlanMaster.findUnique({
-      where: { id: master.id },
+    const updatedPlan = await prisma.productionPlanMaster.findUnique({
+      where: { id: parseInt(params.id) },
       include: {
         productionPlanDetail: {
           include: { item: true },
@@ -62,21 +65,31 @@ export async function POST(request) {
         item: true,
       },
     });
-    const formattedNew = {
-      id: newPlan.id,
-      finishedId: newPlan.finished_id,
-      productName: newPlan.item.item,
-      date: newPlan.date_created.toISOString().split('T')[0],
-      qty: newPlan.Qty,
-      status: newPlan.status,
-      materialRequirements: newPlan.productionPlanDetail.map(detail => ({
+    const formattedUpdated = {
+      id: updatedPlan.id,
+      finishedId: updatedPlan.finished_id,
+      productName: updatedPlan.item.item,
+      date: updatedPlan.date_created.toISOString().split('T')[0],
+      qty: updatedPlan.Qty,
+      status: updatedPlan.status,
+      materialRequirements: updatedPlan.productionPlanDetail.map(detail => ({
         id: detail.material_id,
         name: detail.item.item,
         percentage: detail.material_percentage,
         required: detail.material_qty,
       })),
     };
-    return Response.json(formattedNew, { status: 201 });
+    return Response.json(formattedUpdated, { status: 200 });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request, { params }) {
+  try {
+    await prisma.productionPlanDetail.deleteMany({ where: { plan_id: parseInt(params.id) } });
+    await prisma.productionPlanMaster.delete({ where: { id: parseInt(params.id) } });
+    return Response.json({}, { status: 204 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

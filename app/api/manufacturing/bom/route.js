@@ -1,130 +1,83 @@
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+// app/api/bom/route.js
+import prisma from '@/lib/prisma';
 
-export async function GET(req) {
-    const url = new URL(req.url);
-    const page = parseInt(url.searchParams.get("page") || "1");
-    const limit = parseInt(url.searchParams.get("limit") || "10");
-    const skip = (page - 1) * limit;
-    
-    const [routes, total] = await Promise.all([
-        prisma.bomMaster.findMany({
-        skip,
-        take: limit,
-        orderBy: { finishedId: "desc" },
-        include: {
-            bomDetails : {
-                include: {
-                    item: true,
-                },
-            },
+export async function GET() {
+  try {
+    const boms = await prisma.bomMaster.findMany({
+      include: {
+        bomDetails: {
+          include: { item: true },
         },
-        }),
-        prisma.bomMaster.count(),
-    ]);
-    
-    const formattedData = routes.map((route) => ({
-    finishedId: String(route.finishedId),
-    productName: route.finishedProduct?.name || "",
-    category: "Finished",
-    materials: route.bomDetails.map((detail) => ({
-      id: String(detail.materialId),
-      name: detail.item?.item || "",
-      percentage: detail.materialPercentage,
-    })),
-  }));
-    const totalPages = Math.ceil(total / limit);
-    
-    return NextResponse.json({
-        data: formattedData,
-        totalPages,
-        page,
-        limit,
-        total,
-        status: 200,
+        item: true,
+        receipeMasters: true, // Link to recipes
+      },
     });
-    }
-
-// POST method
-export async function POST(req) {
-    const data = await req.json();
-    try {
-        console.log("Data: ", data);
-        const newRoute = await prisma.bomMaster.create({
-            data: {
-                finishedId: parseInt(data.finishedId),
-
-            },
-        });
-
-        const details = data.materials.map((detail) => ({
-            finishedId: parseInt(data.finishedId),
-            materialId: parseInt(detail.id),
-            materialPercentage: parseFloat(detail.percentage),
-        }));
-
-        await prisma.bomDetail.createMany({ data: details });
-        return NextResponse.json({ data: newRoute, status: 201 });
-    } catch (error) {
-        console.error("Error creating BOM route:", error);
-        return NextResponse.json(
-            { message: "Failed to create BOM route", error: error.message },
-            { status: 500 }
-        );
-    }
+    const formatted = boms.map(bom => ({
+      id: bom.id,
+      finishedId: bom.finished_id,
+      productName: bom.item.item,
+      dateCreated: bom.dated?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+      instructions: bom.instructions,
+      status: 'Active', // Assume default
+      materials: bom.bomDetails.map(detail => ({
+        id: detail.material_id,
+        name: detail.item.item,
+        percentage: detail.material_percentage,
+      })),
+      linkedRecipes: bom.receipeMasters.map(recipe => recipe.receipe_id),
+    }));
+    return Response.json({ data: formatted }, { status: 200 });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 }
 
-export async function PUT(req) {
-     const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
-    const data = await req.json();
-    try {
-
-        const updatedRoute = await prisma.bomMaster.update({
-            where: { finishedId: parseInt(id) },
-            data: {
-                finishedId: parseInt(data.finishedId),
-            },
-        });
-        // Delete existing details
-        await prisma.bomDetail.deleteMany({
-            where: { finishedId: parseInt(id) },
-        });
-        // Create new details
-        const details = data.materials.map((detail) => ({
-            finishedId: parseInt(data.finishedId),
-            materialId: parseInt(detail.id),
-            materialPercentage: parseFloat(detail.percentage),
-        }));
-        await prisma.bomDetail.createMany({ data: details });
-        return NextResponse.json({ data: updatedRoute, status: 200 });
-    } catch (error) {
-        console.error("Error updating BOM route:", error);
-        return NextResponse.json(
-            { message: "Failed to update BOM route", error: error.message },
-            { status: 500 }
-        );
+export async function POST(request) {
+  try {
+    const data = await request.json();
+    const { finishedId, materials, instructions } = data;
+    const master = await prisma.bomMaster.create({
+      data: {
+        finished_id: parseInt(finishedId),
+        instructions,
+      },
+    });
+    for (const mat of materials) {
+      await prisma.bomDetail.create({
+        data: {
+          bom_id: master.id,
+          finished_id: parseInt(finishedId),
+          material_id: parseInt(mat.id),
+          material_percentage: mat.percentage,
+        },
+      });
     }
-}
-
-export async function DELETE(req) {
-    const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
-    try {
-         await prisma.bomDetail.deleteMany({
-            where: { finishedId: parseInt(id) },
-        });
-
-        await prisma.bomMaster.delete({
-            where: { finishedId: parseInt(id) },
-        });
-       
-        return NextResponse.json({ message: "BOM route deleted", status: 200 });
-    } catch (error) {
-        console.error("Error deleting BOM route:", error);
-        return NextResponse.json(
-            { message: "Failed to delete BOM route", error: error.message },
-            { status: 500 }
-        );
-    }
+    const newBom = await prisma.bomMaster.findUnique({
+      where: { id: master.id },
+      include: {
+        bomDetails: {
+          include: { item: true },
+        },
+        item: true,
+        receipeMasters: true,
+      },
+    });
+    const formattedNew = {
+      id: newBom.id,
+      finishedId: newBom.finished_id,
+      productName: newBom.item.item,
+      dateCreated: newBom.dated?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+      instructions: newBom.instructions,
+      status: 'Active',
+      materials: newBom.bomDetails.map(detail => ({
+        id: detail.material_id,
+        name: detail.item.item,
+        percentage: detail.material_percentage,
+      })),
+      linkedRecipes: newBom.receipeMasters.map(recipe => recipe.receipe_id),
+    };
+    return Response.json(formattedNew, { status: 201 });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 }

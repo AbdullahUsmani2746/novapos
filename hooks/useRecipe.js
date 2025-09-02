@@ -1,18 +1,18 @@
-// hooks/useProduction.js
+// hooks/useRecipe.js
 import { useState, useEffect, useCallback } from "react";
-import { productionAPI } from "@/components/Manufacturing/api";
+import { recipeAPI } from "@/components/Manufacturing/api";
 
-export const useProductionPlans = () => {
-  const [productionPlans, setProductionPlans] = useState([]);
+export const useRecipes = () => {
+  const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchProductionPlans = useCallback(async () => {
+  const fetchRecipes = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await productionAPI.getAll();
-      setProductionPlans(data.data);
+      const { data } = await recipeAPI.getAll();
+      setRecipes(data.data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -20,12 +20,12 @@ export const useProductionPlans = () => {
     }
   }, []);
 
-  const createProductionPlan = async (planData) => {
+  const createRecipe = async (recipeData) => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await productionAPI.create(planData);
-      setProductionPlans((prev) => [...prev, data]);
+      const { data } = await recipeAPI.create(recipeData);
+      setRecipes((prev) => [...prev, data]);
       return { success: true, data };
     } catch (err) {
       setError(err.message);
@@ -35,13 +35,13 @@ export const useProductionPlans = () => {
     }
   };
 
-  const updateProductionPlan = async (id, planData) => {
+  const updateRecipe = async (id, recipeData) => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await productionAPI.update(id, planData);
-      setProductionPlans((prev) =>
-        prev.map((plan) => (plan.id === id ? data : plan))
+      const { data } = await recipeAPI.update(id, recipeData);
+      setRecipes((prev) =>
+        prev.map((recipe) => (recipe.id === id ? data : recipe))
       );
       return { success: true, data };
     } catch (err) {
@@ -52,12 +52,12 @@ export const useProductionPlans = () => {
     }
   };
 
-  const deleteProductionPlan = async (id) => {
+  const deleteRecipe = async (id) => {
     setLoading(true);
     setError(null);
     try {
-      await productionAPI.delete(id);
-      setProductionPlans((prev) => prev.filter((plan) => plan.id !== id));
+      await recipeAPI.delete(id);
+      setRecipes((prev) => prev.filter((recipe) => recipe.id !== id));
       return { success: true };
     } catch (err) {
       setError(err.message);
@@ -68,15 +68,15 @@ export const useProductionPlans = () => {
   };
 
   useEffect(() => {
-    fetchProductionPlans();
-  }, [fetchProductionPlans]);
+    fetchRecipes();
+  }, [fetchRecipes]);
 
   return {
-    productionPlans,
+    recipes,
     loading,
     error,
-    createProductionPlan,
-    updateProductionPlan,
-    deleteProductionPlan,
+    createRecipe,
+    updateRecipe,
+    deleteRecipe,
   };
 };
