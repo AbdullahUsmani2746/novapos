@@ -605,14 +605,22 @@ const entityConfig = {
     title: "Managers",
     endpoint: "managers",
     buttonText: "Add Manager",
-    fields: [
+    tableFields: [
+      { name: "manager", label: "Manager Name", sortable: true },
       {
-        name: "manager",
-        label: "Manager Name",
-        fieldType: "text",
-        required: true,
+        name: "department",
+        label: "Department",
         sortable: true,
+        relationKey: "dept_name",
       },
+      {
+        name: "employee",
+        label: "Employee",
+        sortable: true,
+        relationKey: "firstName",
+      },
+    ],
+    fields: [
       {
         relation: "department",
         relationName: "department",
@@ -623,19 +631,37 @@ const entityConfig = {
         optionLabelKey: "dept_name",
         optionValueKey: "id",
         required: true,
-        sortable: false,
       },
-      // {
-      //   relation: "company",
-      //   relationName: "company",
-      //   name: "company_id",
-      //   label: "Company",
-      //   fieldType: "select",
-      //   fetchFrom: "/api/setup/companies",
-      //   optionLabelKey: "company",
-      //   optionValueKey: "id",
-      //   required: true,
-      // },
+      {
+        relation: "employee",
+        relationName: "employee",
+        name: "employeeId",
+        label: "Employee (Manager)",
+        fieldType: "select",
+        // Department ke basis par employees filter karo
+        fetchFrom: (formData) => {
+          if (formData.department_id) {
+            return `/api/setup/employees?departmentId=${formData.department_id}&status=ACTIVE`;
+          }
+          return "/api/setup/employees?status=ACTIVE";
+        },
+        // Full name display karo
+        optionLabelKey: (item) => {
+          const middleName = item.middleName ? ` ${item.middleName}` : "";
+          return `${item.firstName}${middleName} ${item.surname}`;
+        },
+        optionValueKey: "id",
+        required: true,
+        dependsOn: ["department_id"],
+      },
+      {
+        name: "manager",
+        label: "Manager Name",
+        fieldType: "text",
+        required: true,
+        readOnly: true,
+        placeholder: "Will be auto-filled when employee is selected",
+      },
     ],
   },
 

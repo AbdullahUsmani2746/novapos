@@ -25,7 +25,12 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
       for (const field of fields) {
         if (field.fieldType === "select" && field.fetchFrom) {
           try {
-            const response = await fetch(field.fetchFrom);
+            // Check if fetchFrom is a function (for dynamic URLs)
+            const url = typeof field.fetchFrom === 'function' 
+              ? field.fetchFrom(formData) 
+              : field.fetchFrom;
+              
+            const response = await fetch(url);
             const result = await response.json();
             const data = result.data;
             relationDataObj[field.name] = data;
@@ -42,15 +47,93 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
     };
 
     fetchRelationData();
-  }, [fields]);
+  }, [fields, formData]); // formData dependency add kiya for dynamic fetching
 
-  const handleChange = (e) => {
+  // Special handler for dependent fields (like employee based on department)
+  const handleDependentFieldChange = async (fieldName, value) => {
+    // Find fields that depend on this field
+    const dependentFields = fields.filter(field => 
+      field.dependsOn && field.dependsOn.includes(fieldName)
+    );
+
+    // Reset dependent fields
+    const updatedFormData = { ...formData, [fieldName]: value };
+    
+    dependentFields.forEach(depField => {
+      updatedFormData[depField.name] = '';
+      // Clear manager name if employee is reset
+      if (depField.name === 'employeeId' && title.toLowerCase().includes('manager')) {
+        updatedFormData['manager'] = '';
+      }
+    });
+
+    setFormData(updatedFormData);
+
+    // Fetch new data for dependent fields
+    for (const depField of dependentFields) {
+      if (depField.fieldType === "select" && depField.fetchFrom && value) {
+        try {
+          const url = typeof depField.fetchFrom === 'function' 
+            ? depField.fetchFrom(updatedFormData) 
+            : depField.fetchFrom;
+            
+          const response = await fetch(url);
+          const result = await response.json();
+          const data = result.data;
+          
+          setRelationData(prev => ({
+            ...prev,
+            [depField.name]: data
+          }));
+        } catch (error) {
+          console.error(`Error fetching dependent data for ${depField.name}:`, error);
+        }
+      }
+    }
+  };
+
+  // Special handler for employee selection in manager form
+  const handleEmployeeSelection = async (employeeId) => {
+    if (title.toLowerCase().includes('manager') && employeeId) {
+      // Find the selected employee from relationData
+      const employees = relationData['employeeId'] || [];
+      const selectedEmployee = employees.find(emp => emp.id == employeeId);
+      
+      if (selectedEmployee) {
+        // Auto-fill manager name
+        const middleName = selectedEmployee.middleName ? ` ${selectedEmployee.middleName}` : '';
+        const fullName = `${selectedEmployee.firstName}${middleName} ${selectedEmployee.surname}`;
+        
+        setFormData(prev => ({
+          ...prev,
+          employeeId: employeeId,
+          manager: fullName
+        }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, employeeId: employeeId }));
+    }
+  };
+
+  const handleChange = async (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-
+    
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors({ ...errors, [name]: "" });
+    }
+
+    // Check if this field has dependent fields
+    const fieldConfig = fields.find(f => f.name === name);
+    const hasDependents = fields.some(f => f.dependsOn && f.dependsOn.includes(name));
+
+    if (hasDependents) {
+      await handleDependentFieldChange(name, value);
+    } else if (name === 'employeeId') {
+      // Special handling for employee selection in manager form
+      await handleEmployeeSelection(value);
+    } else {
+      setFormData({ ...formData, [name]: value });
     }
   };
 
@@ -214,6 +297,8 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
               placeholder={`Enter ${field.label.toLowerCase()}`}
               className={inputClasses}
               required={field.required}
+              // Manager name field ko readonly banao agar auto-fill hai
+              readOnly={field.name === 'manager' && title.toLowerCase().includes('manager')}
             />
           )}
 
@@ -278,15 +363,22 @@ const AddModal = ({ title, fields, onSubmit, onClose }) => {
                       {option.label}
                     </option>
                   ))
-                : relationData[field.name]?.map((item) => (
-                    <option
-                      key={item[field.optionValueKey]}
-                      value={item[field.optionValueKey]}
-                      className="text-gray-900"
-                    >
-                      {item[field.optionLabelKey]}
-                    </option>
-                  ))}
+                : relationData[field.name]?.map((item) => {
+                    // Handle dynamic option labels for employees
+                    const optionLabel = typeof field.optionLabelKey === 'function'
+                      ? field.optionLabelKey(item)
+                      : item[field.optionLabelKey];
+                      
+                    return (
+                      <option
+                        key={item[field.optionValueKey]}
+                        value={item[field.optionValueKey]}
+                        className="text-gray-900"
+                      >
+                        {optionLabel}
+                      </option>
+                    );
+                  })}
             </select>
           )}
 
