@@ -199,8 +199,8 @@ const data = {
       isActive: true,
       items: [
         {
-          title: "Iten Setup",
-          url: "/accounting/setup/items",
+          title: "Item Setup",
+          url: "/accounting/forms/items",
         },
         {
           title: "Company Setup",
