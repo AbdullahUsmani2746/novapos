@@ -1,4 +1,4 @@
-import ItemList from '@/components/forms/itemList';
+import ItemList from '@/components/Forms/itemList';
 
 export default function Home() {
   return <ItemList />;
