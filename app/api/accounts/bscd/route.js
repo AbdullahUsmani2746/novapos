@@ -30,9 +30,9 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { bscd, bscdDetail, mbscd } = body;
+    const { bscdDetail, mbscd } = body;
     
-    if (!bscd || !bscdDetail || !mbscd) {
+    if (!bscdDetail || !mbscd) {
       return NextResponse.json(
         { error: 'bscd, bscdDetail, and mbscd are required' },
         { status: 400 }
@@ -40,7 +40,7 @@ export async function POST(request) {
     }
 
     const parentExists = await prisma.mBSCD.findUnique({
-      where: { mbscd: mbscd },
+      where: { mbscd: Number(mbscd) },
     });
 
     if (!parentExists) {
@@ -52,9 +52,8 @@ export async function POST(request) {
 
     const newBscd = await prisma.bSCD.create({
       data: {
-        bscd: bscd,
         bscdDetail,
-        mbscd: mbscd,
+        mbscd: Number(mbscd),
       },
     //   include: {
     //     mainBsCd: true,

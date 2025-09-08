@@ -18,7 +18,7 @@ export async function GET(req) {
     const existingInvoice = await prisma.transactionsMaster.findFirst({
       where: {
         tran_code,
-        pycd,
+        pycd: Number(pycd),
         invoice_no,
       },
     });
@@ -29,7 +29,7 @@ export async function GET(req) {
       let existsNext = await prisma.transactionsMaster.findFirst({
         where: {
           tran_code,
-          pycd,
+          pycd: Number(pycd),
           invoice_no: nextInvoiceNo.toString(),
         },
       });
@@ -40,7 +40,7 @@ export async function GET(req) {
         existsNext = await prisma.transactionsMaster.findFirst({
           where: {
             tran_code,
-            pycd,
+            pycd: Number(pycd),
             invoice_no: nextInvoiceNo.toString(),
           },
         });

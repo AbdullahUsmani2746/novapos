@@ -39,7 +39,6 @@ export async function POST(request) {
     const body = await request.json();
     const { 
       macno, 
-      acno, 
       acname, 
       bankAccountNo,
       address,
@@ -71,10 +70,10 @@ export async function POST(request) {
       );
     }
 
-    if(!acno ){}
+    // if(!acno ){}
 
     const parentExists = await prisma.mACNO.findUnique({
-      where: { macno },
+      where: { macno: Number(macno) },
     });
 
     if (!parentExists) {
@@ -84,25 +83,24 @@ export async function POST(request) {
       );
     }
     // Check if the combination of macno and acno already exists
-    const existingAcno = await prisma.aCNO.findFirst({
-      where: {
-        macno: macno,
-        acno: acno,
-      },
-    });
+    // const existingAcno = await prisma.aCNO.findFirst({
+    //   where: {
+    //     macno: macno,
+    //     acno: acno,
+    //   },
+    // });
 
-    if (existingAcno) {
-      console.log('ACNO combination already exists:', existingAcno);
-      return NextResponse.json(
-        { error: 'ACNO combination already exists' },
-        { status: 400 }
-      );
-    }
+    // if (existingAcno) {
+    //   console.log('ACNO combination already exists:', existingAcno);
+    //   return NextResponse.json(
+    //     { error: 'ACNO combination already exists' },
+    //     { status: 400 }
+    //   );
+    // }
 
     const newAcno = await prisma.aCNO.create({
       data: {
-        macno: macno,
-        acno: acno,
+        macno: Number(macno),
         acname,
         bankAccountNo,
         address,

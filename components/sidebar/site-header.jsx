@@ -48,7 +48,7 @@ export function SiteHeader() {
                 href="#" 
                 className="text-sm font-semibold text-primary-foreground/90 hover:text-primary-foreground transition-all duration-300 px-3 py-1.5 rounded-lg hover:bg-background/10 backdrop-blur-sm border border-transparent hover:border-border/20"
               >
-                SIEGWERK PAKISTAN LIMITED
+                NOVA KNIVES
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator>

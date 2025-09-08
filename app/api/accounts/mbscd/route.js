@@ -20,9 +20,9 @@ export async function POST(request) {
   try {
     const body = await request.json();
     console.log(body);
-    const { mbscd, mbscdDetail } = body;
+    const { mbscdDetail } = body;
     
-    if (!mbscd || !mbscdDetail) {
+    if (!mbscdDetail) {
       return NextResponse.json(
         { error: 'Both bscd and bscdDetail are required' },
         { status: 400 }
@@ -31,7 +31,6 @@ export async function POST(request) {
 
     const newMbscd = await prisma.mBSCD.create({
       data: {
-        mbscd,
         mbscdDetail,
       },
     });

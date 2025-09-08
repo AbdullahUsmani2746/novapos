@@ -135,6 +135,7 @@ export async function POST(req, { params }) {
 
       if ([4, 6, 9, 10].includes(tran_code)) {
         master.godown = parseOptionalInt(master.godown);
+        master.pycd  = Number(master.pycd);
       }
     } else if (tran_code === 3 || tran_code === 11) {
       if (tran_code === 11) {
@@ -217,7 +218,7 @@ export async function POST(req, { params }) {
         }
 
         if (acnoValue !== null && acnoValue !== undefined) {
-          itemAccountMap[item.itcd] = acnoValue.toString().padStart(4, "0");
+          itemAccountMap[item.itcd] = Number(acnoValue);
         }
       }
 
@@ -228,6 +229,7 @@ export async function POST(req, { params }) {
       data: lines.map((line) => {
         const base = {
           ...line,
+          itcd: Number(line.itcd) || null,
           tran_id: masterData.tran_id,
           sub_tran_id: 1,
         };

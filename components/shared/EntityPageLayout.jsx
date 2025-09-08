@@ -89,7 +89,7 @@ const EntityPageLayout = ({
   const handleAddSubmit = async (formData) => {
     try {
       setLoading(true);
-      await axios.post(`/api/setup/${endpoint}`, formData);
+      await axios.post(`${endpoint}`, formData);
       setIsAddModalOpen(false);
       setCurrentPage(1);
       fetchData();
@@ -105,7 +105,7 @@ const EntityPageLayout = ({
       setLoading(true);
       console.log("editingItem", editingItem);
       await axios.put(
-        `/api/setup/${endpoint}/${editingItem.id || editingItem.ccno}`,
+        `${endpoint}/${editingItem.id || editingItem.ccno}`,
         formData
       );
       setEditingItem(null);
@@ -127,7 +127,7 @@ const EntityPageLayout = ({
     ) {
       try {
         setLoading(true);
-        await axios.delete(`/api/setup/${endpoint}/${id}`);
+        await axios.delete(`${endpoint}/${id}`);
 
         if (items.length === 1 && currentPage > 1) {
           setCurrentPage(currentPage - 1);

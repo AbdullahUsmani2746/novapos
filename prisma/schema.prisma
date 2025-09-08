@@ -514,7 +514,7 @@ model RECEIPE_DETAIL {
 model TransactionsMaster {
   tran_id       Int            @id @default(autoincrement())
   company_id    Int?
-  dateD         DateTime?
+  dated         DateTime?
   time          DateTime?
   tran_code     Int?
   vr_no         Int?

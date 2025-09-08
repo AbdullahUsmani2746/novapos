@@ -72,19 +72,11 @@ const data = {
       isActive: true,
       items: [
         {
-          title: "Bank Payment Voucher",
+          title: "Payment Voucher",
           url: "/accounting/voucher/payment",
         },
         {
-          title: "Cash Payment Voucher",
-          url: "/accounting/voucher/cashPayment",
-        },
-        {
-          title: "Bank Receipt Voucher",
-          url: "/accounting/voucher/receipt",
-        },
-        {
-          title: "Cash Receipt Voucher",
+          title: "Receipt Voucher",
           url: "/accounting/voucher/cashReceipt",
         },{
           title: "Journal Voucher",

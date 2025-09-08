@@ -260,8 +260,6 @@ export default function VoucherForm({
   const apiMap = {
     payment: "/api/voucher/payment",
     receipt: "/api/voucher/receipt",
-    cashPayment: "/api/voucher/payment",
-    cashReceipt: "/api/voucher/receipt",
     journal: "/api/voucher/journal",
     purchase: "/api/voucher/purchase",
     sale: "/api/voucher/sale",
