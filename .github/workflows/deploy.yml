@@ -31,10 +31,10 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: 2746
           script: |
-            cd accounting
+            cd novapos
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
             docker stop novapos || true
             docker rm novapos || true
             docker image rm ghcr.io/${{ secrets.GHCR_USERNAME }}/novapos:latest || true
             docker pull ghcr.io/${{ secrets.GHCR_USERNAME }}/novapos:latest
-            docker run -d --env-file .env -p 3003:3003 -v /var/www/uploads:/app/public/uploads --name accounting ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest
+            docker run -d --env-file .env -p 3003:3003 -v /var/www/uploads:/app/public/uploads --name novapos ghcr.io/${{ secrets.GHCR_USERNAME }}/novapos:latest
