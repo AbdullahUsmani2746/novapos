@@ -6,26 +6,46 @@ const prisma = new PrismaClient();
 async function main() {
   const users = [
     {
-      id: "SALES",
-      name: "Sales User",
-      email: "sale@demo.com",
+      name: "Admin User",
+      email: "admin@demo.com",
       password: "admin123",
-      role: "SALES",
+      role: "ADMIN",
+
     },
-     {
-      id: "SALES_2",
-      name: "Sales User",
-      email: "sale_2@demo.com",
-      password: "admin123",
-      role: "SALES",
+    {
+      name: "Cashier User",
+      email: "cashier@demo.com",
+      password: "cashier123",
+      role: "CASHIER",
     },
-     {
-      id: "SALES_3",
-      name: "Sales User",
-      email: "sale_3demo.com",
-      password: "admin123",
-      role: "SALES",
+    {
+      name: "Accountant",
+      email: "Accountant@demo.com",
+      password: "accountant123",
+      role: "ACCOUNTANT",
     },
+
+    // {
+    //   id: "SALES",
+    //   name: "Sales User",
+    //   email: "sale@demo.com",
+    //   password: "admin123",
+    //   role: "SALES",
+    // },
+    //  {
+    //   id: "SALES_2",
+    //   name: "Sales User",
+    //   email: "sale_2@demo.com",
+    //   password: "admin123",
+    //   role: "SALES",
+    // },
+    //  {
+    //   id: "SALES_3",
+    //   name: "Sales User",
+    //   email: "sale_3demo.com",
+    //   password: "admin123",
+    //   role: "SALES",
+    // },
     
   ];
 
