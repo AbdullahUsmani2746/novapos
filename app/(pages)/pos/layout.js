@@ -128,7 +128,7 @@ const ModernPosLayout = ({ children }) => {
               </div>
               <div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-white">
-                  Silky Slik Flowers
+                  Nova Knives
                 </h1>
                 <p className="text-xs text-white">Point of Sale</p>
               </div>
