@@ -72,12 +72,20 @@ const data = {
       isActive: true,
       items: [
         {
-          title: "Payment Voucher",
+          title: "Bank Payment Voucher",
           url: "/accounting/voucher/payment",
         },
         {
-          title: "Receipt Voucher",
+          title: "Cash Payment Voucher",
+          url: "/accounting/voucher/cashPayment",
+        },
+        {
+          title: "Bank Receipt Voucher",
           url: "/accounting/voucher/receipt",
+        },
+        {
+          title: "Cash Receipt Voucher",
+          url: "/accounting/voucher/cashReceipt",
         },{
           title: "Journal Voucher",
           url: "/accounting/voucher/journal",
@@ -202,7 +210,7 @@ const data = {
           title: "Item Setup",
           url: "/accounting/forms/items",
         },
-        {
+        { 
           title: "Company Setup",
           url: "/accounting/setup/companies",
         },
@@ -492,13 +500,13 @@ export function AppSidebar({
 }) {
   return (
     (<Sidebar
-      className="top-[--header-height] !h-[calc(100svh-var(--header-height))]"
+      className="top-[--header-height] !h-[calc(100svh-var(--header-height)) "
       {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="#">
+              {/* <a href="#">
                 <div
   className="flex aspect-square size-12 items-center justify-center rounded-lg bg-sidebar-primary-foreground text-sidebar-primary-foreground">
   <Image
@@ -513,7 +521,7 @@ export function AppSidebar({
                   <span className="truncate font-semibold">SIEGWERK PAKISTAN LIMITED</span>
                   <span className="truncate text-xs">ENTERPRISE</span>
                 </div>
-              </a>
+              </a> */}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -528,9 +536,9 @@ export function AppSidebar({
         {/* <NavProjects projects={data.projects} /> */}
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
-      <SidebarFooter>
+      {/* <SidebarFooter>
         <NavUser user={data.user} />
-      </SidebarFooter>
+      </SidebarFooter> */}
     </Sidebar>)
   );
 }

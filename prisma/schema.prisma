@@ -272,6 +272,10 @@ model Item {
   a             String?        @db.VarChar(50)
   l             String?        @db.VarChar(50)
   b             String?        @db.VarChar(50)
+  weight        Float?
+  length        Float?
+  width         Float?
+  height        Float?
   stock         Int?
   description   String?        @db.VarChar(500)
   wc_product_id  Int?          @unique
@@ -413,35 +417,48 @@ model BomMaster {
 
 
 model BomDetail {
-  bom_id          Int        @id
-  finished_id      Int
+  id              Int        @id @default(autoincrement())
+  bom_id          Int       
   material_id     Int
-  material_percentage Float 
+  material_percentage Float? 
   bomMaster   BomMaster  @relation(fields: [bom_id], references: [id])
   item        Item       @relation(fields: [material_id], references: [itcd])
 }
-
-
 model productionPlanMaster {
-  id               Int                     @id @default(autoincrement())
-  date_created     DateTime                @default(now())
-  finished_id       Int                   // Reference to finished product (Item itcd)
-  Qty              Float                   // Quantity to produce
-  status           String?                 @db.VarChar(25) // e.g., Planned, In Progress, Completed
-  item        Item        @relation(fields: [finished_id], references: [itcd])  
-  productionPlanDetail  productionPlanDetail[]
-  // createdByUser   User                    @relation(fields: [created_by], references: [id])
+  id               Int      @id @default(autoincrement()) // PRD_ORD_NO
+  receipe_id       Int
+  finished_id      Int
+  bom_id           Int?
+  qty              Float
+  dated            DateTime @default(now())
+  req_del_date     DateTime?
+  batch_no         String?   @db.VarChar(50)
+  machine_id       Int?
+  time_min         Int?
+  actual_yield     Float?
+  viscosity        String?   @db.VarChar(50)
+  sale_ord_no      Int?
+
+  // Relations
+  item             Item                @relation(fields: [finished_id], references: [itcd])
+  receipe          RECEIPE_MASTER      @relation(fields: [receipe_id], references: [receipe_id])
+  productionPlanDetail productionPlanDetail[]
 }
+
 
 model productionPlanDetail {
-  id                   Int                     @id @default(autoincrement())
+  id                   Int   @id @default(autoincrement()) // SNO
   plan_id              Int
-  material_id         Int
-  material_qty       Float                   // Quantity of material required
-  material_percentage  Float                   // Percentage of material in the BOM
-  productionPlanMaster productionPlanMaster   @relation(fields: [plan_id], references: [id])
-  item                Item                    @relation(fields: [material_id], references: [itcd])
+  material_id          Int
+  material_qty         Float
+  material_percentage  Float?
+  material_desc         String?   @db.VarChar(200)
+  sno                  Int?
+
+  productionPlanMaster productionPlanMaster @relation(fields: [plan_id], references: [id])
+  item                Item                  @relation(fields: [material_id], references: [itcd])
 }
+
 
 model MACHINE_INSTRUCTION_MASTER {
   rec_id Int @id @default(autoincrement())
@@ -479,6 +496,7 @@ model RECEIPE_MASTER {
   bomRef BomMaster? @relation(fields: [bom_id], references: [id])
   item Item @relation(fields: [finished_id], references: [itcd])
   receipeDetails RECEIPE_DETAIL[]
+  productionPlanMaster productionPlanMaster[]
 }
 
 model RECEIPE_DETAIL {

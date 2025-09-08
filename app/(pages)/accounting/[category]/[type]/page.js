@@ -20,14 +20,28 @@ import axios from "axios";
 const CONFIG = {
   voucher: {
     payment: {
-      label: "Payment",
+      label: "Bank Payment",
+      stats: ["total"],
+      apiPath: "payment",
+      icon: TrendingUp,
+      gradient: "from-primary to-primary",
+    },
+    cashPayment: {
+      label: "Cash Payment",
       stats: ["total"],
       apiPath: "payment",
       icon: TrendingUp,
       gradient: "from-primary to-primary",
     },
     receipt: {
-      label: "Receipt",
+      label: "Bank Receipt",
+      stats: ["total"],
+      apiPath: "receipt",
+      icon: BarChart3,
+      gradient: "from-primary to-primary",
+    },
+     cashReceipt: {
+      label: "Cash Receipt",
       stats: ["total"],
       apiPath: "receipt",
       icon: BarChart3,

@@ -3,6 +3,7 @@ export const VOUCHER_CONFIG = {
   payment: {
     tran_code: 2,
     hasDeductionBlock: true,
+    paymentType: "bank",
     masterFields: [
       {
         name: "pycd",
@@ -10,7 +11,344 @@ export const VOUCHER_CONFIG = {
         label: "Paid From",
         type: "select",
         options: "masterAccounts", // This is the key to store and access
-        apiEndpoint: "/api/accounts/acno?macno=003,004",
+        apiEndpoint: "/api/accounts/acno?macno=27",
+        createEndpoint: "/api/accounts/acno",
+        nameKey: "acname",
+        valueKey: "acno",
+        required: true,
+        modalFields: [
+          {
+            name: "acname",
+            label: "Account Name",
+            type: "text",
+            required: true,
+          },
+          {
+            name: "acno",
+            label: "Main Account",
+            type: "select",
+            options: "mainAccounts",
+            apiEndpoint: "/api/accounts/acno?macno=003",
+            valueKey: "acno",
+            nameKey: "acname",
+            required: true,
+          },
+        ],
+      },
+      {
+        name: "dated",
+        label: "Date",
+        type: "date",
+        required: true,
+      },
+      {
+        name: "vr_no",
+        label: "Vr No",
+        type: "text",
+        required: true,
+        autoGenerate: true,
+      },
+      { name: "check_no", label: "Check No", type: "text" },
+      { name: "check_date", label: "Check Date", type: "date" },
+      { name: "rmk", label: "Narration", type: "textarea" },
+      // { name: "rmk1", label: "Export Inv From", type: "text" },
+      // { name: "rmk2", label: "RMK1", type: "text" },
+      // { name: "rmk3", label: "Fwd Cont#", type: "text" },
+      // { name: "rmk4", label: "FE Ref#", type: "text" },
+      // { name: "rmk5", label: "RMK5", type: "text" },
+    ],
+    lineFields: [
+      {
+        name: "acname",
+        formName: "acno",
+        label: "A/c Name",
+        type: "select",
+        options: "accounts",
+        apiEndpoint: "/api/accounts/acno?excludeMacno=003,004",
+        createEndpoint: "/api/accounts/acno",
+        nameKey: "acname",
+        valueKey: "acno",
+        modalFields: [
+          {
+            name: "acname",
+            label: "Account Name",
+            type: "text",
+            required: true,
+          },
+          {
+            name: "macno",
+            label: "Main Account",
+            type: "select",
+            options: "mainAccounts",
+            apiEndpoint: "/api/accounts/macno",
+            valueKey: "macno",
+            nameKey: "macname",
+            required: true,
+          },
+        ],
+      },
+      {
+        name: "ccname",
+        formName: "ccno",
+        label: "Cost Center",
+        type: "select",
+        options: "costCenters",
+        apiEndpoint: "/api/setup/cost_centers",
+        createEndpoint: "/api/setup/cost_centers",
+        nameKey: "ccname",
+        valueKey: "ccno",
+        modalFields: [
+          {
+            name: "ccname",
+            label: "Cost Center Name",
+            type: "text",
+            required: true,
+          },
+        ],
+      },
+      { name: "invoice_no", label: "Invoice No", type: "text" },
+      { name: "wht_rate", label: "WHT Rate", type: "number" },
+      { name: "chno", label: "Check No", type: "text" },
+      { name: "narration1", label: "Narration", type: "text" },
+      { name: "narration2", label: "Narration2", type: "text" },
+      {
+        name: "currency",
+        formName: "currency",
+        label: "Currency",
+        type: "select",
+        options: "currencies",
+        apiEndpoint: "/api/setup/currencies",
+        createEndpoint: "/api/setup/currencies",
+        nameKey: "currency",
+        valueKey: "id",
+        modalFields: [
+          {
+            name: "currency",
+            label: "Currency Name",
+            type: "text",
+            required: true,
+          },
+        ],
+      },
+      { name: "fc_amount", label: "FC Amt", type: "number" },
+      { name: "rate", label: "Exc Rate", type: "number" },
+      {
+        name: "damt",
+        label: "Amount",
+        type: "number",
+        // dependencies: ["fc_amount", "rate"],
+        calculate: (v) => v.fc_amount * v.rate,
+        validate: (() => {
+          let timeoutId;
+          let lastValidatedValue = null;
+          let pendingValidation = false;
+
+          return async (value, line) => {
+            // Skip if same as last validated value or already validating
+            if (value === lastValidatedValue || pendingValidation) return null;
+
+            // Clear any pending validation
+            if (timeoutId) clearTimeout(timeoutId);
+
+            // Return immediately for empty values
+            if (!value || !line.invoice_no) {
+              lastValidatedValue = value;
+              return null;
+            }
+
+            // Set pending state
+            pendingValidation = true;
+
+            return new Promise((resolve) => {
+              timeoutId = setTimeout(async () => {
+                try {
+                  const response = await axios.get(
+                    `/api/voucher/check-amount?invoice_no=${line.invoice_no}&amount=${value}&camt=true`
+                  );
+
+                  lastValidatedValue = value;
+
+                  if (!response.data.exists) {
+                    resolve(`Invoice ${line.invoice_no} not found`);
+                  } else if (!response.data.valid) {
+                    resolve(
+                      `Amount exceeds available balance (${response.data.availableBalance})`
+                    );
+                  } else {
+                    resolve("null");
+                  }
+                } catch (error) {
+                  resolve(`Validation error: ${error.message}`);
+                } finally {
+                  pendingValidation = false;
+                }
+              }, 800); // Increased debounce to 800ms for better UX
+            });
+          };
+        })(),
+      },
+    ],
+    deductionFields: [
+      {
+        name: "acname",
+        formName: "acno",
+        label: "A/c Name",
+        type: "select",
+        options: "accounts",
+        apiEndpoint: "/api/accounts/acno?excludeMacno=003,004",
+        createEndpoint: "/api/accounts/acno",
+        nameKey: "acname",
+        valueKey: "acno",
+        modalFields: [
+          {
+            name: "acname",
+            label: "Account Name",
+            type: "text",
+            required: true,
+          },
+          {
+            name: "macno",
+            label: "Main Account",
+            type: "select",
+            options: "mainAccounts",
+            apiEndpoint: "/api/accounts/macno",
+            valueKey: "macno",
+            nameKey: "macname",
+            required: true,
+          },
+        ],
+      },
+      {
+        name: "ccname",
+        formName: "ccno",
+        label: "Cost Center",
+        type: "select",
+        options: "costCenters",
+        apiEndpoint: "/api/setup/cost_centers",
+        createEndpoint: "/api/setup/cost_centers",
+        nameKey: "ccname",
+        valueKey: "ccno",
+        modalFields: [
+          {
+            name: "ccname",
+            label: "Cost Center Name",
+            type: "text",
+            required: true,
+          },
+        ],
+      },
+      { name: "invoice_no", label: "Invoice No", type: "text" },
+      { name: "wht_rate", label: "WHT Rate", type: "number" },
+      { name: "chno", label: "Check No", type: "text" },
+      { name: "narration1", label: "Narration", type: "text" },
+      { name: "narration2", label: "Narration2", type: "text" },
+      {
+        name: "currency",
+        formName: "currency",
+        label: "Currency",
+        type: "select",
+        options: "currencies",
+        apiEndpoint: "/api/setup/currencies",
+        createEndpoint: "/api/setup/currencies",
+        nameKey: "currency",
+        valueKey: "id",
+        modalFields: [
+          {
+            name: "currency",
+            label: "Currency Name",
+            type: "text",
+            required: true,
+          },
+        ],
+      },
+      { name: "fc_amount", label: "FC Amt", type: "number" },
+      { name: "rate", label: "Exc Rate", type: "number" },
+      {
+        name: "camt",
+        label: "Amount",
+        type: "number",
+        dependencies: ["fc_amount", "rate"],
+        calculate: (v) => v.fc_amount * v.rate,
+      },
+    ],
+    totals: {
+      mainTotal: {
+        label: "Total Payments",
+        calculate: (lines) => lines.reduce((sum, l) => sum + (l.damt || 0), 0),
+      },
+      deductionTotal: {
+        label: "Total Deductions",
+        calculate: (lines) => lines.reduce((sum, l) => sum + (l.camt || 0), 0),
+      },
+      netTotal: {
+        label: "Net Payment",
+        calculate: (_, t) => t.mainTotal - t.deductionTotal,
+      },
+    },
+    balanceCheck: {
+      condition: async (formData) => {
+        // First check if net total is negative
+        if (formData.totals.netTotal < 0) return false;
+
+        // Then validate against API
+        try {
+          const response = await axios.get(
+            "/api/reports/trialBalance?dateTo=2025-07-31T11:00:00.000Z"
+          );
+          let isValid = false;
+          if (response.data.data) {
+            response.data.data.forEach((data) => {
+              if (data.acno === formData.master.pycd) {
+                if (data.balance >= formData.totals.netTotal) {
+                  isValid = true;
+                }
+              }
+            });
+          }
+
+          return isValid;
+        } catch (error) {
+          console.error("Validation API error:", error);
+          return false; // Fail-safe: don't allow if API fails
+        }
+      },
+      errorMessage: (formData) => {
+        if (formData.totals.netTotal < 0) {
+          return `Net Receipt cannot be negative (Current: ${formData.totals.netTotal.toFixed(
+            2
+          )})`;
+        }
+        return "Net total exceeds available balance or violates business rules";
+      },
+    },
+
+    tableFields: [
+      { name: "dated", label: "Date", type: "date" },
+      { name: "tran_id", label: "Transaction No", type: "text" },
+      { name: "vr_no", label: "Voucher No", type: "text" },
+      {
+        name: "pycd",
+        label: "Paid From",
+        type: "text",
+        refApi: "/api/accounts/acno?acno=",
+        refValueKey: "acno",
+        refNameKey: "acname",
+      },
+      { name: "rmk", label: "Narration", type: "text" },
+    ],
+  },
+  cashPayment: {
+    tran_code: 2,
+    paymentType: "cash",
+    hasDeductionBlock: true,
+    masterFields: [
+      {
+        name: "pycd",
+        formName: "pycd",
+        label: "Paid From",
+        type: "select",
+        options: "masterAccounts", // This is the key to store and access
+        apiEndpoint: "/api/accounts/acno?macno=65",
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",
@@ -339,6 +677,7 @@ export const VOUCHER_CONFIG = {
   receipt: {
     tran_code: 1,
     hasDeductionBlock: true,
+    paymentType: "bank",
     masterFields: [
       {
         name: "pycd",
@@ -347,6 +686,329 @@ export const VOUCHER_CONFIG = {
         type: "select",
         options: "masterAccounts", // This is the key to store and access
         apiEndpoint: "/api/accounts/acno?macno=003,004",
+        createEndpoint: "/api/accounts/acno",
+        nameKey: "acname",
+        valueKey: "acno",
+        required: true,
+        modalFields: [
+          {
+            name: "acname",
+            label: "Account Name",
+            type: "text",
+            required: true,
+          },
+          {
+            name: "macno",
+            label: "Main Account",
+            type: "select",
+            options: "mainAccounts",
+            apiEndpoint: "/api/accounts/macno",
+            valueKey: "macno",
+            nameKey: "macname",
+            required: true,
+          },
+        ],
+      },
+      {
+        name: "dated",
+        label: "Date",
+        type: "date",
+        required: true,
+      },
+      {
+        name: "vr_no",
+        label: "Vr No",
+        type: "text",
+        required: true,
+        autoGenerate: true,
+      },
+      { name: "check_no", label: "Check No", type: "text" },
+      { name: "check_date", label: "Check Date", type: "date" },
+      { name: "rmk", label: "Narration", type: "textarea" },
+      // { name: "rmk1", label: "Exp Basis", type: "text" },
+      // { name: "rmk2", label: "Export INV#", type: "text" },
+      // { name: "rmk3", label: "Fwd Cont#", type: "text" },
+      // { name: "rmk5", label: "FE Ref#", type: "text" },
+    ],
+    lineFields: [
+      {
+        name: "acname",
+        formName: "acno",
+        label: "A/c Name",
+        type: "select",
+        options: "accounts",
+        apiEndpoint: "/api/accounts/acno?excludeMacno=27",
+        createEndpoint: "/api/accounts/acno",
+        nameKey: "acname",
+        valueKey: "acno",
+        modalFields: [
+          {
+            name: "acname",
+            label: "Account Name",
+            type: "text",
+            required: true,
+          },
+          {
+            name: "macno",
+            label: "Main Account",
+            type: "select",
+            options: "mainAccounts",
+            apiEndpoint: "/api/accounts/macno",
+            valueKey: "macno",
+            nameKey: "macname",
+            required: true,
+          },
+        ],
+      },
+      {
+        name: "ccname",
+        formName: "ccno",
+        label: "Cost Center",
+        type: "select",
+        options: "costCenters",
+        apiEndpoint: "/api/setup/cost_centers",
+        createEndpoint: "/api/setup/cost_centers",
+        nameKey: "ccname",
+        valueKey: "ccno",
+        modalFields: [
+          {
+            name: "ccname",
+            label: "Cost Center Name",
+            type: "text",
+            required: true,
+          },
+        ],
+      },
+      // { name: "invoice_no", label: "Invoice No", type: "text" },
+      {
+        name: "invoice_no",
+        formName: "invoice_no",
+        label: "Invoice No",
+        type: "select",
+        options: "invoiceAccounts", // This is the key to store and access
+        apiEndpoint: "/api/invoice/",
+        createEndpoint: "/api/invoice/",
+        nameKey: "display",
+        valueKey: "invoice_no",
+        required: true,
+      },
+      { name: "wht_rate", label: "WHT Rate", type: "number" },
+      { name: "chno", label: "Check No", type: "text" },
+      { name: "narration1", label: "Narration", type: "text" },
+      { name: "narration2", label: "Narration2", type: "text" },
+      {
+        name: "currency",
+        formName: "currency",
+        label: "Currency",
+        type: "select",
+        options: "currencies",
+        apiEndpoint: "/api/setup/currencies",
+        createEndpoint: "/api/setup/currencies",
+        nameKey: "currency",
+        valueKey: "id",
+        modalFields: [
+          {
+            name: "currency",
+            label: "Currency Name",
+            type: "text",
+            required: true,
+          },
+        ],
+      },
+      { name: "fc_amount", label: "FC Amt", type: "number" },
+      { name: "rate", label: "Exc Rate", type: "number" },
+      {
+        name: "camt",
+        label: "Amount",
+        type: "number",
+        // dependencies: ["fc_amount", "rate"],
+        calculate: (v) => v.fc_amount * v.rate,
+        validate: (() => {
+          let timeoutId;
+          let lastValidatedValue = null;
+          let pendingValidation = false;
+
+          return async (value, line) => {
+            // Skip if same as last validated value or already validating
+            if (value === lastValidatedValue || pendingValidation) return null;
+
+            // Clear any pending validation
+            if (timeoutId) clearTimeout(timeoutId);
+
+            // Return immediately for empty values
+            if (!value || !line.invoice_no) {
+              lastValidatedValue = value;
+              return null;
+            }
+
+            // Set pending state
+            pendingValidation = true;
+
+            return new Promise((resolve) => {
+              timeoutId = setTimeout(async () => {
+                try {
+                  const response = await axios.get(
+                    `/api/voucher/check-amount?invoice_no=${line.invoice_no}&amount=${value}&damt=true`
+                  );
+
+                  lastValidatedValue = value;
+
+                  if (!response.data.exists) {
+                    resolve(`Invoice ${line.invoice_no} not found`);
+                  } else if (!response.data.valid) {
+                    resolve(
+                      `Amount exceeds available balance (${response.data.availableBalance})`
+                    );
+                  } else {
+                    resolve("null");
+                  }
+                } catch (error) {
+                  resolve(`Validation error: ${error.message}`);
+                } finally {
+                  pendingValidation = false;
+                }
+              }, 800); // Increased debounce to 800ms for better UX
+            });
+          };
+        })(),
+      },
+    ],
+    deductionFields: [
+      {
+        name: "acname",
+        formName: "acno",
+        label: "A/c Name",
+        type: "select",
+        options: "accounts",
+        apiEndpoint: "/api/accounts/acno?excludeMacno=003,004",
+        createEndpoint: "/api/accounts/acno",
+        nameKey: "acname",
+        valueKey: "acno",
+        modalFields: [
+          {
+            name: "acname",
+            label: "Account Name",
+            type: "text",
+            required: true,
+          },
+          {
+            name: "macno",
+            label: "Main Account",
+            type: "select",
+            options: "mainAccounts",
+            apiEndpoint: "/api/accounts/macno",
+            valueKey: "macno",
+            nameKey: "macname",
+            required: true,
+          },
+        ],
+      },
+      {
+        name: "ccname",
+        formName: "ccno",
+        label: "Cost Center",
+        type: "select",
+        options: "costCenters",
+        apiEndpoint: "/api/setup/cost_centers",
+        createEndpoint: "/api/setup/cost_centers",
+        nameKey: "ccname",
+        valueKey: "ccno",
+        modalFields: [
+          {
+            name: "ccname",
+            label: "Cost Center Name",
+            type: "text",
+            required: true,
+          },
+        ],
+      },
+      {
+        name: "invoice_no",
+        formName: "invoice_no",
+        label: "Invoice No",
+        type: "select",
+        options: "invoiceAccounts", // This is the key to store and access
+        apiEndpoint: "/api/invoice/",
+        createEndpoint: "/api/invoice/",
+        nameKey: "display",
+        valueKey: "invoice_no",
+        required: true,
+      },
+      { name: "wht_rate", label: "WHT Rate", type: "number" },
+      { name: "chno", label: "Check No", type: "text" },
+      { name: "narration1", label: "Narration", type: "text" },
+      { name: "narration2", label: "Narration2", type: "text" },
+      {
+        name: "currency",
+        formName: "currency",
+        label: "Currency",
+        type: "select",
+        options: "currencies",
+        apiEndpoint: "/api/setup/currencies",
+        createEndpoint: "/api/setup/currencies",
+        nameKey: "currency",
+        valueKey: "id",
+        modalFields: [
+          {
+            name: "currency",
+            label: "Currency Name",
+            type: "text",
+            required: true,
+          },
+        ],
+      },
+      { name: "fc_amount", label: "FC Amt", type: "number" },
+      { name: "rate", label: "Exc Rate", type: "number" },
+      {
+        name: "damt",
+        label: "Amount",
+        type: "number",
+        dependencies: ["fc_amount", "rate"],
+        calculate: (v) => v.fc_amount * v.rate,
+      },
+    ],
+    totals: {
+      mainTotal: {
+        label: "Total Receipts",
+        calculate: (lines) => lines.reduce((sum, l) => sum + (l.camt || 0), 0),
+      },
+      deductionTotal: {
+        label: "Total Deductions",
+        calculate: (lines) => lines.reduce((sum, l) => sum + (l.damt || 0), 0),
+      },
+      netTotal: {
+        label: "Net Receipt",
+        calculate: (_, t) => t.mainTotal - t.deductionTotal,
+      },
+    },
+
+    balanceCheck: {
+      condition: (formData) => formData.totals.netTotal >= 0,
+      errorMessage: (formData) =>
+        `Net Receipt (${formData.totals.netTotal.toFixed(
+          2
+        )}) cannot be negative.`,
+    },
+    tableFields: [
+      { name: "dated", label: "Date", type: "date" },
+      { name: "tran_id", label: "Transaction No", type: "text" },
+      { name: "vr_no", label: "Voucher No", type: "text" },
+      { name: "pycd", label: "Received At", type: "text" },
+      { name: "rmk", label: "Narration", type: "text" },
+    ],
+  },
+  cashReceipt: {
+    tran_code: 1,
+    hasDeductionBlock: true,
+    paymentType: "cash",
+    masterFields: [
+      {
+        name: "pycd",
+        formName: "pycd",
+        label: "Received At",
+        type: "select",
+        options: "masterAccounts", // This is the key to store and access
+        apiEndpoint: "/api/accounts/acno?macno=65",
         createEndpoint: "/api/accounts/acno",
         nameKey: "acname",
         valueKey: "acno",

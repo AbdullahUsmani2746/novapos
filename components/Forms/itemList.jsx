@@ -238,9 +238,9 @@ export default function ItemList() {
             <table className="w-full">
               <thead>
                 <tr className="bg-gradient-to-r from-primary to-primary">
-                  {fields.map((field) => (
+                  {fields.map((field, index) => (
                     <th
-                      key={field.name}
+                      key={index}
                       className={`group px-8 py-5 text-left text-sm text-white uppercase tracking-wider ${
                         field.sortable
                           ? "cursor-pointer hover:bg-opacity-90 transition-all duration-200"
@@ -283,9 +283,9 @@ export default function ItemList() {
                     </td>
                   </tr>
                 ) : (
-                  items.map((item) => (
+                  items.map((item, index) => (
                     <tr
-                      key={item.itcd}
+                      key={index}
                       className={`group transition-all duration-200 ${
                         hoveredRow === item.itcd
                           ? "bg-secondary shadow-sm"
@@ -382,9 +382,9 @@ export default function ItemList() {
 
                 {/* Page Numbers */}
                 <div className="flex">
-                  {getPageNumbers().map((pageNum) => (
+                  {getPageNumbers().map((pageNum, index) => (
                     <button
-                      key={pageNum}
+                      key={index}
                       onClick={() => handlePageChange(pageNum)}
                       className={`inline-flex items-center px-4 py-2 text-sm font-medium border-t border-b border-r transition-all duration-200 ${
                         pageNum === pagination.page

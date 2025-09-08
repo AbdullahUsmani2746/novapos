@@ -260,6 +260,8 @@ export default function VoucherForm({
   const apiMap = {
     payment: "/api/voucher/payment",
     receipt: "/api/voucher/receipt",
+    cashPayment: "/api/voucher/payment",
+    cashReceipt: "/api/voucher/receipt",
     journal: "/api/voucher/journal",
     purchase: "/api/voucher/purchase",
     sale: "/api/voucher/sale",
@@ -587,8 +589,14 @@ export default function VoucherForm({
       const fetchVrNo = async () => {
         setLoading((prev) => ({ ...prev, vrNo: true }));
         try {
+          if(voucherConfig.tran_code===1 || voucherConfig.tran_code===2){
+            // For receipt and payment vouchers, ensure paymentType is set
+            if(!voucherConfig.paymentType){
+              throw new Error("Payment type not specified in voucher configuration");
+            }            
+          }
           const response = await axios.get(
-            `/api/voucher/next-vr-no?tran_code=${voucherConfig.tran_code}`
+            `/api/voucher/next-vr-no?tran_code=${voucherConfig.tran_code}&paymentType=${voucherConfig.paymentType || ""}`
           );
           setMasterData((prev) => ({ ...prev, vr_no: response.data.nextVrNo }));
         } catch (error) {

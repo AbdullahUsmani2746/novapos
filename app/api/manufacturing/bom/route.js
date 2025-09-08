@@ -1,37 +1,122 @@
-// app/api/bom/route.js
 import prisma from '@/lib/prisma';
+import { NextResponse } from 'next/server';
 
-export async function GET() {
+// GET: Fetch all BOMs with pagination, sorting, and filtering
+// export async function GET(request) {
+//   const { searchParams } = new URL(request.url);
+//   const search = searchParams.get('search') || '';
+//   const status = searchParams.get('status') || '';
+//   const page = parseInt(searchParams.get('page') || '1');
+//   const limit = parseInt(searchParams.get('limit') || '10');
+//   const sortBy = searchParams.get('sortBy') || 'id';
+//   const sortOrder = searchParams.get('sortOrder') || 'asc';
+
+//   try {
+//     const where = {};
+//     if (search) {
+//       where.OR = [
+//         { item: { item: { contains: search, mode: 'insensitive' } } },
+//         { finished_id: { contains: search, mode: 'insensitive' } },
+//       ];
+//     }
+//     if (status) {
+//       where.status = status;
+//     }
+
+//     const orderBy = { [sortBy]: sortOrder };
+
+//     const total = await prisma.bomMaster.count({ where });
+//     const boms = await prisma.bomMaster.findMany({
+//       where,
+//       orderBy,
+//       skip: (page - 1) * limit,
+//       take: limit,
+//       include: {
+//         bomDetails: {
+//           include: { item: true },
+//         },
+//         item: true,
+//         receipeMasters: { select: { id: true } }, // For linkedRecipes
+//       },
+//     });
+
+//     const formatted = boms.map(bom => ({
+//       id: bom.id,
+//       finishedId: bom.finished_id,
+//       productName: bom.item?.item || 'Unknown',
+//       dateCreated: bom.created_at?.toISOString().split('T')[0] || '',
+//       status: bom.status || 'Active',
+//       linkedRecipes: bom.receipeMasters.map(r => r.id),
+//       materials: bom.bomDetails.map(detail => ({
+//         id: detail.item.itcd,
+//         name: detail.item.item,
+//         percentage: detail.percentage,
+//       })),
+//       category: bom.category || 'Finished',
+//     }));
+
+//     return NextResponse.json({ data: formatted, total }, { status: 200 });
+//   } catch (error) {
+//     return NextResponse.json({ error: error.message }, { status: 500 });
+//   }
+// }
+
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const search = searchParams.get('search') || '';
+  const status = searchParams.get('status') || '';
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '10');
+  const sortBy = searchParams.get('sortBy') || 'id';
+  const sortOrder = searchParams.get('sortOrder') || 'asc';
   try {
+    const where = {};
+    if (search) {
+      where.OR = [
+        // { item: { item: { contains: search, mode: 'insensitive' } } },
+        { finished_id: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    if (status) {
+      where.status = status;
+    }
+
+    const orderBy = { [sortBy]: sortOrder };
+
+    const total = await prisma.bomMaster.count({ where });
     const boms = await prisma.bomMaster.findMany({
+      where,
+      orderBy,
+      skip: (page - 1) * limit,
+      take: limit,
       include: {
         bomDetails: {
           include: { item: true },
         },
         item: true,
-        receipeMasters: true, // Link to recipes
+        receipeMasters: true,
       },
     });
-    const formatted = boms.map(bom => ({
-      id: bom.id,
-      finishedId: bom.finished_id,
-      productName: bom.item.item,
-      dateCreated: bom.dated?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
-      instructions: bom.instructions,
-      status: 'Active', // Assume default
-      materials: bom.bomDetails.map(detail => ({
-        id: detail.material_id,
-        name: detail.item.item,
-        percentage: detail.material_percentage,
-      })),
-      linkedRecipes: bom.receipeMasters.map(recipe => recipe.receipe_id),
-    }));
-    return Response.json({ data: formatted }, { status: 200 });
+    if (!boms) return Response.json({ error: 'Not found' }, { status: 404 });
+    // const formatted = boms.map(bom => ({
+    //   id: bom.id,
+    //   finishedId: bom.finished_id,
+    //   productName: bom.item.item,
+    //   dateCreated: bom.dated?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+    //   instructions: bom.instructions,
+    //   status: 'Active',
+    //   materials: bom.bomDetails.map(detail => ({
+    //     id: detail.material_id,
+    //     name: detail.item.item,
+    //     percentage: detail.material_percentage,
+    //   })),
+    //   linkedRecipes: bom.receipeMasters.map(recipe => recipe.receipe_id),
+    // }));
+    return NextResponse.json({data: boms, total}, { status: 200 });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-
 export async function POST(request) {
   try {
     const data = await request.json();
@@ -76,8 +161,8 @@ export async function POST(request) {
       })),
       linkedRecipes: newBom.receipeMasters.map(recipe => recipe.receipe_id),
     };
-    return Response.json(formattedNew, { status: 201 });
+    return NextResponse.json(formattedNew, { status: 201 });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

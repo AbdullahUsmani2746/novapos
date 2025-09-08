@@ -1,5 +1,6 @@
 // app/api/recipe/[id]/route.js
 import prisma from '@/lib/prisma';
+import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
   try {
@@ -35,75 +36,86 @@ export async function GET(request, { params }) {
       })),
       linkedBom: recipe.bomRef ? recipe.bomRef.id : null,
     };
-    return Response.json(formatted, { status: 200 });
+    return NextResponse.json(formatted, { status: 200 });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
 export async function PUT(request, { params }) {
   try {
     const data = await request.json();
-    const { finishedId, finishedCount, machineId, bomId, timeMin, status, details, date } = data;
+    const { finished_id, finished_count, machine_id, bom_id, time_min, status, dated, receipeDetails } = data;
+
+    if (status === 'Active') {
+      await prisma.rECEIPE_MASTER.updateMany({
+        where: { finished_id: parseInt(finished_id), status: 'Active', NOT: { receipe_id: parseInt(params.id) } },
+        data: { status: 'Inactive' },
+      });
+    }
+
     await prisma.rECEIPE_MASTER.update({
       where: { receipe_id: parseInt(params.id) },
       data: {
-        finished_id: parseInt(finishedId),
-        finished_count: finishedCount,
-        machine_id: parseInt(machineId),
-        bom_id: bomId ? parseInt(bomId) : null,
-        time_min: timeMin,
+        finished_id: parseInt(finished_id),
+        finished_count: parseInt(finished_count),
+        machine_id: parseInt(machine_id),
+        bom_id: parseInt(bom_id),
+        time_min: parseInt(time_min),
         status,
-        dated: new Date(date),
+        dated: new Date(dated),
       },
     });
+
     await prisma.rECEIPE_DETAIL.deleteMany({ where: { receipe_id: parseInt(params.id) } });
-    for (const det of details) {
+
+    for (const det of receipeDetails) {
       await prisma.rECEIPE_DETAIL.create({
         data: {
           receipe_id: parseInt(params.id),
-          product_id: det.productId ? parseInt(det.productId) : null,
-          product_desc: det.productDesc,
-          qty: det.qty,
-          product_percentage: det.percentage,
-          sno: det.sno,
+          product_id: parseInt(det.product_id),
+          product_desc: det.product_desc,
+          type: det.type,
+          qty: parseInt(det.qty) || 0,
+          product_percentage: parseFloat(det.product_percentage) || 0,
+          instructions: det.instructions || null,
+          sno: parseInt(det.sno),
         },
       });
     }
+
     const updatedRecipe = await prisma.rECEIPE_MASTER.findUnique({
       where: { receipe_id: parseInt(params.id) },
       include: {
-        receipeDetails: {
-          include: { item: true },
-        },
         item: true,
-        bomRef: true,
+        receipeDetails: true,
       },
     });
+
     const formattedUpdated = {
-      id: updatedRecipe.receipe_id,
-      finishedId: updatedRecipe.finished_id,
-      productName: updatedRecipe.item.item,
-      date: updatedRecipe.dated.toISOString().split('T')[0],
-      finishedCount: updatedRecipe.finished_count,
-      machineId: updatedRecipe.machine_id,
-      timeMin: updatedRecipe.time_min,
+      receipe_id: updatedRecipe.receipe_id,
+      finished_id: updatedRecipe.finished_id,
+      productName: updatedRecipe.item?.item || 'Unknown',
+      machine_id: updatedRecipe.machine_id,
+      bom_id: updatedRecipe.bom_id,
+      time_min: updatedRecipe.time_min,
       status: updatedRecipe.status,
-      bomId: updatedRecipe.bom_id,
-      details: updatedRecipe.receipeDetails.map(detail => ({
-        id: detail.id,
-        productId: detail.product_id,
-        productDesc: detail.product_desc,
+      dated: updatedRecipe.dated?.toISOString().split('T')[0] || '',
+      finished_count: updatedRecipe.finished_count,
+      receipeDetails: updatedRecipe.receipeDetails.map(detail => ({
+        product_id: detail.product_id,
+        product_desc: detail.product_desc,
+        type: detail.type,
         qty: detail.qty,
-        percentage: detail.product_percentage,
+        product_percentage: detail.product_percentage,
+        instructions: detail.instructions,
         sno: detail.sno,
-        name: detail.item?.item || '',
       })),
-      linkedBom: updatedRecipe.bomRef ? updatedRecipe.bomRef.id : null,
     };
-    return Response.json(formattedUpdated, { status: 200 });
+
+    return NextResponse.json(formattedUpdated, { status: 200 });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -111,8 +123,8 @@ export async function DELETE(request, { params }) {
   try {
     await prisma.rECEIPE_DETAIL.deleteMany({ where: { receipe_id: parseInt(params.id) } });
     await prisma.rECEIPE_MASTER.delete({ where: { receipe_id: parseInt(params.id) } });
-    return Response.json({}, { status: 204 });
+    return NextResponse.json({}, { status: 204 });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

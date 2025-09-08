@@ -2,23 +2,25 @@
 import { useState, useEffect, useCallback } from "react";
 import { recipeAPI } from "@/components/Manufacturing/api";
 
-export const useRecipes = () => {
+export const useRecipes = ({ searchTerm, filterStatus, page, limit, sortBy, sortOrder }) => {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [total, setTotal] = useState(0);
 
   const fetchRecipes = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await recipeAPI.getAll();
+      const { data } = await recipeAPI.getAll({ search: searchTerm, status: filterStatus, page, limit, sortBy, sortOrder });
+      setTotal(data.total);
       setRecipes(data.data);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [searchTerm, filterStatus, page, limit, sortBy, sortOrder]);
 
   const createRecipe = async (recipeData) => {
     setLoading(true);
@@ -75,8 +77,10 @@ export const useRecipes = () => {
     recipes,
     loading,
     error,
+    total,
     createRecipe,
     updateRecipe,
     deleteRecipe,
+    fetchRecipes,
   };
 };

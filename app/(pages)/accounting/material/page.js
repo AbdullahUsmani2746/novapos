@@ -1,4 +1,3 @@
-// app/dashboard/page.js
 "use client";
 import React, { useState, useEffect } from "react";
 import {
@@ -19,20 +18,55 @@ import {
   Check,
   BookOpen,
   Cog,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useBOM } from "@/hooks/useBOM";
 import { useProductionPlans } from "@/hooks/useProduction";
 import { useRecipes } from "@/hooks/useRecipe";
 import { useMachineInstructions } from "@/hooks/useMachineInstruction";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import Select from "react-select";
+
+const ITEM_TYPE = "RECIPE_DETAIL";
 
 const Material = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("");
   const [editingItem, setEditingItem] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
   const [notification, setNotification] = useState(null);
+
+  // State for each tab
+  const [searchBOM, setSearchBOM] = useState("");
+  const [filterBOM, setFilterBOM] = useState("");
+  const [bomPage, setBomPage] = useState(1);
+  const [bomLimit, setBomLimit] = useState(10);
+  const [bomSortBy, setBomSortBy] = useState("id");
+  const [bomSortOrder, setBomSortOrder] = useState("asc");
+
+  const [searchProduction, setSearchProduction] = useState("");
+  const [filterProduction, setFilterProduction] = useState("");
+  const [productionPage, setProductionPage] = useState(1);
+  const [productionLimit, setProductionLimit] = useState(10);
+  const [productionSortBy, setProductionSortBy] = useState("id");
+  const [productionSortOrder, setProductionSortOrder] = useState("asc");
+
+  const [searchRecipe, setSearchRecipe] = useState("");
+  const [filterRecipe, setFilterRecipe] = useState("");
+  const [recipePage, setRecipePage] = useState(1);
+  const [recipeLimit, setRecipeLimit] = useState(10);
+  const [recipeSortBy, setRecipeSortBy] = useState("receipe_id");
+  const [recipeSortOrder, setRecipeSortOrder] = useState("asc");
+
+  const [searchMachine, setSearchMachine] = useState("");
+  const [filterMachine, setFilterMachine] = useState("");
+  const [machinePage, setMachinePage] = useState(1);
+  const [machineLimit, setMachineLimit] = useState(10);
+  const [machineSortBy, setMachineSortBy] = useState("rec_id");
+  const [machineSortOrder, setMachineSortOrder] = useState("asc");
 
   const {
     bomItems,
@@ -42,7 +76,16 @@ const Material = () => {
     createBOM: createBOMAPI,
     updateBOM: updateBOMAPI,
     deleteBOM: deleteBOMAPI,
-  } = useBOM();
+    total: bomTotal,
+    fetchBOMs,
+  } = useBOM({
+    searchTerm: searchBOM,
+    filterStatus: filterBOM,
+    page: bomPage,
+    limit: bomLimit,
+    sortBy: bomSortBy,
+    sortOrder: bomSortOrder,
+  });
 
   const {
     productionPlans,
@@ -51,7 +94,16 @@ const Material = () => {
     createProductionPlan: createProductionPlanAPI,
     updateProductionPlan: updateProductionPlanAPI,
     deleteProductionPlan: deleteProductionPlanAPI,
-  } = useProductionPlans();
+    total: productionTotal,
+    fetchProductionPlans,
+  } = useProductionPlans({
+    searchTerm: searchProduction,
+    filterStatus: filterProduction,
+    page: productionPage,
+    limit: productionLimit,
+    sortBy: productionSortBy,
+    sortOrder: productionSortOrder,
+  });
 
   const {
     recipes,
@@ -60,7 +112,16 @@ const Material = () => {
     createRecipe: createRecipeAPI,
     updateRecipe: updateRecipeAPI,
     deleteRecipe: deleteRecipeAPI,
-  } = useRecipes();
+    total: recipeTotal,
+    fetchRecipes,
+  } = useRecipes({
+    searchTerm: searchRecipe,
+    filterStatus: filterRecipe,
+    page: recipePage,
+    limit: recipeLimit,
+    sortBy: recipeSortBy,
+    sortOrder: recipeSortOrder,
+  });
 
   const {
     machineInstructions,
@@ -69,93 +130,194 @@ const Material = () => {
     createMachineInstruction: createMachineInstructionAPI,
     updateMachineInstruction: updateMachineInstructionAPI,
     deleteMachineInstruction: deleteMachineInstructionAPI,
-  } = useMachineInstructions();
+    total: machineTotal,
+    fetchMachineInstructions,
+  } = useMachineInstructions({
+    searchTerm: searchMachine,
+    filterStatus: filterMachine,
+    page: machinePage,
+    limit: machineLimit,
+    sortBy: machineSortBy,
+    sortOrder: machineSortOrder,
+  });
 
   const [bomForm, setBomForm] = useState({
-    finishedId: "",
+    finished_id: "",
     category: "Finished",
-    materials: [],
+    instructions: "",
+    bomDetails: [],
   });
 
   const [productionForm, setProductionForm] = useState({
-    finishedId: "",
-    date: "",
+    receipe_id: "",
+    finished_id: "",
+    dated: "",
+    req_del_date: "",
+    batch_no: "",
+    sale_ord_no: null,
     qty: 0,
-    materialRequirements: [],
+    actual_yield: null,
+    viscosity: "",
+    machine_id: null,
+    time_min: null,
+    bom_id: null,
+    productionPlanDetail: [], // Renamed from materialRequirements
   });
 
   const [recipeForm, setRecipeForm] = useState({
-    finishedId: "",
-    finishedCount: 0,
-    machineId: "",
-    bomId: "",
-    timeMin: 0,
+    receipe_id: 0,
+    finished_id: "",
+    finished_count: 0,
+    machine_id: "",
+    bom_id: "",
+    time_min: 0,
     status: "Active",
-    date: "",
-    details: [],
+    dated: "",
+    receipeDetails: [],
   });
 
   const [machineForm, setMachineForm] = useState({
-    machineId: "",
-    timeMin: 0,
+    machine_id: "",
+    time_min: 0,
     descr: "",
-    details: [],
+    machineDetails: [],
   });
 
   const [materialInput, setMaterialInput] = useState({
-    id: "",
-    name: "",
-    percentage: 0,
-  });
-
-  const [recipeDetailInput, setRecipeDetailInput] = useState({
-    productId: "",
-    productDesc: "",
-    qty: 0,
-    percentage: 0,
-    sno: 0,
+    material_id: "",
+    material_desc: "",
+    material_percentage: 0,
   });
 
   const [machineDetailInput, setMachineDetailInput] = useState({
-    machineId: "",
+    machine_id: "",
     part: "",
-    timeMin: 0,
+    time_min: 0,
     instructions: "",
   });
 
+  // Fetch BOMs, Production Plans, Recipes, and Machine Instructions
   useEffect(() => {
-    if (productionForm.finishedId) {
-      const bom = bomItems.find(
-        (b) => b.finishedId === productionForm.finishedId
-      );
-      if (bom && productionForm.qty > 0) {
-        const materialRequirements = bom.materials.map((mat) => ({
-          id: mat.id,
-          name: mat.name,
-          percentage: mat.percentage,
-          required: (productionForm.qty * mat.percentage) / 100,
+    fetchBOMs();
+  }, [searchBOM, filterBOM, bomPage, bomLimit, bomSortBy, bomSortOrder]);
+
+  useEffect(() => {
+    fetchProductionPlans();
+  }, [searchProduction, filterProduction, productionPage, productionLimit, productionSortBy, productionSortOrder]);
+
+  useEffect(() => {
+    fetchRecipes();
+  }, [searchRecipe, filterRecipe, recipePage, recipeLimit, recipeSortBy, recipeSortOrder]);
+
+  useEffect(() => {
+    fetchMachineInstructions();
+  }, [searchMachine, filterMachine, machinePage, machineLimit, machineSortBy, machineSortOrder]);
+
+  // Handle Recipe Form: Auto-populate receipeDetails and time_min
+  useEffect(() => {
+    if (recipeForm.bom_id && recipeForm.machine_id) {
+      const bom = bomItems.find((b) => b.id === recipeForm.bom_id);
+      const machine = machineInstructions.find((m) => m.rec_id === recipeForm.machine_id);
+      let newDetails = [];
+
+      if (bom && bom.bomDetails) {
+        // Fetch BOM materials as products
+        const bomDetails = bom.bomDetails.map((mat, index) => ({
+          product_id: mat.material_id,
+          product_desc: mat.item?.item || mat.material_id.toString(),
+          type: "product",
+          qty: 1, // Default, adjustable
+          product_percentage: mat.material_percentage || 0,
+          instructions: "",
+          sno: index + 1,
         }));
+        newDetails = [...bomDetails];
+      }
+
+      if (machine && machine.machineDetails) {
+        // Fetch machine instructions
+        const machineDetails = machine.machineDetails.map((det, index) => ({
+          product_id: det.machine_id,
+          product_desc: det.part || det.machine_id.toString(),
+          type: "instruction",
+          qty: 0,
+          product_percentage: 0,
+          instructions: det.instructions || "",
+          sno: newDetails.length + index + 1,
+        }));
+        newDetails = [...newDetails, ...machineDetails];
+      }
+
+      setRecipeForm((prev) => ({
+        ...prev,
+        time_min: machine?.time_min || 0,
+        receipeDetails: newDetails,
+      }));
+    } else {
+      setRecipeForm((prev) => ({
+        ...prev,
+        receipeDetails: [],
+        time_min: 0,
+      }));
+    }
+  }, [recipeForm.bom_id, recipeForm.machine_id, bomItems, machineInstructions]);
+
+  // Handle Production Form: Auto-populate productionPlanDetail
+  useEffect(() => {
+    if (productionForm.receipe_id && productionForm.qty > 0) {
+      const recipe = recipes.find((r) => r.receipe_id === productionForm.receipe_id);
+      if (recipe) {
+        const materialRequirements = recipe.receipeDetails
+          .filter((det) => det.type === "product")
+          .map((det, index) => ({
+            material_id: det.product_id,
+            material_desc: det.product_desc,
+            material_percentage: det.product_percentage || 0,
+            material_qty: (productionForm.qty * (det.product_percentage || 0)) / 100,
+            sno: index + 1,
+          }));
         setProductionForm((prev) => ({
           ...prev,
-          materialRequirements,
+          finished_id: recipe.finished_id,
+          machine_id: recipe.machine_id || null,
+          time_min: recipe.time_min || null,
+          bom_id: recipe.bom_id || null,
+          productionPlanDetail: materialRequirements,
         }));
       }
+    } else {
+      setProductionForm((prev) => ({
+        ...prev,
+        productionPlanDetail: [],
+        finished_id: "",
+        machine_id: null,
+        time_min: null,
+        bom_id: null,
+      }));
     }
-  }, [productionForm.finishedId, productionForm.qty, bomItems]);
+  }, [productionForm.receipe_id, productionForm.qty, recipes]);
 
+  // Handle Recipe Form: Ensure only one active recipe per finished_id
   useEffect(() => {
-    if (recipeForm.finishedId) {
-      // Optionally auto-populate from BOM if linked
+    if (recipeForm.finished_id && recipeForm.status === "Active") {
+      const existingRecipes = recipes.filter(
+        (r) => r.finished_id === recipeForm.finished_id && r.status === "Active" && r.receipe_id !== editingItem?.receipe_id
+      );
+      if (existingRecipes.length > 0) {
+        showNotification(
+          "Only one recipe can be active per finished product. Inactivating others.",
+          "warning"
+        );
+      }
     }
-  }, [recipeForm.finishedId, bomItems]);
+  }, [recipeForm.finished_id, recipeForm.status, recipes, editingItem]);
 
+  // Error Handling
   if (bomError || productionError || recipeError || machineError) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-bold text-red-600 mb-2">
-            Error Loading Data
-          </h2>
+          <h2 className="text-xl font-bold text-red-600 mb-2">Error Loading Data</h2>
           <p className="text-gray-600">{bomError || productionError || recipeError || machineError}</p>
           <button
             onClick={() => window.location.reload()}
@@ -173,21 +335,20 @@ const Material = () => {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // BOM Operations...
+  // BOM CRUD
   const createBOM = async () => {
-    if (!bomForm.finishedId || bomForm.materials.length === 0) {
+    if (!bomForm.finished_id || bomForm.bomDetails.length === 0) {
       showNotification("Please fill all required fields and add at least one material", "error");
       return;
     }
 
-    const totalPercentage = bomForm.materials.reduce((sum, mat) => sum + mat.percentage, 0);
+    const totalPercentage = bomForm.bomDetails.reduce((sum, mat) => sum + mat.material_percentage, 0);
     if (totalPercentage !== 100) {
       showNotification("Material percentages must add up to 100%", "error");
       return;
     }
 
     const result = await createBOMAPI(bomForm);
-
     if (result.success) {
       resetBOMForm();
       closeModal();
@@ -198,19 +359,18 @@ const Material = () => {
   };
 
   const updateBOM = async () => {
-    if (!bomForm.finishedId || bomForm.materials.length === 0) {
+    if (!bomForm.finished_id || bomForm.bomDetails.length === 0) {
       showNotification("Please fill all required fields and add at least one material", "error");
       return;
     }
 
-    const totalPercentage = bomForm.materials.reduce((sum, mat) => sum + mat.percentage, 0);
+    const totalPercentage = bomForm.bomDetails.reduce((sum, mat) => sum + mat.material_percentage, 0);
     if (totalPercentage !== 100) {
       showNotification("Material percentages must add up to 100%", "error");
       return;
     }
 
     const result = await updateBOMAPI(editingItem.id, bomForm);
-
     if (result.success) {
       resetBOMForm();
       closeModal();
@@ -231,16 +391,14 @@ const Material = () => {
     }
   };
 
-  // Production Plan Operations...
+  // Production Plan CRUD
   const createProductionPlan = async () => {
-    if (!productionForm.finishedId || !productionForm.date || productionForm.qty <= 0) {
-      showNotification("Please fill all required fields", "error");
+    if (!productionForm.receipe_id || !productionForm.dated || productionForm.qty <= 0 || productionForm.productionPlanDetail.length === 0) {
+      showNotification("Please select a recipe, date, quantity, and ensure materials are calculated", "error");
       return;
     }
 
-    const planData = { ...productionForm };
-    const result = await createProductionPlanAPI(planData);
-
+    const result = await createProductionPlanAPI(productionForm);
     if (result.success) {
       resetProductionForm();
       closeModal();
@@ -251,14 +409,12 @@ const Material = () => {
   };
 
   const updateProductionPlan = async () => {
-    if (!productionForm.finishedId || !productionForm.date || productionForm.qty <= 0) {
-      showNotification("Please fill all required fields", "error");
+    if (!productionForm.receipe_id || !productionForm.dated || productionForm.qty <= 0 || productionForm.productionPlanDetail.length === 0) {
+      showNotification("Please select a recipe, date, quantity, and ensure materials are calculated", "error");
       return;
     }
 
-    const planData = { ...productionForm };
-    const result = await updateProductionPlanAPI(editingItem.id, planData);
-
+    const result = await updateProductionPlanAPI(editingItem.id, productionForm);
     if (result.success) {
       resetProductionForm();
       closeModal();
@@ -279,15 +435,23 @@ const Material = () => {
     }
   };
 
-  // Recipe Operations
+  // Recipe CRUD
   const createRecipe = async () => {
-    if (!recipeForm.finishedId || recipeForm.details.length === 0) {
-      showNotification("Please fill all required fields and add at least one detail", "error");
+    if (!recipeForm.finished_id || recipeForm.receipeDetails.length === 0) {
+      showNotification("Please fill all required fields and ensure recipe details are populated", "error");
       return;
     }
 
-    const result = await createRecipeAPI(recipeForm);
+    if (recipeForm.status === "Active") {
+      const existing = recipes.filter(
+        (r) => r.finished_id === recipeForm.finished_id && r.receipe_id !== editingItem?.receipe_id && r.status === "Active"
+      );
+      for (const ex of existing) {
+        await updateRecipeAPI(ex.receipe_id, { ...ex, status: "Inactive" });
+      }
+    }
 
+    const result = await createRecipeAPI(recipeForm);
     if (result.success) {
       resetRecipeForm();
       closeModal();
@@ -298,13 +462,21 @@ const Material = () => {
   };
 
   const updateRecipe = async () => {
-    if (!recipeForm.finishedId || recipeForm.details.length === 0) {
-      showNotification("Please fill all required fields and add at least one detail", "error");
+    if (!recipeForm.finished_id || recipeForm.receipeDetails.length === 0) {
+      showNotification("Please fill all required fields and ensure recipe details are populated", "error");
       return;
     }
 
-    const result = await updateRecipeAPI(editingItem.id, recipeForm);
+    if (recipeForm.status === "Active") {
+      const existing = recipes.filter(
+        (r) => r.finished_id === recipeForm.finished_id && r.receipe_id !== editingItem.receipe_id && r.status === "Active"
+      );
+      for (const ex of existing) {
+        await updateRecipeAPI(ex.receipe_id, { ...ex, status: "Inactive" });
+      }
+    }
 
+    const result = await updateRecipeAPI(editingItem.receipe_id, recipeForm);
     if (result.success) {
       resetRecipeForm();
       closeModal();
@@ -325,15 +497,14 @@ const Material = () => {
     }
   };
 
-  // Machine Instruction Operations
+  // Machine Instruction CRUD
   const createMachineInstruction = async () => {
-    if (!machineForm.machineId || machineForm.details.length === 0) {
+    if (!machineForm.machine_id || machineForm.machineDetails.length === 0) {
       showNotification("Please fill all required fields and add at least one detail", "error");
       return;
     }
 
     const result = await createMachineInstructionAPI(machineForm);
-
     if (result.success) {
       resetMachineForm();
       closeModal();
@@ -344,13 +515,12 @@ const Material = () => {
   };
 
   const updateMachineInstruction = async () => {
-    if (!machineForm.machineId || machineForm.details.length === 0) {
+    if (!machineForm.machine_id || machineForm.machineDetails.length === 0) {
       showNotification("Please fill all required fields and add at least one detail", "error");
       return;
     }
 
-    const result = await updateMachineInstructionAPI(editingItem.id, machineForm);
-
+    const result = await updateMachineInstructionAPI(editingItem.rec_id, machineForm);
     if (result.success) {
       resetMachineForm();
       closeModal();
@@ -371,115 +541,120 @@ const Material = () => {
     }
   };
 
-  // Form helpers
+  // Reset Forms
   const resetBOMForm = () => {
     setBomForm({
-      finishedId: "",
+      finished_id: "",
       category: "Finished",
-      materials: [],
+      instructions: "",
+      bomDetails: [],
     });
-    setMaterialInput({ id: "", name: "", percentage: 0 });
+    setMaterialInput({ material_id: "", material_desc: "", material_percentage: 0 });
   };
 
   const resetProductionForm = () => {
     setProductionForm({
-      finishedId: "",
-      date: "",
+      receipe_id: "",
+      finished_id: "",
+      dated: "",
+      req_del_date: "",
+      batch_no: "",
+      sale_ord_no: null,
       qty: 0,
-      materialRequirements: [],
+      actual_yield: null,
+      viscosity: "",
+      machine_id: null,
+      time_min: null,
+      bom_id: null,
+      productionPlanDetail: [],
     });
   };
 
   const resetRecipeForm = () => {
     setRecipeForm({
-      finishedId: "",
-      finishedCount: 0,
-      machineId: "",
-      bomId: "",
-      timeMin: 0,
+      receipe_id: 0,
+      finished_id: "",
+      finished_count: 0,
+      machine_id: "",
+      bom_id: "",
+      time_min: 0,
       status: "Active",
-      date: "",
-      details: [],
+      dated: "",
+      receipeDetails: [],
     });
-    setRecipeDetailInput({ productId: "", productDesc: "", qty: 0, percentage: 0, sno: 0 });
   };
 
   const resetMachineForm = () => {
     setMachineForm({
-      machineId: "",
-      timeMin: 0,
+      machine_id: "",
+      time_min: 0,
       descr: "",
-      details: [],
+      machineDetails: [],
     });
-    setMachineDetailInput({ machineId: "", part: "", timeMin: 0, instructions: "" });
+    setMachineDetailInput({ machine_id: "", part: "", time_min: 0, instructions: "" });
   };
 
+  // BOM Material Handling
   const addMaterial = () => {
-    if (!materialInput.id || !materialInput.name || materialInput.percentage <= 0) {
+    if (!materialInput.material_id || !materialInput.material_desc || materialInput.material_percentage <= 0) {
       showNotification("Please fill all material fields", "error");
       return;
     }
 
-    const currentTotal = bomForm.materials.reduce((sum, mat) => sum + mat.percentage, 0);
-    if (currentTotal + materialInput.percentage > 100) {
+    const currentTotal = bomForm.bomDetails.reduce((sum, mat) => sum + mat.material_percentage, 0);
+    if (currentTotal + materialInput.material_percentage > 100) {
       showNotification("Total percentage cannot exceed 100%", "error");
       return;
     }
 
     setBomForm({
       ...bomForm,
-      materials: [...bomForm.materials, { ...materialInput }],
+      bomDetails: [...bomForm.bomDetails, { ...materialInput }],
     });
-    setMaterialInput({ id: "", name: "", percentage: 0 });
+    setMaterialInput({ material_id: "", material_desc: "", material_percentage: 0 });
   };
 
   const removeMaterial = (index) => {
     setBomForm({
       ...bomForm,
-      materials: bomForm.materials.filter((_, i) => i !== index),
+      bomDetails: bomForm.bomDetails.filter((_, i) => i !== index),
     });
   };
 
-  const addRecipeDetail = () => {
-    if (!recipeDetailInput.productId || recipeDetailInput.qty <= 0) {
-      showNotification("Please fill all recipe detail fields", "error");
-      return;
-    }
-
+  // Recipe Detail Handling
+  const moveRecipeDetail = (dragIndex, hoverIndex) => {
+    const dragged = recipeForm.receipeDetails[dragIndex];
+    const newDetails = [...recipeForm.receipeDetails];
+    newDetails.splice(dragIndex, 1);
+    newDetails.splice(hoverIndex, 0, dragged);
     setRecipeForm({
       ...recipeForm,
-      details: [...recipeForm.details, { ...recipeDetailInput }],
-    });
-    setRecipeDetailInput({ productId: "", productDesc: "", qty: 0, percentage: 0, sno: 0 });
-  };
-
-  const removeRecipeDetail = (index) => {
-    setRecipeForm({
-      ...recipeForm,
-      details: recipeForm.details.filter((_, i) => i !== index),
+      receipeDetails: newDetails.map((det, i) => ({ ...det, sno: i + 1 })),
     });
   };
 
+  // Machine Detail Handling
   const addMachineDetail = () => {
-    if (!machineDetailInput.machineId || !machineDetailInput.part) {
+    if (!machineDetailInput.machine_id || !machineDetailInput.part) {
       showNotification("Please fill all machine detail fields", "error");
       return;
     }
 
     setMachineForm({
       ...machineForm,
-      details: [...machineForm.details, { ...machineDetailInput }],
+      machineDetails: [...machineForm.machineDetails, { ...machineDetailInput }],
     });
-    setMachineDetailInput({ machineId: "", part: "", timeMin: 0, instructions: "" });
+    setMachineDetailInput({ machine_id: "", part: "", time_min: 0, instructions: "" });
   };
 
   const removeMachineDetail = (index) => {
     setMachineForm({
       ...machineForm,
-      details: machineForm.details.filter((_, i) => i !== index),
+      machineDetails: machineForm.machineDetails.filter((_, i) => i !== index),
     });
   };
 
+  // Open Modal
   const openModal = (type, item = null) => {
     setModalType(type);
     setEditingItem(item);
@@ -487,9 +662,10 @@ const Material = () => {
     if (type === "bom") {
       if (item) {
         setBomForm({
-          finishedId: item.finishedId,
+          finished_id: item.finished_id,
           category: item.category || "Finished",
-          materials: [...item.materials],
+          instructions: item.instructions || "",
+          bomDetails: [...item.bomDetails],
         });
       } else {
         resetBOMForm();
@@ -497,10 +673,19 @@ const Material = () => {
     } else if (type === "production") {
       if (item) {
         setProductionForm({
-          finishedId: item.finishedId,
-          date: item.date,
+          receipe_id: item.receipe_id || "",
+          finished_id: item.finished_id,
+          dated: item.dated,
+          req_del_date: item.req_del_date || "",
+          batch_no: item.batch_no || "",
+          sale_ord_no: item.sale_ord_no || null,
           qty: item.qty,
-          materialRequirements: item.materialRequirements,
+          actual_yield: item.actual_yield || null,
+          viscosity: item.viscosity || "",
+          machine_id: item.machine_id || null,
+          time_min: item.time_min || null,
+          bom_id: item.bom_id || null,
+          productionPlanDetail: item.productionPlanDetail || [],
         });
       } else {
         resetProductionForm();
@@ -508,14 +693,15 @@ const Material = () => {
     } else if (type === "recipe") {
       if (item) {
         setRecipeForm({
-          finishedId: item.finishedId,
-          finishedCount: item.finishedCount,
-          machineId: item.machineId,
-          bomId: item.bomId,
-          timeMin: item.timeMin,
+          receipe_id: item.receipe_id,
+          finished_id: item.finished_id,
+          finished_count: item.finished_count,
+          machine_id: item.machine_id || "",
+          bom_id: item.bom_id || "",
+          time_min: item.time_min || 0,
           status: item.status,
-          date: item.date,
-          details: [...item.details],
+          dated: item.dated,
+          receipeDetails: [...item.receipeDetails].sort((a, b) => a.sno - b.sno),
         });
       } else {
         resetRecipeForm();
@@ -523,10 +709,10 @@ const Material = () => {
     } else if (type === "machine") {
       if (item) {
         setMachineForm({
-          machineId: item.machineId,
-          timeMin: item.timeMin,
+          machine_id: item.machine_id,
+          time_min: item.time_min,
           descr: item.descr,
-          details: [...item.details],
+          machineDetails: [...item.machineDetails],
         });
       } else {
         resetMachineForm();
@@ -548,6 +734,175 @@ const Material = () => {
 
   const isLoading = bomLoading || productionLoading || recipeLoading || machineLoading;
 
+  // Sorting Handlers
+  const handleBomSort = (field) => {
+    if (bomSortBy === field) {
+      setBomSortOrder(bomSortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setBomSortBy(field);
+      setBomSortOrder("asc");
+    }
+  };
+
+  const handleProductionSort = (field) => {
+    if (productionSortBy === field) {
+      setProductionSortOrder(productionSortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setProductionSortBy(field);
+      setProductionSortOrder("asc");
+    }
+  };
+
+  const handleRecipeSort = (field) => {
+    if (recipeSortBy === field) {
+      setRecipeSortOrder(recipeSortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setRecipeSortBy(field);
+      setRecipeSortOrder("asc");
+    }
+  };
+
+  const handleMachineSort = (field) => {
+    if (machineSortBy === field) {
+      setMachineSortOrder(machineSortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setMachineSortBy(field);
+      setMachineSortOrder("asc");
+    }
+  };
+
+  // Pagination Components
+  const BomPagination = () => (
+    <div className="flex justify-between items-center mt-4">
+      <button
+        onClick={() => setBomPage(Math.max(1, bomPage - 1))}
+        disabled={bomPage === 1}
+        className="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
+      >
+        <ChevronLeft size={16} /> Previous
+      </button>
+      <span>Page {bomPage} of {Math.ceil(bomTotal / bomLimit)}</span>
+      <button
+        onClick={() => setBomPage(bomPage + 1)}
+        disabled={bomPage >= Math.ceil(bomTotal / bomLimit)}
+        className="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
+      >
+        Next <ChevronRight size={16} />
+      </button>
+    </div>
+  );
+
+  const ProductionPagination = () => (
+    <div className="flex justify-between items-center mt-4">
+      <button
+        onClick={() => setProductionPage(Math.max(1, productionPage - 1))}
+        disabled={productionPage === 1}
+        className="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
+      >
+        <ChevronLeft size={16} /> Previous
+      </button>
+      <span>Page {productionPage} of {Math.ceil(productionTotal / productionLimit)}</span>
+      <button
+        onClick={() => setProductionPage(productionPage + 1)}
+        disabled={productionPage >= Math.ceil(productionTotal / productionLimit)}
+        className="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
+      >
+        Next <ChevronRight size={16} />
+      </button>
+    </div>
+  );
+
+  const RecipePagination = () => (
+    <div className="flex justify-between items-center mt-4">
+      <button
+        onClick={() => setRecipePage(Math.max(1, recipePage - 1))}
+        disabled={recipePage === 1}
+        className="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
+      >
+        <ChevronLeft size={16} /> Previous
+      </button>
+      <span>Page {recipePage} of {Math.ceil(recipeTotal / recipeLimit)}</span>
+      <button
+        onClick={() => setRecipePage(recipePage + 1)}
+        disabled={recipePage >= Math.ceil(recipeTotal / recipeLimit)}
+        className="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
+      >
+        Next <ChevronRight size={16} />
+      </button>
+    </div>
+  );
+
+  const MachinePagination = () => (
+    <div className="flex justify-between items-center mt-4">
+      <button
+        onClick={() => setMachinePage(Math.max(1, machinePage - 1))}
+        disabled={machinePage === 1}
+        className="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
+      >
+        <ChevronLeft size={16} /> Previous
+      </button>
+      <span>Page {machinePage} of {Math.ceil(machineTotal / machineLimit)}</span>
+      <button
+        onClick={() => setMachinePage(machinePage + 1)}
+        disabled={machinePage >= Math.ceil(machineTotal / machineLimit)}
+        className="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
+      >
+        Next <ChevronRight size={16} />
+      </button>
+    </div>
+  );
+
+  // Recipe Detail Row for Drag-and-Drop
+  const RecipeDetailRow = ({ detail, index, moveRecipeDetail }) => {
+    const ref = React.useRef(null);
+    const [{ isDragging }, drag] = useDrag({
+      type: ITEM_TYPE,
+      item: { index },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+    });
+
+    const [, drop] = useDrop({
+      accept: ITEM_TYPE,
+      hover: (item) => {
+        if (item.index !== index) {
+          moveRecipeDetail(item.index, index);
+          item.index = index;
+        }
+      },
+    });
+
+    drag(drop(ref));
+
+    return (
+      <div
+        ref={ref}
+        className={`flex items-center justify-between p-3 bg-white rounded border cursor-move ${isDragging ? "opacity-50" : ""}`}
+      >
+        <div className="flex-1">
+          <span className="font-medium">{detail.sno}. {detail.type === "product" ? "Product" : "Instruction"}: {detail.product_id}</span>
+          <span className="text-sm text-gray-600 ml-2">
+            {detail.product_desc}
+            {detail.type === "product" ? ` - Qty: ${detail.qty} - %: ${detail.product_percentage}` : ` - ${detail.instructions}`}
+          </span>
+        </div>
+        <button
+          onClick={() => {
+            setRecipeForm({
+              ...recipeForm,
+              receipeDetails: recipeForm.receipeDetails.filter((_, i) => i !== index).map((det, i) => ({ ...det, sno: i + 1 })),
+            });
+          }}
+          className="text-red-600 hover:text-red-800"
+        >
+          <X size={16} />
+        </button>
+      </div>
+    );
+  };
+
+  // Loading Spinner
   const LoadingSpinner = () => (
     <tr className="flex items-center justify-center py-8">
       <td className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></td>
@@ -555,32 +910,7 @@ const Material = () => {
     </tr>
   );
 
-  const filteredBomItems = bomItems.filter((item) => {
-    const matchesSearch = item.finishedId.toString().toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = !filterStatus || item.status === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
-
-  const filteredProductionPlans = productionPlans.filter((plan) => {
-    const matchesSearch = (plan.productName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      plan.id.toString().toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = !filterStatus || plan.status === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
-
-  const filteredRecipes = recipes.filter((recipe) => {
-    const matchesSearch = (recipe.productName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      recipe.id.toString().toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = !filterStatus || recipe.status === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
-
-  const filteredMachineInstructions = machineInstructions.filter((machine) => {
-    const matchesSearch = (machine.productName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      machine.id.toString().toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
-
+  // Navigation Button
   const NavButton = ({ icon: Icon, label, tabKey, count }) => (
     <button
       onClick={() => setActiveTab(tabKey)}
@@ -606,15 +936,12 @@ const Material = () => {
     </button>
   );
 
-  const ActionButton = ({
-    icon: Icon,
-    label,
-    onClick,
-    variant = "primary",
-  }) => (
+  // Action Button
+  const ActionButton = ({ icon: Icon, label, onClick, variant = "primary", disabled = false }) => (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+      disabled={disabled}
+      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 ${
         variant === "primary"
           ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg"
           : variant === "secondary"
@@ -629,14 +956,14 @@ const Material = () => {
     </button>
   );
 
+  // Card Component
   const Card = ({ children, className = "" }) => (
-    <div
-      className={`bg-white rounded-xl shadow-md border border-gray-200 ${className}`}
-    >
+    <div className={`bg-white rounded-xl shadow-md border border-gray-200 ${className}`}>
       {children}
     </div>
   );
 
+  // Status Badge
   const StatusBadge = ({ status }) => (
     <span
       className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -646,6 +973,8 @@ const Material = () => {
           ? "bg-blue-100 text-blue-800"
           : status === "Completed"
           ? "bg-purple-100 text-purple-800"
+          : status === "Inactive"
+          ? "bg-red-100 text-red-800"
           : "bg-gray-100 text-gray-800"
       }`}
     >
@@ -653,10 +982,11 @@ const Material = () => {
     </span>
   );
 
+  // Notification Component
   const Notification = ({ message, type }) => (
     <div
       className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 flex items-center gap-2 ${
-        type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"
+        type === "success" ? "bg-green-500 text-white" : type === "error" ? "bg-red-500 text-white" : "bg-yellow-500 text-white"
       }`}
     >
       {type === "success" ? <Check size={16} /> : <AlertCircle size={16} />}
@@ -664,79 +994,114 @@ const Material = () => {
     </div>
   );
 
+  // Select Options
+  const finishOptions = finishItems.map((item) => ({
+    value: item.itcd,
+    label: `${item.itcd} - ${item.item}`,
+  }));
+
+  const bomOptions = bomItems.map((bom) => ({
+    value: bom.id,
+    label: `${bom.id} - ${bom.item?.item || bom.finished_id}`,
+  }));
+
+  const activeBomOptions = bomItems
+    .filter((b) => b.instructions === "A")
+    .map((bom) => ({
+      value: bom.id,
+      label: `${bom.id} - ${bom.item?.item || bom.finished_id}`,
+    }));
+
+  const machineOptions = machineInstructions.map((machine) => ({
+    value: machine.rec_id,
+    label: `${machine.machine_id} - ${machine.item?.item || machine.machine_id}`,
+  }));
+
+  const recipeOptions = recipes.map((recipe) => ({
+    value: recipe.receipe_id,
+    label: `${recipe.receipe_id} - ${recipe.item?.item || recipe.finished_id}`,
+  }));
+
+  // BOM Form
   const BOMForm = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Product Category
-          </label>
-          <select
-            value={bomForm.category}
-            onChange={(e) =>
-              setBomForm({ ...bomForm, category: e.target.value })
-            }
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="Raw Material">Raw Material</option>
-            <option value="Semi Finished">Semi Finished</option>
-            <option value="Finished">Finished</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Finished Product
-          </label>
-          <select
-            value={bomForm.finishedId}
-            onChange={(e) =>
-              setBomForm({
-                ...bomForm,
-                finishedId: e.target.value,
-              })
-            }
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">Select Product</option>
-            {finishItems.map((item) => (
-              <option key={item.itcd} value={item.itcd}>
-                {item.itcd} - {item.item}
-              </option>
-            ))}
-          </select>
+    <div className="flex flex-row h-full">
+      {/* Left Side: Master Data */}
+      <div className="w-1/2 p-4 border-r border-gray-200">
+        <h4 className="font-semibold text-gray-800 mb-4">Master Data</h4>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Product Category</label>
+            <select
+              value={bomForm.category}
+              onChange={(e) => setBomForm({ ...bomForm, category: e.target.value })}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="Raw Material">Raw Material</option>
+              <option value="Semi Finished">Semi Finished</option>
+              <option value="Finished">Finished</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Finished Product</label>
+            <Select
+              value={finishOptions.find((opt) => opt.value === bomForm.finished_id) || null}
+              onChange={(selected) =>
+                setBomForm({
+                  ...bomForm,
+                  finished_id: selected ? selected.value : "",
+                })
+              }
+              options={finishOptions}
+              isSearchable
+              isClearable
+              placeholder="Select Product"
+              classNamePrefix="react-select"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Instructions</label>
+            <textarea
+              value={bomForm.instructions}
+              onChange={(e) => setBomForm({ ...bomForm, instructions: e.target.value })}
+              placeholder="Enter instructions"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
         </div>
       </div>
 
-      <div className="bg-gray-50 p-4 rounded-lg">
+      {/* Right Side: Detail Data */}
+      <div className="w-1/2 p-4 bg-gray-50">
         <h4 className="font-semibold text-gray-800 mb-4">Materials Required</h4>
-
         <div className="space-y-3 mb-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <select
-              value={materialInput.id}
-              onChange={(e) =>
+            <Select
+              value={finishOptions.find((opt) => opt.value === materialInput.material_id) || null}
+              onChange={(selected) =>
                 setMaterialInput({
                   ...materialInput,
-                  id: e.target.value,
-                  name: e.target.options[e.target.selectedIndex].text,
+                  material_id: selected ? selected.value : "",
+                  material_desc: selected ? selected.label.split(" - ")[1] : "",
                 })
               }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Select Material</option>
-              {finishItems.map((item) => (
-                <option key={item.itcd} value={item.itcd}>
-                  {item.item}
-                </option>
-              ))}
-            </select>
+              options={finishItems
+                .filter((item) => item.itcd !== bomForm.finished_id)
+                .map((item) => ({
+                  value: item.itcd,
+                  label: `${item.itcd} - ${item.item}`,
+                }))}
+              isSearchable
+              isClearable
+              placeholder="Select Material"
+              classNamePrefix="react-select"
+            />
             <input
               type="number"
-              value={materialInput.percentage}
+              value={materialInput.material_percentage}
               onChange={(e) =>
                 setMaterialInput({
                   ...materialInput,
-                  percentage: parseFloat(e.target.value) || 0,
+                  material_percentage: parseFloat(e.target.value) || 0,
                 })
               }
               placeholder="Percentage %"
@@ -753,22 +1118,15 @@ const Material = () => {
           </div>
         </div>
 
-        {bomForm.materials.length > 0 && (
+        {bomForm.bomDetails.length > 0 && (
           <div className="space-y-2">
             <h5 className="font-medium text-gray-700">Added Materials:</h5>
-            {bomForm.materials.map((material, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-3 bg-white rounded border"
-              >
+            {bomForm.bomDetails.map((material, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-white rounded border">
                 <div className="flex-1">
-                  <span className="font-medium">{material.id}</span>
-                  <span className="text-sm text-gray-600 ml-2">
-                    ({material.name})
-                  </span>
-                  <span className="text-sm text-gray-600 ml-2">
-                    - {material.percentage}%
-                  </span>
+                  <span className="font-medium">{material.material_id}</span>
+                  <span className="text-sm text-gray-600 ml-2">({material.material_desc})</span>
+                  <span className="text-sm text-gray-600 ml-2">- {material.material_percentage}%</span>
                 </div>
                 <button
                   onClick={() => removeMaterial(index)}
@@ -779,9 +1137,7 @@ const Material = () => {
               </div>
             ))}
             <div className="text-sm text-gray-600 mt-2">
-              Total:{" "}
-              {bomForm.materials.reduce((sum, mat) => sum + mat.percentage, 0)}%
-              (Must equal 100%)
+              Total: {bomForm.bomDetails.reduce((sum, mat) => sum + mat.material_percentage, 0)}% (Must equal 100%)
             </div>
           </div>
         )}
@@ -789,382 +1145,335 @@ const Material = () => {
     </div>
   );
 
+  // Production Plan Form
   const ProductionPlanForm = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Plan Date
-          </label>
-          <input
-            type="date"
-            value={productionForm.date}
-            onChange={(e) =>
-              setProductionForm({ ...productionForm, date: e.target.value })
-            }
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Finished Product ID
-          </label>
-          <select
-            value={productionForm.finishedId}
-            onChange={(e) =>
-              setProductionForm({
-                ...productionForm,
-                finishedId: e.target.value,
-              })
-            }
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">Select Product ID</option>
-            {bomItems.map((bom) => (
-              <option key={bom.finishedId} value={bom.finishedId}>
-                {bom.finishedId} - {bom.productName}
-              </option>
-            ))}
-          </select>
+    <div className="flex flex-row h-full">
+      {/* Left Side: Master Data */}
+      <div className="w-1/2 p-4 border-r border-gray-200">
+        <h4 className="font-semibold text-gray-800 mb-4">Master Data</h4>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Recipe ID</label>
+            <Select
+              value={recipeOptions.find((opt) => opt.value === productionForm.receipe_id) || null}
+              onChange={(selected) =>
+                setProductionForm({
+                  ...productionForm,
+                  receipe_id: selected ? selected.value : "",
+                })
+              }
+              options={recipeOptions}
+              isSearchable
+              isClearable
+              placeholder="Select Recipe ID"
+              classNamePrefix="react-select"
+              menuPortalTarget={document.body}
+              styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Plan Date</label>
+            <input
+              type="date"
+              value={productionForm.dated}
+              onChange={(e) => setProductionForm({ ...productionForm, dated: e.target.value })}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Required Delivery Date</label>
+            <input
+              type="date"
+              value={productionForm.req_del_date}
+              onChange={(e) => setProductionForm({ ...productionForm, req_del_date: e.target.value })}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Batch Number</label>
+            <input
+              type="text"
+              value={productionForm.batch_no}
+              onChange={(e) => setProductionForm({ ...productionForm, batch_no: e.target.value })}
+              placeholder="Enter batch number"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Sale Order Number</label>
+            <input
+              type="number"
+              value={productionForm.sale_ord_no}
+              onChange={(e) =>
+                setProductionForm({ ...productionForm, sale_ord_no: parseInt(e.target.value) || null })
+              }
+              placeholder="Enter sale order number"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Production Quantity</label>
+            <input
+              type="number"
+              value={productionForm.qty}
+              onChange={(e) =>
+                setProductionForm({
+                  ...productionForm,
+                  qty: parseFloat(e.target.value) || 0,
+                })
+              }
+              placeholder="Enter quantity to produce"
+              min="1"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Actual Yield</label>
+            <input
+              type="number"
+              value={productionForm.actual_yield}
+              onChange={(e) =>
+                setProductionForm({ ...productionForm, actual_yield: parseFloat(e.target.value) || null })
+              }
+              placeholder="Enter actual yield"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Viscosity</label>
+            <input
+              type="text"
+              value={productionForm.viscosity}
+              onChange={(e) => setProductionForm({ ...productionForm, viscosity: e.target.value })}
+              placeholder="Enter viscosity"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Production Quantity
-        </label>
-        <input
-          type="number"
-          value={productionForm.qty}
-          onChange={(e) =>
-            setProductionForm({
-              ...productionForm,
-              qty: parseFloat(e.target.value) || 0,
-            })
-          }
-          placeholder="Enter quantity to produce"
-          min="1"
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        />
-      </div>
-
-      {productionForm.materialRequirements.length > 0 && (
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="font-semibold text-gray-800 mb-4">
-            Material Requirements (Auto-calculated)
-          </h4>
+      {/* Right Side: Detail Data */}
+      <div className="w-1/2 p-4 bg-gray-50">
+        <h4 className="font-semibold text-gray-800 mb-4">Material Requirements (Auto-calculated from Recipe)</h4>
+        {productionForm.productionPlanDetail.length > 0 ? (
           <div className="space-y-2">
-            {productionForm.materialRequirements.map((material, index) => (
-              <div
-                key={index}
-                className="flex justify-between items-center p-3 bg-white rounded border"
-              >
-                <span className="font-medium">{material.name}</span>
+            {productionForm.productionPlanDetail.map((material, index) => (
+              <div key={index} className="flex justify-between items-center p-3 bg-white rounded border">
+                <span className="font-medium">{material.material_desc}</span>
                 <span className="text-sm text-gray-600">
-                  {material.percentage}% - {material.required} units
+                  {material.material_percentage}% - {material.material_qty} units (SNo: {material.sno})
                 </span>
               </div>
             ))}
           </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const RecipeForm = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Finished Product ID
-          </label>
-          <select
-            value={recipeForm.finishedId}
-            onChange={(e) =>
-              setRecipeForm({ ...recipeForm, finishedId: e.target.value })
-            }
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">Select Finished ID</option>
-            {finishItems.map((item) => (
-              <option key={item.itcd} value={item.itcd}>
-                {item.itcd} - {item.item}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Finished Count
-          </label>
-          <input
-            type="number"
-            value={recipeForm.finishedCount}
-            onChange={(e) =>
-              setRecipeForm({ ...recipeForm, finishedCount: parseInt(e.target.value) || 0 })
-            }
-            placeholder="Finished Count"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Machine ID
-          </label>
-          <select
-            value={recipeForm.machineId}
-            onChange={(e) =>
-              setRecipeForm({ ...recipeForm, machineId: e.target.value })
-            }
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">Select Machine ID</option>
-            {finishItems.map((item) => (
-              <option key={item.itcd} value={item.itcd}>
-                {item.itcd} - {item.item}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Linked BOM ID
-          </label>
-          <select
-            value={recipeForm.bomId}
-            onChange={(e) =>
-              setRecipeForm({ ...recipeForm, bomId: e.target.value })
-            }
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">Select BOM ID</option>
-            {bomItems.map((bom) => (
-              <option key={bom.id} value={bom.id}>
-                {bom.id} - {bom.productName}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Time (min)
-          </label>
-          <input
-            type="number"
-            value={recipeForm.timeMin}
-            onChange={(e) =>
-              setRecipeForm({ ...recipeForm, timeMin: parseInt(e.target.value) || 0 })
-            }
-            placeholder="Time in minutes"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Status
-          </label>
-          <select
-            value={recipeForm.status}
-            onChange={(e) =>
-              setRecipeForm({ ...recipeForm, status: e.target.value })
-            }
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="Active">Active</option>
-            <option value="Draft">Draft</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Date
-          </label>
-          <input
-            type="date"
-            value={recipeForm.date}
-            onChange={(e) =>
-              setRecipeForm({ ...recipeForm, date: e.target.value })
-            }
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-      </div>
-
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <h4 className="font-semibold text-gray-800 mb-4">Recipe Details</h4>
-
-        <div className="space-y-3 mb-4">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-            <select
-              value={recipeDetailInput.productId}
-              onChange={(e) =>
-                setRecipeDetailInput({ ...recipeDetailInput, productId: e.target.value })
-              }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Select Product ID</option>
-              {finishItems.map((item) => (
-                <option key={item.itcd} value={item.itcd}>
-                  {item.item}
-                </option>
-              ))}
-            </select>
-            <input
-              type="text"
-              value={recipeDetailInput.productDesc}
-              onChange={(e) =>
-                setRecipeDetailInput({ ...recipeDetailInput, productDesc: e.target.value })
-              }
-              placeholder="Product Description"
-              className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <input
-              type="number"
-              value={recipeDetailInput.qty}
-              onChange={(e) =>
-                setRecipeDetailInput({ ...recipeDetailInput, qty: parseInt(e.target.value) || 0 })
-              }
-              placeholder="Quantity"
-              className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <input
-              type="number"
-              value={recipeDetailInput.percentage}
-              onChange={(e) =>
-                setRecipeDetailInput({ ...recipeDetailInput, percentage: parseFloat(e.target.value) || 0 })
-              }
-              placeholder="Percentage"
-              className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <input
-              type="number"
-              value={recipeDetailInput.sno}
-              onChange={(e) =>
-                setRecipeDetailInput({ ...recipeDetailInput, sno: parseInt(e.target.value) || 0 })
-              }
-              placeholder="SNO"
-              className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <button
-              onClick={addRecipeDetail}
-              className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 font-medium col-span-full md:col-auto"
-            >
-              Add Detail
-            </button>
-          </div>
-        </div>
-
-        {recipeForm.details.length > 0 && (
-          <div className="space-y-2">
-            <h5 className="font-medium text-gray-700">Added Details:</h5>
-            {recipeForm.details.map((detail, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-3 bg-white rounded border"
-              >
-                <div className="flex-1">
-                  <span className="font-medium">{detail.productId}</span>
-                  <span className="text-sm text-gray-600 ml-2">
-                    {detail.productDesc} - Qty: {detail.qty} - %: {detail.percentage} - SNO: {detail.sno}
-                  </span>
-                </div>
-                <button
-                  onClick={() => removeRecipeDetail(index)}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            ))}
-          </div>
+        ) : (
+          <p className="text-sm text-gray-600">Select a recipe and quantity to populate material requirements.</p>
         )}
       </div>
     </div>
   );
 
+  // Recipe Form
+  const RecipeForm = () => (
+    <DndProvider backend={HTML5Backend}>
+      <div className="flex flex-row h-full">
+        {/* Left Side: Master Data */}
+        <div className="w-1/2 p-4 border-r border-gray-200">
+          <h4 className="font-semibold text-gray-800 mb-4">Master Data</h4>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Finished Product ID</label>
+              <Select
+                value={finishOptions.find((opt) => opt.value === recipeForm.finished_id) || null}
+                onChange={(selected) =>
+                  setRecipeForm({ ...recipeForm, finished_id: selected ? selected.value : "" })
+                }
+                options={finishOptions}
+                isSearchable
+                isClearable
+                placeholder="Select Finished ID"
+                classNamePrefix="react-select"
+                menuPortalTarget={document.body}
+                styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Finished Count</label>
+              <input
+                type="number"
+                value={recipeForm.finished_count}
+                onChange={(e) =>
+                  setRecipeForm({ ...recipeForm, finished_count: parseInt(e.target.value) || 0 })
+                }
+                placeholder="Finished Count"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Machine ID</label>
+              <Select
+                value={machineOptions.find((opt) => opt.value === recipeForm.machine_id) || null}
+                onChange={(selected) =>
+                  setRecipeForm({ ...recipeForm, machine_id: selected ? selected.value : "" })
+                }
+                options={machineOptions}
+                isSearchable
+                isClearable
+                placeholder="Select Machine ID"
+                classNamePrefix="react-select"
+                menuPortalTarget={document.body}
+                styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Linked BOM ID (Active only)</label>
+              <Select
+                value={activeBomOptions.find((opt) => opt.value === recipeForm.bom_id) || null}
+                onChange={(selected) =>
+                  setRecipeForm({ ...recipeForm, bom_id: selected ? selected.value : "" })
+                }
+                options={activeBomOptions}
+                isSearchable
+                isClearable
+                placeholder="Select BOM ID"
+                classNamePrefix="react-select"
+                menuPortalTarget={document.body}
+                styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Time (min)</label>
+              <input
+                type="number"
+                value={recipeForm.time_min}
+                onChange={(e) =>
+                  setRecipeForm({ ...recipeForm, time_min: parseInt(e.target.value) || 0 })
+                }
+                placeholder="Time in minutes"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+              <select
+                value={recipeForm.status}
+                onChange={(e) => setRecipeForm({ ...recipeForm, status: e.target.value })}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Draft">Draft</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+              <input
+                type="date"
+                value={recipeForm.dated}
+                onChange={(e) => setRecipeForm({ ...recipeForm, dated: e.target.value })}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side: Detail Data */}
+        <div className="w-1/2 p-4 bg-gray-50">
+          <h4 className="font-semibold text-gray-800 mb-4">Recipe Details (Drag to reorder)</h4>
+          {recipeForm.receipeDetails.length > 0 ? (
+            <div className="space-y-2">
+              <h5 className="font-medium text-gray-700">Sequence (Drag to reorder):</h5>
+              {recipeForm.receipeDetails.map((detail, index) => (
+                <RecipeDetailRow
+                  key={index}
+                  detail={detail}
+                  index={index}
+                  moveRecipeDetail={moveRecipeDetail}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600">Select a BOM and Machine ID to populate recipe details.</p>
+          )}
+        </div>
+      </div>
+    </DndProvider>
+  );
+
+  // Machine Instruction Form
   const MachineInstructionForm = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Machine ID
-          </label>
-          <select
-            value={machineForm.machineId}
-            onChange={(e) =>
-              setMachineForm({ ...machineForm, machineId: e.target.value })
-            }
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">Select Machine ID</option>
-            {finishItems.map((item) => (
-              <option key={item.itcd} value={item.itcd}>
-                {item.itcd} - {item.item}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Time (min)
-          </label>
-          <input
-            type="number"
-            value={machineForm.timeMin}
-            onChange={(e) =>
-              setMachineForm({ ...machineForm, timeMin: parseInt(e.target.value) || 0 })
-            }
-            placeholder="Time in minutes"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-        <div className="col-span-2">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Description
-          </label>
-          <textarea
-            value={machineForm.descr}
-            onChange={(e) =>
-              setMachineForm({ ...machineForm, descr: e.target.value })
-            }
-            placeholder="Description"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+    <div className="flex flex-row h-full">
+      {/* Left Side: Master Data */}
+      <div className="w-1/2 p-4 border-r border-gray-200">
+        <h4 className="font-semibold text-gray-800 mb-4">Master Data</h4>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Machine ID</label>
+            <Select
+              value={finishOptions.find((opt) => opt.value === machineForm.machine_id) || null}
+              onChange={(selected) =>
+                setMachineForm({ ...machineForm, machine_id: selected ? selected.value : "" })
+              }
+              options={finishOptions}
+              isSearchable
+              isClearable
+              placeholder="Select Machine ID"
+              classNamePrefix="react-select"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Time (min)</label>
+            <input
+              type="number"
+              value={machineForm.time_min}
+              onChange={(e) =>
+                setMachineForm({ ...machineForm, time_min: parseInt(e.target.value) || 0 })
+              }
+              placeholder="Time in minutes"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+            <textarea
+              value={machineForm.descr}
+              onChange={(e) => setMachineForm({ ...machineForm, descr: e.target.value })}
+              placeholder="Description"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
         </div>
       </div>
 
-      <div className="bg-gray-50 p-4 rounded-lg">
+      {/* Right Side: Detail Data */}
+      <div className="w-1/2 p-4 bg-gray-50">
         <h4 className="font-semibold text-gray-800 mb-4">Machine Details</h4>
-
         <div className="space-y-3 mb-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <select
-              value={machineDetailInput.machineId}
-              onChange={(e) =>
-                setMachineDetailInput({ ...machineDetailInput, machineId: e.target.value })
+            <Select
+              value={finishOptions.find((opt) => opt.value === machineDetailInput.machine_id) || null}
+              onChange={(selected) =>
+                setMachineDetailInput({ ...machineDetailInput, machine_id: selected ? selected.value : "" })
               }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Select Machine ID</option>
-              {finishItems.map((item) => (
-                <option key={item.itcd} value={item.itcd}>
-                  {item.item}
-                </option>
-              ))}
-            </select>
+              options={finishOptions}
+              isSearchable
+              isClearable
+              placeholder="Select Machine ID"
+              classNamePrefix="react-select"
+            />
             <input
               type="text"
               value={machineDetailInput.part}
-              onChange={(e) =>
-                setMachineDetailInput({ ...machineDetailInput, part: e.target.value })
-              }
+              onChange={(e) => setMachineDetailInput({ ...machineDetailInput, part: e.target.value })}
               placeholder="Part"
               className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             <input
               type="number"
-              value={machineDetailInput.timeMin}
+              value={machineDetailInput.time_min}
               onChange={(e) =>
-                setMachineDetailInput({ ...machineDetailInput, timeMin: parseInt(e.target.value) || 0 })
+                setMachineDetailInput({ ...machineDetailInput, time_min: parseInt(e.target.value) || 0 })
               }
               placeholder="Time (min)"
               className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -1187,18 +1496,15 @@ const Material = () => {
           </div>
         </div>
 
-        {machineForm.details.length > 0 && (
+        {machineForm.machineDetails.length > 0 && (
           <div className="space-y-2">
             <h5 className="font-medium text-gray-700">Added Details:</h5>
-            {machineForm.details.map((detail, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-3 bg-white rounded border"
-              >
+            {machineForm.machineDetails.map((detail, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-white rounded border">
                 <div className="flex-1">
-                  <span className="font-medium">{detail.machineId}</span>
+                  <span className="font-medium">{detail.machine_id}</span>
                   <span className="text-sm text-gray-600 ml-2">
-                    Part: {detail.part} - Time: {detail.timeMin} min - Instructions: {detail.instructions}
+                    Part: {detail.part} - Time: {detail.time_min} min - Instructions: {detail.instructions}
                   </span>
                 </div>
                 <button
@@ -1215,22 +1521,20 @@ const Material = () => {
     </div>
   );
 
+  // Modal Component
   const Modal = ({ isOpen, onClose, title, children, onSave }) => {
     if (!isOpen) return null;
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-white rounded-xl max-w-6xl w-full max-h-full overflow-hidden">
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl"
-            >
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">
               ×
             </button>
           </div>
-          <div className="p-6">{children}</div>
+          <div className="p-6 overflow-y-auto max-h-[70vh]">{children}</div>
           <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
             <button
               onClick={onClose}
@@ -1238,59 +1542,30 @@ const Material = () => {
             >
               Cancel
             </button>
-            <button
+            <ActionButton
+              icon={Save}
+              label={editingItem ? "Update" : "Save"}
               onClick={onSave}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
-            >
-              {editingItem ? "Update" : "Save"}
-            </button>
+              variant="primary"
+              disabled={modalType === "production" && productionForm.productionPlanDetail.length === 0}
+            />
           </div>
         </div>
       </div>
     );
   };
 
+  // Main Render
   return (
     <div className="min-h-screen bg-gray-50">
-      {notification && (
-        <Notification message={notification.message} type={notification.type} />
-      )}
+      {notification && <Notification message={notification.message} type={notification.type} />}
 
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
               <BoxIcon className="text-blue-600" size={28} />
-              <h1 className="text-xl font-bold text-gray-900">
-                Manufacturing Hub
-              </h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  size={16}
-                />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search products, plans..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64"
-                />
-              </div>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">All Status</option>
-                <option value="Active">Active</option>
-                <option value="Draft">Draft</option>
-                <option value="Scheduled">Scheduled</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-              </select>
+              <h1 className="text-xl font-bold text-gray-900">Manufacturing Hub</h1>
             </div>
           </div>
         </div>
@@ -1301,40 +1576,11 @@ const Material = () => {
           <div className="col-span-12 lg:col-span-3">
             <Card className="p-6">
               <nav className="space-y-2">
-                <NavButton
-                  icon={BarChart3}
-                  label="Dashboard"
-                  tabKey="dashboard"
-                />
-                <NavButton
-                  icon={BoxIcon}
-                  label="Bill of Materials"
-                  tabKey="bom"
-                  count={bomItems.length}
-                />
-                <NavButton
-                  icon={Calendar}
-                  label="Production Plans"
-                  tabKey="production"
-                  count={productionPlans.length}
-                />
-                <NavButton
-                  icon={BookOpen}
-                  label="Recipes"
-                  tabKey="recipe"
-                  count={recipes.length}
-                />
-                <NavButton
-                  icon={Cog}
-                  label="Machine Instructions"
-                  tabKey="machine"
-                  count={machineInstructions.length}
-                />
-                <NavButton
-                  icon={Settings}
-                  label="Product Categories"
-                  tabKey="categories"
-                />
+                <NavButton icon={BarChart3} label="Dashboard" tabKey="dashboard" />
+                <NavButton icon={BoxIcon} label="Bill of Materials" tabKey="bom" count={bomTotal} />
+                <NavButton icon={Calendar} label="Production Plans" tabKey="production" count={productionTotal} />
+                <NavButton icon={BookOpen} label="Recipes" tabKey="recipe" count={recipeTotal} />
+                <NavButton icon={Cog} label="Machine Instructions" tabKey="machine" count={machineTotal} />
               </nav>
             </Card>
           </div>
@@ -1346,12 +1592,8 @@ const Material = () => {
                   <Card className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-600">
-                          Total BOMs
-                        </p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {bomItems.length}
-                        </p>
+                        <p className="text-sm font-medium text-gray-600">Total BOMs</p>
+                        <p className="text-2xl font-bold text-gray-900">{bomTotal}</p>
                       </div>
                       <FileText className="text-blue-600" size={32} />
                     </div>
@@ -1359,12 +1601,8 @@ const Material = () => {
                   <Card className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-600">
-                          Production Plans
-                        </p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {productionPlans.length}
-                        </p>
+                        <p className="text-sm font-medium text-gray-600">Production Plans</p>
+                        <p className="text-2xl font-bold text-gray-900">{productionTotal}</p>
                       </div>
                       <Calendar className="text-green-600" size={32} />
                     </div>
@@ -1372,12 +1610,8 @@ const Material = () => {
                   <Card className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-600">
-                          Recipes
-                        </p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {recipes.length}
-                        </p>
+                        <p className="text-sm font-medium text-gray-600">Recipes</p>
+                        <p className="text-2xl font-bold text-gray-900">{recipeTotal}</p>
                       </div>
                       <BookOpen className="text-purple-600" size={32} />
                     </div>
@@ -1385,33 +1619,23 @@ const Material = () => {
                   <Card className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-600">
-                          Machine Instructions
-                        </p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {machineInstructions.length}
-                        </p>
+                        <p className="text-sm font-medium text-gray-600">Machine Instructions</p>
+                        <p className="text-2xl font-bold text-gray-900">{machineTotal}</p>
                       </div>
                       <Cog className="text-orange-600" size={32} />
                     </div>
                   </Card>
                 </div>
                 <Card className="p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">
-                    Recent Activities
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    No recent activities to display.
-                  </p>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Activities</h3>
+                  <p className="text-sm text-gray-600">No recent activities to display.</p>
                 </Card>
               </div>
             )}
             {activeTab === "bom" && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Bill of Materials
-                  </h2>
+                  <h2 className="text-2xl font-bold text-gray-900">Bill of Materials</h2>
                   <ActionButton
                     icon={Plus}
                     label="New BOM"
@@ -1419,18 +1643,58 @@ const Material = () => {
                     variant="primary"
                   />
                 </div>
+                <div className="flex items-center gap-4">
+                  <div className="relative flex-1">
+                    <Search
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      size={16}
+                    />
+                    <input
+                      type="text"
+                      value={searchBOM}
+                      onChange={(e) => setSearchBOM(e.target.value)}
+                      placeholder="Search BOMs..."
+                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
+                    />
+                  </div>
+                  <select
+                    value={filterBOM}
+                    onChange={(e) => setFilterBOM(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Draft">Draft</option>
+                  </select>
+                </div>
                 <Card>
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Finished ID
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleBomSort("id")}
+                        >
+                          BOM ID <ArrowUpDown size={12} className="inline" />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date Created
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleBomSort("finished_id")}
+                        >
+                          Finished ID <ArrowUpDown size={12} className="inline" />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleBomSort("dated")}
+                        >
+                          Date Created <ArrowUpDown size={12} className="inline" />
+                        </th>
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleBomSort("status")}
+                        >
+                          Status <ArrowUpDown size={12} className="inline" />
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Linked Recipes
@@ -1441,31 +1705,28 @@ const Material = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {isLoading ? (
+                      {bomLoading ? (
                         <LoadingSpinner />
-                      ) : filteredBomItems.length === 0 ? (
+                      ) : bomItems.length === 0 ? (
                         <tr>
-                          <td
-                            colSpan="5"
-                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center"
-                          >
+                          <td colSpan="6" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                             No BOMs found.
                           </td>
                         </tr>
                       ) : (
-                        filteredBomItems.map((item) => (
-                          <tr key={item.id}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {item.finishedId}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {item.dateCreated}
-                            </td>
+                        bomItems.map((item, index) => (
+                          <tr key={index}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.finished_id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(item.dated).toLocaleDateString(
+                              "en-US",
+                              { year: "numeric", month: "short", day: "numeric" }
+                            )}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <StatusBadge status={item.status} />
+                              <StatusBadge status={item.instructions=== "A" ? "Active" : "Inactive"} />
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {item.linkedRecipes.join(', ') || 'None'}
+                              {item.receipeMasters?.map((r) => r.receipe_id).join(", ") || "None"}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right space-x-2">
                               <button
@@ -1489,14 +1750,13 @@ const Material = () => {
                     </tbody>
                   </table>
                 </Card>
+                <BomPagination />
               </div>
             )}
             {activeTab === "production" && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Production Plans
-                  </h2>
+                  <h2 className="text-2xl font-bold text-gray-900">Production Plans</h2>
                   <ActionButton
                     icon={Plus}
                     label="New Plan"
@@ -1504,27 +1764,70 @@ const Material = () => {
                     variant="primary"
                   />
                 </div>
+                <div className="flex items-center gap-4">
+                  <div className="relative flex-1">
+                    <Search
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      size={16}
+                    />
+                    <input
+                      type="text"
+                      value={searchProduction}
+                      onChange={(e) => setSearchProduction(e.target.value)}
+                      placeholder="Search production plans..."
+                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
+                    />
+                  </div>
+                  <select
+                    value={filterProduction}
+                    onChange={(e) => setFilterProduction(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">All Status</option>
+                    <option value="Scheduled">Scheduled</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                  </select>
+                </div>
                 <Card>
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Plan ID
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleProductionSort("id")}
+                        >
+                          Plan ID <ArrowUpDown size={12} className="inline" />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Finished ID
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleProductionSort("finished_id")}
+                        >
+                          Finished ID <ArrowUpDown size={12} className="inline" />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Product Name
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleProductionSort("item.item")}
+                        >
+                          Product Name <ArrowUpDown size={12} className="inline" />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleProductionSort("dated")}
+                        >
+                          Date <ArrowUpDown size={12} className="inline" />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Quantity
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleProductionSort("qty")}
+                        >
+                          Quantity <ArrowUpDown size={12} className="inline" />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
+                                                <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleProductionSort("status")}
+                        >
+                          Status <ArrowUpDown size={12} className="inline" />
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
@@ -1532,35 +1835,22 @@ const Material = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {isLoading ? (
+                      {productionLoading ? (
                         <LoadingSpinner />
-                      ) : filteredProductionPlans.length === 0 ? (
+                      ) : productionPlans.length === 0 ? (
                         <tr>
-                          <td
-                            colSpan="7"
-                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center"
-                          >
+                          <td colSpan="7" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                             No production plans found.
                           </td>
                         </tr>
                       ) : (
-                        filteredProductionPlans.map((plan) => (
-                          <tr key={plan.id}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {plan.id}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {plan.finishedId}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {plan.productName}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {plan.date}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {plan.qty}
-                            </td>
+                        productionPlans.map((plan, index) => (
+                          <tr key={index}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{plan.id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{plan.finished_id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{plan.item?.item || plan.finished_id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{plan.dated}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{plan.qty}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <StatusBadge status={plan.status} />
                             </td>
@@ -1586,14 +1876,13 @@ const Material = () => {
                     </tbody>
                   </table>
                 </Card>
+                <ProductionPagination />
               </div>
             )}
             {activeTab === "recipe" && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Recipes
-                  </h2>
+                  <h2 className="text-2xl font-bold text-gray-900">Recipes</h2>
                   <ActionButton
                     icon={Plus}
                     label="New Recipe"
@@ -1601,27 +1890,64 @@ const Material = () => {
                     variant="primary"
                   />
                 </div>
+                <div className="flex items-center gap-4">
+                  <div className="relative flex-1">
+                    <Search
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      size={16}
+                    />
+                    <input
+                      type="text"
+                      value={searchRecipe}
+                      onChange={(e) => setSearchRecipe(e.target.value)}
+                      placeholder="Search recipes..."
+                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
+                    />
+                  </div>
+                  <select
+                    value={filterRecipe}
+                    onChange={(e) => setFilterRecipe(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Draft">Draft</option>
+                  </select>
+                </div>
                 <Card>
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Recipe ID
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleRecipeSort("receipe_id")}
+                        >
+                          Recipe ID <ArrowUpDown size={12} className="inline" />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Finished ID
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleRecipeSort("finished_id")}
+                        >
+                          Finished ID <ArrowUpDown size={12} className="inline" />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Product Name
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleRecipeSort("item.item")}
+                        >
+                          Product Name <ArrowUpDown size={12} className="inline" />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleRecipeSort("dated")}
+                        >
+                          Date Created <ArrowUpDown size={12} className="inline" />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Linked BOM
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleRecipeSort("status")}
+                        >
+                          Status <ArrowUpDown size={12} className="inline" />
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
@@ -1629,37 +1955,26 @@ const Material = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {isLoading ? (
+                      {recipeLoading ? (
                         <LoadingSpinner />
-                      ) : filteredRecipes.length === 0 ? (
+                      ) : recipes.length === 0 ? (
                         <tr>
-                          <td
-                            colSpan="7"
-                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center"
-                          >
+                          <td colSpan="6" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                             No recipes found.
                           </td>
                         </tr>
                       ) : (
-                        filteredRecipes.map((recipe) => (
-                          <tr key={recipe.id}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {recipe.id}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {recipe.finishedId}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {recipe.productName}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {recipe.date}
-                            </td>
+                        recipes.map((recipe, index) => (
+                          <tr key={index}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{recipe.receipe_id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{recipe.finished_id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{recipe.item?.item || recipe.finished_id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(recipe.dated).toLocaleDateString(
+                              "en-US",
+                              { year: "numeric", month: "short", day: "numeric" }
+                            )}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <StatusBadge status={recipe.status} />
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {recipe.linkedBom || 'None'}
+                              <StatusBadge status={recipe.status==="A" ? "Active" : "Inactive"} />
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right space-x-2">
                               <button
@@ -1670,7 +1985,7 @@ const Material = () => {
                                 <Edit size={16} />
                               </button>
                               <button
-                                onClick={() => deleteRecipe(recipe.id)}
+                                onClick={() => deleteRecipe(recipe.receipe_id)}
                                 className="text-red-600 hover:text-red-900"
                                 title="Delete"
                               >
@@ -1683,14 +1998,13 @@ const Material = () => {
                     </tbody>
                   </table>
                 </Card>
+                <RecipePagination />
               </div>
             )}
             {activeTab === "machine" && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Machine Instructions
-                  </h2>
+                  <h2 className="text-2xl font-bold text-gray-900">Machine Instructions</h2>
                   <ActionButton
                     icon={Plus}
                     label="New Instruction"
@@ -1698,60 +2012,82 @@ const Material = () => {
                     variant="primary"
                   />
                 </div>
+                <div className="flex items-center gap-4">
+                  <div className="relative flex-1">
+                    <Search
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      size={16}
+                    />
+                    <input
+                      type="text"
+                      value={searchMachine}
+                      onChange={(e) => setSearchMachine(e.target.value)}
+                      placeholder="Search machine instructions..."
+                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
+                    />
+                  </div>
+                  <select
+                    value={filterMachine}
+                    onChange={(e) => setFilterMachine(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Draft">Draft</option>
+                  </select>
+                </div>
                 <Card>
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          ID
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleMachineSort("rec_id")}
+                        >
+                          Machine ID <ArrowUpDown size={12} className="inline" />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Machine ID
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleMachineSort("machine_id")}
+                        >
+                          Machine Name <ArrowUpDown size={12} className="inline" />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Product Name
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleMachineSort("time_min")}
+                        >
+                          Time (min) <ArrowUpDown size={12} className="inline" />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Time (min)
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Description
-                        </th>
+                        {/* <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleMachineSort("status")}
+                        >
+                          Status <ArrowUpDown size={12} className="inline" />
+                        </th> */}
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {isLoading ? (
+                      {machineLoading ? (
                         <LoadingSpinner />
-                      ) : filteredMachineInstructions.length === 0 ? (
+                      ) : machineInstructions.length === 0 ? (
                         <tr>
-                          <td
-                            colSpan="6"
-                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center"
-                          >
+                          <td colSpan="5" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                             No machine instructions found.
                           </td>
                         </tr>
                       ) : (
-                        filteredMachineInstructions.map((machine) => (
-                          <tr key={machine.id}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {machine.id}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {machine.machineId}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {machine.productName}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {machine.timeMin}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {machine.descr}
-                            </td>
+                        machineInstructions.map((machine, index) => (
+                          <tr key={index}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{machine.rec_id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{machine.item?.item || machine.machine_id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{machine.time_min}</td>
+                            {/* <td className="px-6 py-4 whitespace-nowrap">
+                              <StatusBadge status={machine.status} />
+                            </td> */}
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right space-x-2">
                               <button
                                 onClick={() => openModal("machine", machine)}
@@ -1761,7 +2097,7 @@ const Material = () => {
                                 <Edit size={16} />
                               </button>
                               <button
-                                onClick={() => deleteMachineInstruction(machine.id)}
+                                onClick={() => deleteMachineInstruction(machine.rec_id)}
                                 className="text-red-600 hover:text-red-900"
                                 title="Delete"
                               >
@@ -1774,42 +2110,33 @@ const Material = () => {
                     </tbody>
                   </table>
                 </Card>
-              </div>
-            )}
-            {activeTab === "categories" && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Product Categories
-                </h2>
-                <Card className="p-6">
-                  <p className="text-sm text-gray-600">
-                    Category management functionality is not implemented yet.
-                  </p>
-                </Card>
+                <MachinePagination />
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Modal */}
       <Modal
         isOpen={showModal}
         onClose={closeModal}
         title={
           modalType === "bom"
             ? editingItem
-              ? "Edit BOM"
-              : "New BOM"
+              ? "Edit Bill of Materials"
+              : "Create Bill of Materials"
             : modalType === "production"
             ? editingItem
               ? "Edit Production Plan"
-              : "New Production Plan"
+              : "Create Production Plan"
             : modalType === "recipe"
             ? editingItem
               ? "Edit Recipe"
-              : "New Recipe"
+              : "Create Recipe"
             : editingItem
             ? "Edit Machine Instruction"
-            : "New Machine Instruction"
+            : "Create Machine Instruction"
         }
         onSave={
           modalType === "bom"
@@ -1829,7 +2156,10 @@ const Material = () => {
             : createMachineInstruction
         }
       >
-        {modalType === "bom" ? <BOMForm /> : modalType === "production" ? <ProductionPlanForm /> : modalType === "recipe" ? <RecipeForm /> : <MachineInstructionForm />}
+        {modalType === "bom" && <BOMForm />}
+        {modalType === "production" && <ProductionPlanForm />}
+        {modalType === "recipe" && <RecipeForm />}
+        {modalType === "machine" && <MachineInstructionForm />}
       </Modal>
     </div>
   );

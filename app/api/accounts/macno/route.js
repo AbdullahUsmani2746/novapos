@@ -37,10 +37,11 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const { macno, macname, bscd } = await request.json();
+    const { macname, bscd } = await request.json();
+    console.log("BSCD: ",bscd);
 
     // Validate input
-    if (!macno || !macname || !bscd) {
+    if (!macname || !bscd) {
       return NextResponse.json(
         { error: 'macno, macname, and bscd are required' },
         { status: 400 }
@@ -49,7 +50,7 @@ export async function POST(request) {
 
     // Check if parent BSCD exists
     const parentExists = await prisma.bSCD.findUnique({
-      where: { bscd: bscd },
+      where: { bscd: Number(bscd) },
     });
 
     if (!parentExists) {
@@ -61,9 +62,8 @@ export async function POST(request) {
 
     const newMacno = await prisma.mACNO.create({
       data: {
-        macno: macno,
         macname,
-        bscd: bscd,
+        bscd: Number(bscd),
       },
     //   include: {
     //     businessCat: true,
@@ -89,6 +89,7 @@ export async function POST(request) {
 export async function PUT(request) {
   try {
     const { macno, macname, bscd } = await request.json();
+    console.log("Update BSCD: ",bscd, macno, macname);
 
     if (!macno || !macname || !bscd) {
       return NextResponse.json(

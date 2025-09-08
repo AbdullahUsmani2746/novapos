@@ -51,7 +51,7 @@ const config = {
         },
         // Sidebar components
         sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
+          DEFAULT: "hsl(var(--sidebar-background))", 
           foreground: "hsl(var( --custom-white))",
           primary: "hsl(var(--sidebar-primary))",
           "primary-foreground": "hsl(var(--sidebar-primary-foreground))",

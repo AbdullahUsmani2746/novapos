@@ -17,11 +17,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build --no-cache . -t ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest --platform linux/amd64
+          docker build --no-cache . -t ghcr.io/${{ secrets.GHCR_USERNAME }}/novapos:latest --platform linux/amd64
 
       - name: Push Docker image to GHCR
         run: |
-          docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest
+          docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/novapos:latest
 
       - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@v1.0.0
@@ -33,8 +33,8 @@ jobs:
           script: |
             cd accounting
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
-            docker stop accounting || true
-            docker rm accounting || true
-            docker image rm ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest || true
-            docker pull ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest
-            docker run -d --env-file .env -p 3001:3001 -v /var/www/uploads:/app/public/uploads --name accounting ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest
+            docker stop novapos || true
+            docker rm novapos || true
+            docker image rm ghcr.io/${{ secrets.GHCR_USERNAME }}/novapos:latest || true
+            docker pull ghcr.io/${{ secrets.GHCR_USERNAME }}/novapos:latest
+            docker run -d --env-file .env -p 3003:3003 -v /var/www/uploads:/app/public/uploads --name accounting ghcr.io/${{ secrets.GHCR_USERNAME }}/accounting:latest

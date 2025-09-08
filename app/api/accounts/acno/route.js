@@ -184,7 +184,7 @@ export async function PUT(request) {
     }
 
     // Ensure parent MACNO exists
-    const parentExists = await prisma.mACNO.findUnique({ where: { macno } });
+    const parentExists = await prisma.mACNO.findUnique({ where: { macno: Number(macno) } });
     if (!parentExists) {
       return NextResponse.json(
         { error: 'Parent MACNO does not exist' },
@@ -194,12 +194,10 @@ export async function PUT(request) {
 
     const updatedAcno = await prisma.aCNO.update({
       where: {
-        macno_acno: {
-          macno,
-          acno,
-        },
+        acno: acno,
       },
       data: {
+        macno: Number(macno),
         acname,
         bankAccountNo,
         address,
