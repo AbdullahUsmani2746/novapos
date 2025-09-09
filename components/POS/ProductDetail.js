@@ -306,10 +306,12 @@ const ProductDetail = ({ productId }) => {
               <div className="space-y-4">
                 <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden relative">
                   {imagePreview ? (
-                    <img
-                      src={imagePreview}
+                    <Image
+                      src={imagePreview ||`/api/pos/products/uploads${imagePreview}` }
                       alt={form.item || "Product"}
                       className="w-full h-full object-cover"
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                     />
                   ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -387,7 +389,7 @@ const ProductDetail = ({ productId }) => {
                     {imagePreview ? (
                       <div className="relative">
                         <Image
-                          src={imagePreview}
+                          src={imagePreview ||`/api/pos/products/uploads${imagePreview}` }
                           alt="Preview"
                           className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-xl mx-auto mb-3 sm:mb-4"
                           width={128}
